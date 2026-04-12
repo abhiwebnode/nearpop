@@ -1,0 +1,11 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "in.nearpop.twa",
+      "sha256_cert_fingerprints":
+        ["9D:69:E9:73:0B:70:6B:4A:14:D5:7D:B1:2D:67:F0:2B:0A:7F:B3:7B:3A:66:14:DF:F5:AC:F6:B1:56:BB:C6:8D"]
+    }
+  }
+]

@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0F0F13">
+<meta name="color-scheme" content="light dark">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+<title>NearPop — Discover Local Deals, Rentals & Jobs Instantly</title>
+<meta name="title" content="NearPop — Discover Local Deals, Rentals & Jobs Instantly">
+<meta name="description" content="Turn on your GPS and find the best hyper-local shop discounts, flats, PGs, and jobs near you in real-time. Explore your neighborhood with NearPop.">
+
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://nearpop.in/">
+
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js').catch(err => console.log('SW failed', err));
+    });
+  }
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800;900&family=Syne:wght@700;800&display=swap">
+<link rel="stylesheet" href="css/shared.css">
+<style>
+  body { 
+    display:flex; 
+    flex-direction:column; 
+    align-items:center; 
+    justify-content:center; 
+    min-height:100vh; 
+    min-height:100dvh; 
+    background-color: var(--bg-body); 
+    background-image: radial-gradient(circle at 15% 20%, rgba(255, 87, 34, 0.15) 0%, transparent 40%), radial-gradient(circle at 85% 80%, rgba(59, 130, 246, 0.15) 0%, transparent 40%); 
+    background-attachment: fixed; 
+    padding:16px; 
+    overflow:hidden; 
+    position: relative;
+  }
+  
+  /* 🚀 NEW: Beautiful, rotating floating Emoji background */
+  .bg-pattern {
+    position: fixed;
+    top: -50%; left: -50%; width: 200%; height: 200%;
+    /* Super lightweight SVG Data URI embedding food/shopping emojis */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400' viewBox='0 0 400 400'%3E%3Ctext x='20' y='60' font-size='45'%3E🛍️%3C/text%3E%3Ctext x='200' y='100' font-size='45'%3E🍔%3C/text%3E%3Ctext x='80' y='220' font-size='45'%3E🏷️%3C/text%3E%3Ctext x='280' y='260' font-size='45'%3E☕%3C/text%3E%3Ctext x='160' y='360' font-size='45'%3E🍕%3C/text%3E%3Ctext x='340' y='160' font-size='45'%3E🛒%3C/text%3E%3Ctext x='50' y='320' font-size='45'%3E🍦%3C/text%3E%3Ctext x='250' y='380' font-size='45'%3E🎁%3C/text%3E%3C/svg%3E");
+    background-size: 350px; 
+    background-repeat: repeat;
+    opacity: 0.15; 
+    z-index: 0; 
+    pointer-events: none;
+    transform: rotate(-20deg); 
+    animation: panBackground 50s linear infinite; 
+  }
+
+  @keyframes panBackground {
+    0% { background-position: 0px 0px; }
+    100% { background-position: 350px 350px; } 
+  }
+
+  /* 🚀 NEW: Smooth entry animation for the card */
+  .card { 
+    width:100%; 
+    max-width:400px; 
+    border-radius:28px; 
+    padding:40px 24px; 
+    text-align:center; 
+    position:relative; 
+    z-index: 10; 
+    background-color: rgba(255, 255, 255, 0.85); 
+    backdrop-filter: blur(24px); 
+    -webkit-backdrop-filter: blur(24px); 
+    box-shadow: 0 30px 60px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.05); 
+    border: none; 
+    animation: slideUpFade 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  
+  @keyframes slideUpFade {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  
+  @media (prefers-color-scheme: dark) {
+    body { background-image: radial-gradient(circle at 15% 20%, rgba(255, 87, 34, 0.20) 0%, transparent 40%), radial-gradient(circle at 85% 80%, rgba(59, 130, 246, 0.20) 0%, transparent 40%); }
+    .bg-pattern { opacity: 0.10; filter: grayscale(1); } 
+    .card { background-color: rgba(30, 41, 59, 0.85); box-shadow: 0 30px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.1); }
+  }
+  
+  .brand { display:flex; align-items:center; justify-content:center; gap:10px; margin-bottom:12px; }
+  .tagline { font-size:14px; color:var(--gray); font-weight:600; margin-bottom:30px; line-height:1.4; }
+  
+  .role-tog { display:flex; background:var(--cream); border-radius:14px; padding:4px; margin-bottom:24px; border:1px solid var(--bdr); }
+  .rtb { flex:1; padding:10px; font-size:13px; font-weight:800; color:var(--gray); border-radius:10px; cursor:pointer; transition:all 0.2s; }
+  .rtb.on { background:var(--bg-app); color:var(--deep); box-shadow:0 2px 8px rgba(0,0,0,0.08); }
+  
+  .btn-google { display:flex; align-items:center; justify-content:center; gap:12px; width:100%; padding:14px; border-radius:12px; background:var(--bg-app); color:var(--deep); font-size:15px; font-weight:800; border:2px solid var(--bdr); cursor:pointer; transition:all 0.2s; font-family:inherit; box-shadow:0 4px 15px rgba(0,0,0,0.06); }
+  .btn-google:active { transform:scale(0.97); background:var(--cream); }
+  .btn-google img { width:20px; height:20px; }
+
+  /* Polished Checkbox */
+  .checkbox-wrapper { display:flex; align-items:flex-start; gap:10px; margin-bottom:20px; text-align:left; padding:0 4px; }
+  .custom-checkbox { width:20px; height:20px; accent-color:#FF5722; cursor:pointer; flex-shrink:0; margin-top:2px; background-color:#ffffff; box-shadow:0 0 0 2px #9CA3AF; border-radius:3px; outline:none; -webkit-appearance:auto; transition: transform 0.2s; }
+  .custom-checkbox:active { transform: scale(0.9); }
+</style>
+</head>
+<body>
+
+<div class="bg-pattern"></div>
+
+<div class="card" id="login-card">
+  <div class="brand" style="margin-bottom: 20px;">
+    <img src="icons/logo.png" alt="NearPop Logo" style="max-height: 64px; width: auto; filter: drop-shadow(0 4px 12px rgba(0,0,0,0.1));">
+  </div>
+  <div class="tagline" id="tag-line">Sign in to discover nearby deals instantly.</div>
+
+  <div class="role-tog" id="role-box">
+    <div class="rtb on" id="rt-con" onclick="setRole('consumer')">📱 Customer</div>
+    <div class="rtb" id="rt-mer" onclick="setRole('merchant')">🏪 Merchant</div>
+  </div>
+
+  <div class="checkbox-wrapper">
+    <input type="checkbox" id="agree-check" class="custom-checkbox">
+    <label for="agree-check" style="font-size:12px; color:var(--deep); line-height:1.5; cursor:pointer; font-weight:600;">
+      By checking this, you agree to NearPop's 
+      <a href="terms.html" style="color:#FF5722; font-weight:800; text-decoration:underline;">Terms</a> & 
+      <a href="privacy.html" style="color:#FF5722; font-weight:800; text-decoration:underline;">Privacy</a>.
+    </label>
+  </div>
+  
+  <button class="btn-google" id="btn-login" onclick="window.loginWithGoogle()">
+    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
+    Continue with Google
+  </button>
+
+  <div id="ldr" style="display:none; margin-top:16px;">
+    <div class="spin" style="margin:0 auto 10px;"></div>
+    <div style="font-size:13px; font-weight:800; color:var(--deep);" id="ldr-tx">Securing session...</div>
+  </div>
+
+  <div style="margin-top: 24px; font-size: 11px; color: var(--gray); text-align: center; font-weight:600;">
+    © 2026 NearPop. All rights reserved.
+  </div>
+</div>
+
+<div class="toast" id="toast"><span id="t-ic">✅</span><span id="t-tx"></span></div>
+
+<script type="module">
+import { db, LS, SS, toast, cacheClear } from './js/app.js';
+import { getAuth, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js";
+import { doc, getDoc, setDoc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js";
+import { app } from './js/app.js';
+
+// If already logged in, redirect smoothly
+if (LS('uid')) { 
+  const savedIntent = sessionStorage.getItem('np_intent');
+  if (savedIntent) {
+    sessionStorage.removeItem('np_intent');
+    window.location.href = savedIntent;
+  } else {
+    window.location.href = LS('role') === 'merchant' ? 'merchant.html' : 'map.html'; 
+  }
+}
+
+const auth = getAuth(app);
+const provider = new GoogleAuthProvider();
+window.loginRole = 'consumer';
+
+window.setRole = (r) => {
+  window.loginRole = r;
+  document.getElementById('rt-con').classList.toggle('on', r === 'consumer');
+  document.getElementById('rt-mer').classList.toggle('on', r === 'merchant');
+};
+
+const urlP = new URLSearchParams(window.location.search);
+if (urlP.get('qr') === '1') {
+  document.getElementById('tag-line').innerHTML = "<span style='color:#FF5722; font-size:18px; font-weight:900;'>Store Found! 🏪</span><br>Sign in to unlock deals and claim visit points.";
+  setRole('consumer');
+  document.getElementById('role-box').style.display = 'none'; 
+}
+
+function showLdr(msg) {
+  document.getElementById('btn-login').style.display = 'none';
+  document.getElementById('ldr').style.display = 'block';
+  document.getElementById('ldr-tx').textContent = msg;
+}
+
+window.loginWithGoogle = async () => {
+  if (!document.getElementById('agree-check').checked) return toast('⚠️', 'Please agree to the Terms & Privacy Policy.');
+
+  try {
+    showLdr('Connecting to Google...');
+    const result = await signInWithPopup(auth, provider);
+    const user = result.user; const uid = user.uid; const gName = user.displayName || 'User';
+    
+    SS('uid', uid); SS('name', gName); SS('role', window.loginRole);
+    
+    showLdr('Signing in...'); 
+    
+    const userRef = doc(db, 'users', uid);
+    const userSnap = await getDoc(userRef);
+    const isNewUser = !userSnap.exists(); 
+    
+    if (window.loginRole === 'merchant') {
+      let bname = gName + "'s Business";
+      if (!userSnap.exists()) {
+        bname = prompt('What is your business / shop name?') || bname;
+        SS('mname', bname); SS('wallet', 500); 
+        await setDoc(userRef, { name: gName, role: 'merchant', mname: bname, wallet: 500, points: 0, liked: [], createdAt: Date.now() });
+      } else {
+        if (userSnap.data().mname) { bname = userSnap.data().mname; SS('mname', bname); } 
+        else { bname = prompt('What is your business / shop name?') || bname; SS('mname', bname); await updateDoc(userRef, { role: 'merchant', mname: bname }); }
+        SS('wallet', userSnap.data().wallet !== undefined ? userSnap.data().wallet : 500);
+        if (userSnap.data().plan) SS('plan', userSnap.data().plan);
+      }
+    } else {
+      if (!userSnap.exists()) await setDoc(userRef, { name: gName, role: 'consumer', wallet: 0, points: 50, liked: [], createdAt: Date.now() });
+    }
+    
+    cacheClear();
+    const savedIntent = sessionStorage.getItem('np_intent');
+    
+    // 🚀 Strict Preservation of QR & Analytics Logic
+    const qrMid = urlP.get('mid');
+    if (qrMid) {
+      try {
+        if (isNewUser) {
+          await updateDoc(doc(db, 'users', qrMid), { qrNew: increment(1), qrScans: increment(1) });
+        } else {
+          await updateDoc(doc(db, 'users', qrMid), { qrRet: increment(1), qrScans: increment(1) });
+        }
+        sessionStorage.setItem('np_qr_logged_' + qrMid, 'true'); 
+      } catch (err) { console.warn("Rules blocked analytics:", err); }
+    } else if (savedIntent && savedIntent.includes('utm_source=qr_standee')) {
+      try {
+        const urlStr = savedIntent.startsWith('http') ? savedIntent : window.location.origin + '/' + savedIntent;
+        const intentUrl = new URL(urlStr);
+        const merchantId = intentUrl.searchParams.get('mid');
+        if (merchantId) {
+          if (isNewUser) await updateDoc(doc(db, 'users', merchantId), { qrNew: increment(1), qrScans: increment(1) });
+          else await updateDoc(doc(db, 'users', merchantId), { qrRet: increment(1), qrScans: increment(1) });
+          sessionStorage.setItem('np_qr_logged_' + merchantId, 'true');
+        }
+      } catch (err) { console.warn("Rules blocked fallback analytics:", err); }
+    }
+    
+    if (savedIntent) {
+      sessionStorage.removeItem('np_intent');
+      window.location.href = savedIntent;
+    } else {
+      window.location.href = window.loginRole === 'merchant' ? 'merchant.html?v=' + Date.now() : 'map.html?v=' + Date.now();
+    }
+
+  } catch(e) {
+    toast('❌', 'Login failed.');
+    document.getElementById('btn-login').style.display = 'flex';
+    document.getElementById('ldr').style.display = 'none';
+  }
+};
+</script>
+</body>
+</html>
