@@ -313,7 +313,7 @@ export function checkProximity(showNotifFn, showMarketNotifFn) {
               body: (winner.price ? winner.price + ' · ' : '') + (winner.desc || 'Tap to view details').slice(0, 40) + '...',
               icon: '/icons/icon-192.png',
               badge: '/icons/badge-96.png',
-              vibrate: [500, 250, 500, 250, 500], 
+              vibrate: [500, 250, 500, 250, 1000, 250, 1000], 
               requireInteraction: true, 
               data: { url: '/detail.html?id=' + winner.id } 
             }
@@ -327,11 +327,11 @@ export function checkProximity(showNotifFn, showMarketNotifFn) {
         );
       }
     } else {
-      if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+      if (navigator.vibrate) navigator.vibrate([500, 250, 1000]);
     }
   } else if (ntype === 'soft') {
     showSoftBanner(winner);
-    if (navigator.vibrate) navigator.vibrate([60]);
+    if (navigator.vibrate) navigator.vibrate([250]);
   }
 
   // UPDATE ENGINE STATE
