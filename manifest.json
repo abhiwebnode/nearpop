@@ -27,8 +27,8 @@
   "related_applications": [
     {
       "platform": "play",
-      "url": "https://play.google.com/store/apps/details?id=in.nearpop.twa",
-      "id": "in.nearpop.twa"
+      "url": "https://play.google.com/store/apps/details?id=in.nearpop.app",
+      "id": "in.nearpop.app"
     }
   ],
   "launch_handler": {
