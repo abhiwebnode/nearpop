@@ -159,14 +159,6 @@ export function updateSpeed(newLoc, newTime) {
   return secs > 0 ? (metres / secs) * 3.6 : 0;
 }
 
-function allowedByTime(type) {
-  const h = new Date().getHours();
-  if (h >= 6  && h < 11) return true;
-  if (h >= 11 && h < 15) return ['deal', 'rental'].includes(type);
-  if (h >= 15 && h < 21) return ['deal', 'pg', 'rental', 'job'].includes(type);
-  return ['rental', 'pg'].includes(type);
-}
-
 function scoreL(l, d, prefs) {
   let s = 0;
   if      (d <= 50)  s += 40;
@@ -266,7 +258,6 @@ export function checkProximity(showNotifFn, showMarketNotifFn) {
       if (!prefs.interests.includes(l.type))        return false;
       if (prefs.mutedCats.includes(l.type))         return false;
       if (prefs.mutedVendors.includes(l.uid||l.id)) return false;
-      if (!allowedByTime(l.type))                   return false;
       return l._score >= 40;
     })
     .sort((a, b) => b._score - a._score);
