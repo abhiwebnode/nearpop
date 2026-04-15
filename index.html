@@ -49,7 +49,6 @@
   .bg-pattern {
     position: fixed;
     top: -50%; left: -50%; width: 200%; height: 200%;
-    /* Super lightweight SVG Data URI embedding food/shopping emojis */
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400' viewBox='0 0 400 400'%3E%3Ctext x='20' y='60' font-size='45'%3E🛍️%3C/text%3E%3Ctext x='200' y='100' font-size='45'%3E🍔%3C/text%3E%3Ctext x='80' y='220' font-size='45'%3E🏷️%3C/text%3E%3Ctext x='280' y='260' font-size='45'%3E☕%3C/text%3E%3Ctext x='160' y='360' font-size='45'%3E🍕%3C/text%3E%3Ctext x='340' y='160' font-size='45'%3E🛒%3C/text%3E%3Ctext x='50' y='320' font-size='45'%3E🍦%3C/text%3E%3Ctext x='250' y='380' font-size='45'%3E🎁%3C/text%3E%3C/svg%3E");
     background-size: 350px; 
     background-repeat: repeat;
@@ -207,6 +206,28 @@ window.loginWithGoogle = async () => {
     const userSnap = await getDoc(userRef);
     const isNewUser = !userSnap.exists(); 
     
+    // 🛑 NEW: CROSS-ROLE LOGIN PREVENTION
+    if (!isNewUser) {
+      const existingRole = userSnap.data().role || 'consumer';
+      
+      if (existingRole !== window.loginRole) {
+        // Sign them back out of Firebase so they aren't stuck
+        await auth.signOut(); 
+        
+        // Reset the UI buttons
+        document.getElementById('ldr').style.display = 'none';
+        document.getElementById('btn-login').style.display = 'flex';
+        
+        // Show the warning toast
+        if (existingRole === 'consumer') {
+          return toast('⚠️', 'This Google account is registered as a Customer. You cannot log in as a Merchant.');
+        } else {
+          return toast('⚠️', 'This Google account is registered as a Merchant. You cannot log in as a Customer.');
+        }
+      }
+    }
+    // 🛑 END OF PREVENTION LOGIC
+
     if (window.loginRole === 'merchant') {
       let bname = gName + "'s Business";
       if (!userSnap.exists()) {
