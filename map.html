@@ -337,7 +337,7 @@ import { ghEncode, ghNeighbors, ghFilter } from './js/geohash.js';
 import { setLoc, setListings, checkProximity, dist, getPrefs, notifsToday, notifsThisHour, logNotif, inMarketZone, vendorCapReached, budgetThrottled, markVendorCapUsed, markBudgetUsed, markGeofenceNotified, applyDensityControl, getNotifType, showSoftBanner, trackEng, updateSpeed } from './js/notifications.js';
 import { getDocs, query, collection, orderBy, where, doc, updateDoc, increment } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js';
-import { getMessaging, getToken } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-messaging.js";
+import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-messaging.js";
 
 // 🚀 THE UNIFIED NOTIFICATION PERMISSION ENGINE
 window.askForNotifs = async () => {
@@ -346,19 +346,32 @@ window.askForNotifs = async () => {
     if (perm === 'granted') {
       document.getElementById('notif-prompt').style.display = 'none';
       console.log('Notification permission granted.');
+      
       const swRegistration = await navigator.serviceWorker.register('/sw.js');
       
-      // 🚀 NEW: Initialize messaging ONLY after permission is granted
+      // 1. Safely initialize messaging ONLY after permission is granted
       const messaging = getMessaging(app);
-      // Fetch the unique Device Token using YOUR VAPID key
+
+      // 2. 🚀 THE FOREGROUND LISTENER (Mobile Safe)
+      onMessage(messaging, (payload) => {
+        console.log('Foreground message:', payload);
+        // Mobile browsers require swRegistration to show notifications!
+        swRegistration.showNotification(payload.notification.title, {
+          body: payload.notification.body,
+          icon: '/icons/icon-192.png'
+        });
+      });
+
+      // 3. Fetch the unique Device Token using YOUR VAPID key
       const currentToken = await getToken(messaging, { 
-        vapidKey: 'BKybN5UdJys9wB137592emPk83awpfTy_97V45LeM3MByP6FZA3fPhXqY6N1k5vP5--CUKXrnWUmeyG7dFLJMwQ' 
+        vapidKey: 'BKybN5UdJys9wB137592emPk83awpfTy_97V45LeM3MByP6FZA3fPhXqY6N1k5vP5--CUKXrnWUmeyG7dFLJMwQ',
+        serviceWorkerRegistration: swRegistration
       });
 
       if (currentToken) {
         console.log('Got FCM Device Token:', currentToken);
         
-        // Save this token to the user's database profile so you can target them later
+        // Save this token to the user's database profile
         if (LS('uid')) {
           await updateDoc(doc(db, 'users', LS('uid')), { 
             fcmToken: currentToken 
