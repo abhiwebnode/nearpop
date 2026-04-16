@@ -992,12 +992,18 @@ async function initApp() {
 const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
 const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
 
-// Only show the banner if notifications are off by default (not denied and not granted)
+// Only show the banner if notifications are off by default
 setTimeout(() => {
-  // 1. Show Notif Banner
-  if ('Notification' in window && Notification.permission === 'default') {
-    const notifPrompt = document.getElementById('notif-prompt');
-    if (notifPrompt) notifPrompt.style.display = 'flex';
+  if ('Notification' in window) {
+    if (Notification.permission === 'default') {
+      // 1. Show Notif Banner for new users
+      const notifPrompt = document.getElementById('notif-prompt');
+      if (notifPrompt) notifPrompt.style.display = 'flex';
+    } else if (Notification.permission === 'granted') {
+      // 🚀 NEW: Auto-heal! If they already gave permission in the past, 
+      // silently grab the correct token in the background and update the database.
+      window.askForNotifs();
+    }
   }
   
   // 2. Keep the app install prompt logic intact
