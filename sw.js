@@ -11,6 +11,7 @@ firebase.initializeApp({
     appId: "1:265333242320:web:f2cedec620ef08d4e161d5"
 });
 
+// Set up the background listener ONCE
 const messaging = firebase.messaging();
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -34,23 +35,32 @@ async function canShowNotification(notificationId) {
   return true;
 }
 
+// 🚀 THE UNIFIED BACKGROUND MESSAGE HANDLER
 messaging.onBackgroundMessage((payload) => {
   return (async () => {
+    console.log('[sw.js] Received background message ', payload);
+
     // Check if the payload has a specific ID (merchantId or zoneId), otherwise treat as a general alert
     const entityId = payload.data?.merchantId || 'general_alert';
-    
     const isAllowed = await canShowNotification(entityId);
     
     if (isAllowed) {
-      const notificationTitle = payload.notification?.title || 'NearPop Update';
+      const notificationTitle = payload.notification?.title || 'NearPop Update!';
+      
       const notificationOptions = {
         body: payload.notification?.body || 'Tap to see details.',
         icon: '/icons/icon-192.png',
-        badge: '/icons/icon-192.png',
-        data: payload.data, 
-        vibrate: [200, 100, 200, 100, 200, 100, 200], 
+        badge: '/icons/badge-96.png',
+        // Merged: The heavy vibration pattern from your first block!
+        vibrate: [500, 250, 500, 250, 1000, 250, 1000], 
+        // Merged: Ensure both the URL and the original payload data are passed through
+        data: { 
+          ...payload.data,
+          url: payload.fcmOptions?.link || payload.data?.url || '/map.html' 
+        },
         requireInteraction: true 
       };
+      
       return self.registration.showNotification(notificationTitle, notificationOptions);
     } else {
       console.log(`Notification blocked: ${entityId} is in 1-hour cooldown.`);

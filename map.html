@@ -332,11 +332,49 @@
 
 <script type="module">
 // 🚀 ALL imports natively restored
-import { db, LS, SS, TC, TE, distM, isExpired, toast, cacheGet, cacheSet, cacheClear, loadNavigation, requestPushPermissions } from './js/app.js';
+import { app, db, LS, SS, TC, TE, distM, isExpired, toast, cacheGet, cacheSet, cacheClear, loadNavigation } from './js/app.js';
 import { ghEncode, ghNeighbors, ghFilter } from './js/geohash.js';
 import { setLoc, setListings, checkProximity, dist, getPrefs, notifsToday, notifsThisHour, logNotif, inMarketZone, vendorCapReached, budgetThrottled, markVendorCapUsed, markBudgetUsed, markGeofenceNotified, applyDensityControl, getNotifType, showSoftBanner, trackEng, updateSpeed } from './js/notifications.js';
 import { getDocs, query, collection, orderBy, where, doc, updateDoc, increment } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js';
+import { getMessaging, getToken } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-messaging.js";
+
+const messaging = getMessaging(app);
+
+// 🚀 THE UNIFIED NOTIFICATION PERMISSION ENGINE
+window.askForNotifs = async () => {
+  try {
+    const perm = await Notification.requestPermission();
+    if (perm === 'granted') {
+      document.getElementById('notif-prompt').style.display = 'none';
+      console.log('Notification permission granted.');
+      
+      // Fetch the unique Device Token using YOUR VAPID key
+      const currentToken = await getToken(messaging, { 
+        vapidKey: 'BKybN5UdJys9wB137592emPk83awpfTy_97V45LeM3MByP6FZA3fPhXqY6N1k5vP5--CUKXrnWUmeyG7dFLJMwQ' 
+      });
+
+      if (currentToken) {
+        console.log('Got FCM Device Token:', currentToken);
+        
+        // Save this token to the user's database profile so you can target them later
+        if (LS('uid')) {
+          await updateDoc(doc(db, 'users', LS('uid')), { 
+            fcmToken: currentToken 
+          });
+        }
+        toast('✅', 'Background alerts enabled!');
+      } else {
+        console.log('No registration token available.');
+      }
+    } else {
+      document.getElementById('notif-prompt').style.display = 'none';
+    }
+  } catch (error) {
+    console.error('An error occurred while retrieving token. ', error);
+  }
+};
+
 
 function handleGeoError(err) {
   if (err.code === 1) { 
@@ -953,20 +991,6 @@ async function initApp() {
 
 const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
 const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
-
-// 🚀 THE NEW NOTIFICATION PERMISSION ENGINE
-window.askForNotifs = async () => {
-  try {
-    const perm = await Notification.requestPermission();
-    if (perm === 'granted') {
-      document.getElementById('notif-prompt').style.display = 'none';
-      if (LS('uid')) requestPushPermissions(LS('uid'));
-      toast('✅', 'Background alerts enabled!');
-    } else {
-      document.getElementById('notif-prompt').style.display = 'none';
-    }
-  } catch (e) { console.error(e); }
-};
 
 // Only show the banner if notifications are off by default (not denied and not granted)
 setTimeout(() => {
