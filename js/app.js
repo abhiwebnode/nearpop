@@ -10,30 +10,50 @@ import { initializeFirestore, persistentLocalCache, doc, setDoc, updateDoc } fro
 import { getAuth, setPersistence, browserLocalPersistence, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js";
 import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-messaging.js";
 
-// 🚀 MOBILE-ONLY ENFORCEMENT
-const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+<script>
+// 🚀 HARDENED MOBILE-ONLY ENFORCEMENT
+(function enforceMobileOnly() {
+  // 1. Check User Agent
+  const ua = navigator.userAgent || navigator.vendor || window.opera;
+  const isMobileUA = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(ua.toLowerCase());
+  
+  // 2. Check for physical touch hardware
+  const hasTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || (navigator.msMaxTouchPoints > 0);
+  
+  // 3. Check for a precise mouse (smartphones use "coarse" pointers)
+  const isFinePointer = window.matchMedia && window.matchMedia('(pointer: fine)').matches;
 
-if (!isMobileDevice) {
-  document.documentElement.innerHTML = `
-    <head>
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>NearPop — Mobile Only</title>
-      <style>
-        body { margin:0; padding:30px; display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; background:#0F0F13; color:#fff; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; text-align:center; }
-        .ic { font-size:64px; margin-bottom:20px; filter: drop-shadow(0 10px 20px rgba(255,87,34,0.3)); }
-        h1 { font-size:26px; font-weight:800; margin-bottom:12px; letter-spacing:-0.5px; }
-        p { font-size:15px; color:#9CA3AF; line-height:1.6; max-width:400px; }
-      </style>
-    </head>
-    <body>
-      <div class="ic">📱</div>
-      <h1>Mobile Only Experience</h1>
-      <p>NearPop is a hyperlocal proximity engine designed to push deals to your phone while you walk.</p>
-      <p style="margin-top:16px; color:#fff; font-weight:700;">Please open this website on your smartphone to continue.</p>
-    </body>
-  `;
-  throw new Error("NearPop is restricted to mobile devices only."); 
-}
+  // The Judgment: If they lack a mobile UA, OR lack touch, OR use a mouse... kick them out.
+  if (!isMobileUA || !hasTouch || isFinePointer) {
+    
+    // Halt all further page loading and script execution immediately
+    if (window.stop) { window.stop(); } 
+    else if (document.execCommand) { document.execCommand("Stop", false); }
+
+    // Overwrite the DOM
+    document.documentElement.innerHTML = `
+      <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>NearPop — Mobile Only</title>
+        <style>
+          body { margin:0; padding:30px; display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; background:#0F0F13; color:#fff; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; text-align:center; }
+          .ic { font-size:64px; margin-bottom:20px; filter: drop-shadow(0 10px 20px rgba(255,87,34,0.3)); }
+          h1 { font-size:26px; font-weight:800; margin-bottom:12px; letter-spacing:-0.5px; }
+          p { font-size:15px; color:#9CA3AF; line-height:1.6; max-width:400px; }
+        </style>
+      </head>
+      <body>
+        <div class="ic">📱</div>
+        <h1>Mobile Only Experience</h1>
+        <p>NearPop is a hyperlocal proximity engine designed to push deals to your phone while you walk.</p>
+        <p style="margin-top:16px; color:#fff; font-weight:700;">Please open this website on your smartphone to continue.</p>
+      </body>
+    `;
+    
+    throw new Error("NearPop execution halted: Desktop or Emulator environment detected."); 
+  }
+})();
+</script>
 
 // ── Firebase config ──────────────────────────────────────
 const FB_CONFIG = {
