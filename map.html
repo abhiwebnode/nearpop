@@ -339,8 +339,6 @@ import { getDocs, query, collection, orderBy, where, doc, updateDoc, increment }
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js';
 import { getMessaging, getToken } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-messaging.js";
 
-const messaging = getMessaging(app);
-
 // 🚀 THE UNIFIED NOTIFICATION PERMISSION ENGINE
 window.askForNotifs = async () => {
   try {
@@ -348,7 +346,10 @@ window.askForNotifs = async () => {
     if (perm === 'granted') {
       document.getElementById('notif-prompt').style.display = 'none';
       console.log('Notification permission granted.');
+      const swRegistration = await navigator.serviceWorker.register('/sw.js');
       
+      // 🚀 NEW: Initialize messaging ONLY after permission is granted
+      const messaging = getMessaging(app);
       // Fetch the unique Device Token using YOUR VAPID key
       const currentToken = await getToken(messaging, { 
         vapidKey: 'BKybN5UdJys9wB137592emPk83awpfTy_97V45LeM3MByP6FZA3fPhXqY6N1k5vP5--CUKXrnWUmeyG7dFLJMwQ' 
