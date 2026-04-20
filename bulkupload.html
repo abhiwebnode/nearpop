@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NearPop for Business — Merchant Portal</title>
+<title>NearPop Bulk Upload</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800;900&family=Syne:wght@700;800&display=swap">
@@ -49,8 +49,8 @@
 
 <div class="container">
   <div class="header">
-    <h1>NearPop for Business</h1>
-    <p>Bulk Upload Portal for Merchants</p>
+    <h1>NearPop Bulk Upload</h1>
+    <p>Secure Merchant Data Portal</p>
   </div>
 
   <div class="card" id="auth-section">
@@ -65,7 +65,7 @@
     <div class="card">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid var(--bdr);">
         <div>
-          <h2 style="font-family: 'Syne', sans-serif; font-size: 22px;">Bulk Upload</h2>
+          <h2 style="font-family: 'Syne', sans-serif; font-size: 22px;">Upload CSV</h2>
           <div style="font-size: 13px; color: #10B981; margin-top: 4px; font-weight:800;" id="merchant-id-display"></div>
         </div>
         <button class="btn btn-sm" id="btn-logout" style="background: #374151;">Logout</button>
@@ -75,14 +75,14 @@
         <div style="color: #fff; font-weight: 800; margin-bottom: 8px;">📊 Validation Rules:</div>
         • <b>Max Size:</b> 5MB per CSV. Maximum 2,000 rows.<br>
         • <b>Types Allowed:</b> <code>deal, rental, pg, job</code><br>
-        • <b>Expiry Format:</b> <code>YYYY-MM-DDTHH:MM:SS</code> (or leave blank)<br>
+        • <b>Expiry Format:</b> <code>YYYY-MM-DD</code> or <code>YYYY-MM-DDTHH:MM:SS</code><br>
         • <b>Duplicates:</b> Re-uploading an existing deal automatically updates it.
       </div>
 
       <div class="input-group">
         <input type="file" id="csv-file" accept=".csv">
       </div>
-      <button class="btn" id="btn-upload" style="width: 100%;">🚀 Validate & Upload to NearPop</button>
+      <button class="btn" id="btn-upload" style="width: 100%;">🚀 Process Exact Schema</button>
       <div id="log-area"></div>
     </div>
 
@@ -133,7 +133,6 @@
       try {
         const userDoc = await getDoc(doc(db, 'users', user.uid));
         
-        // Strict Auth: Must exist in database AND have merchant role
         if (!userDoc.exists() || userDoc.data().role !== 'merchant') {
           DOM.authErr.textContent = "Access Denied: You do not have an authorized merchant profile.";
           DOM.authErr.style.display = 'block';
@@ -148,7 +147,7 @@
 
         DOM.auth.style.display = 'none';
         DOM.dash.style.display = 'block';
-        DOM.merchDisp.textContent = `🏪 ${currentMerchant.storeName}`;
+        DOM.merchDisp.textContent = `🏪 ${currentMerchant.storeName} | UID: ${currentMerchant.uid}`;
         
         loadActiveListings();
       } catch (err) {
@@ -169,7 +168,7 @@
   // 2. FETCH AND DELETE ACTIVE LISTINGS
   async function loadActiveListings() {
     DOM.listArea.innerHTML = 'Fetching deals...';
-    // Match the new 'uid' field for fetching their listings
+    // Match exact native UID
     const q = query(collection(db, 'listings'), where('uid', '==', currentMerchant.uid));
     const snap = await getDocs(q);
     
@@ -185,8 +184,8 @@
       div.className = 'listing-row';
       div.innerHTML = `
         <div>
-          <div class="listing-title">${data.emoji} ${data.title}</div>
-          <div class="listing-meta">${data.type.toUpperCase()} • ${data.price} • Views: ${data.visits || 0}</div>
+          <div class="listing-title">${data.emoji || '🏷️'} ${data.title}</div>
+          <div class="listing-meta">${(data.type || 'deal').toUpperCase()} • ${data.price || 'Free'} • Views: ${data.visits || 0}</div>
         </div>
         <button class="btn btn-sm btn-danger" data-id="${d.id}">Delete</button>
       `;
@@ -202,7 +201,7 @@
     });
   }
 
-  // 3. SECURE BATCH UPLOAD LOGIC
+  // 3. SECURE BATCH UPLOAD WITH EXACT SCHEMA MAPPING
   DOM.btnUp.onclick = () => {
     const file = DOM.file.files[0];
     if (!file) return alert("Select a CSV file first.");
@@ -233,9 +232,6 @@
           if (!ALLOWED_TYPES.includes(type)) {
             logMsg(`Row ${rNum}: Invalid type '${type}'.`, 'warn'); errors++; return;
           }
-          if (row.expiryDate && !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/.test(row.expiryDate)) {
-             logMsg(`Row ${rNum}: Invalid expiry format.`, 'warn'); errors++; return;
-          }
 
           validRows.push({ ...row, type, lat: parseFloat(row.lat), lng: parseFloat(row.lng) });
         });
@@ -243,56 +239,72 @@
         if (validRows.length === 0) return failUpload("No valid rows passed inspection.");
         logMsg(`Validation complete: ${validRows.length} valid, ${errors} skipped.`);
 
-        // Dynamic Batch Splitting (Firebase limit is 500 ops/batch)
         const CHUNK_SIZE = 450; 
         const chunks = [];
         for (let i = 0; i < validRows.length; i += CHUNK_SIZE) {
           chunks.push(validRows.slice(i, i + CHUNK_SIZE));
         }
 
-        logMsg(`Splitting upload into ${chunks.length} batches...`);
         let uploadedCount = 0;
+        const todayStr = new Date().toISOString().split('T')[0];
+        const nowIso = new Date().toISOString();
 
         for (let i = 0; i < chunks.length; i++) {
           const chunk = chunks[i];
           const batch = writeBatch(db);
 
           chunk.forEach(row => {
-            // DUPLICATE PREVENTION: Deterministic ID based on uid + title
             const safeTitle = row.title.toLowerCase().replace(/[^a-z0-9]/g, '-').slice(0, 20);
             const docId = `${currentMerchant.uid}_${safeTitle}`;
             const docRef = doc(collection(db, 'listings'), docId);
 
-            // 🚀 EXACT MAPPING FOR NATIVE APP COMPATIBILITY
+            // 🚀 EXACT NATIVE SCHEMA REPLICATION 🚀
             batch.set(docRef, {
-              // 1. Core Data
+              // 1. Core CSV Data
               title: row.title,
               desc: row.desc || '',
-              price: row.price || '',
+              price: row.price || 'Free',
               type: row.type,
               emoji: row.emoji || '🏷️',
               lat: row.lat,
               lng: row.lng,
               expiryDate: row.expiryDate || null,
-              
-              // 2. Native App Linkage
+
+              // 2. Auth & Geolocation
               uid: currentMerchant.uid,
               owner: currentMerchant.storeName,
               geohash5: ghEncode(row.lat, row.lng, 5),
-              
-              // 3. UI Defaults & Tracking
-              status: 'active',
-              radius: 500,
-              color: '#FF5722',
-              bg: 'linear-gradient(135deg,#f7971e,#ffd200)',
-              updatedAt: new Date().toISOString(),
-              visits: 0,
+              geohash6: ghEncode(row.lat, row.lng, 6), // Added precision hash
+
+              // 3. Perfect App Styling & Constraints
+              amenities: [
+                { ic: '🏷️', lb: 'Discount' },
+                { ic: '📅', lb: 'Limited Time' },
+                { ic: '💳', lb: 'Cards OK' }
+              ],
+              bg: "linear-gradient(135deg,#f7971e,#ffd200)",
+              budget: 25,
+              claims: 0,
+              color: "#FF5722",
+              contact: "",
+              createdAt: nowIso,
+              dailyPopupLimit: 250,
+              image: "",
+              ownerEmoji: "🏪",
+              ownerTag: "NearPop Merchant",
               popups: 0,
-              popupsSentToday: 0
-            }, { merge: true }); // Merge ensures we update existing deals rather than overwrite stats
+              popupsSentToday: 0,
+              priceLabel: "",
+              radius: 500,
+              redemptions: 0,
+              startDate: todayStr,
+              status: "active",
+              verified: true,
+              visits: 0
+            }, { merge: true }); 
           });
 
-          // Error Retry Mechanism (Exponential Backoff)
+          // Upload Execution
           let success = false;
           let attempts = 0;
           while (!success && attempts < 3) {
@@ -310,10 +322,10 @@
           if (!success) logMsg(`Batch ${i+1} critically failed after 3 attempts.`, 'error');
         }
 
-        logMsg(`✅ FINISHED: Successfully processed ${uploadedCount} deals.`);
+        logMsg(`✅ FINISHED: Successfully mapped and uploaded ${uploadedCount} deals.`);
         DOM.btnUp.disabled = false;
         DOM.file.value = '';
-        loadActiveListings(); // Refresh the UI table
+        loadActiveListings(); 
       }
     });
   };
