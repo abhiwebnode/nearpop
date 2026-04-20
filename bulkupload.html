@@ -96,8 +96,9 @@
 <script type="module">
   import { app, db } from './js/app.js';
   import { ghEncode } from './js/geohash.js';
+  // 🚀 FIX: serverTimestamp is now imported directly from the Firebase SDK
   import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js';
-  import { collection, doc, writeBatch, getDoc, getDocs, query, where, deleteDoc } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
+  import { collection, doc, writeBatch, getDoc, getDocs, query, where, deleteDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
 
   const auth = getAuth(app);
   const provider = new GoogleAuthProvider();
@@ -247,7 +248,6 @@
 
         let uploadedCount = 0;
         const todayStr = new Date().toISOString().split('T')[0];
-        const nowIso = new Date().toISOString();
 
         for (let i = 0; i < chunks.length; i++) {
           const chunk = chunks[i];
@@ -268,13 +268,14 @@
               emoji: row.emoji || '🏷️',
               lat: row.lat,
               lng: row.lng,
-              expiryDate: row.expiryDate || null,
+              // 🚀 FIX: Fallback to empty string "" instead of null
+              expiryDate: row.expiryDate || "",
 
               // 2. Auth & Geolocation
               uid: currentMerchant.uid,
               owner: currentMerchant.storeName,
               geohash5: ghEncode(row.lat, row.lng, 5),
-              geohash6: ghEncode(row.lat, row.lng, 6), // Added precision hash
+              geohash6: ghEncode(row.lat, row.lng, 6),
 
               // 3. Perfect App Styling & Constraints
               amenities: [
@@ -287,7 +288,8 @@
               claims: 0,
               color: "#FF5722",
               contact: "",
-              createdAt: nowIso,
+              // 🚀 FIX: Generates a true Native Firestore Timestamp
+              createdAt: serverTimestamp(),
               dailyPopupLimit: 250,
               image: "",
               ownerEmoji: "🏪",
