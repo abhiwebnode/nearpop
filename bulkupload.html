@@ -169,7 +169,8 @@
   // 2. FETCH AND DELETE ACTIVE LISTINGS
   async function loadActiveListings() {
     DOM.listArea.innerHTML = 'Fetching deals...';
-    const q = query(collection(db, 'listings'), where('merchantId', '==', currentMerchant.uid));
+    // Match the new 'uid' field for fetching their listings
+    const q = query(collection(db, 'listings'), where('uid', '==', currentMerchant.uid));
     const snap = await getDocs(q);
     
     if (snap.empty) {
@@ -257,12 +258,14 @@
           const batch = writeBatch(db);
 
           chunk.forEach(row => {
-            // DUPLICATE PREVENTION: Deterministic ID based on merchant + title
+            // DUPLICATE PREVENTION: Deterministic ID based on uid + title
             const safeTitle = row.title.toLowerCase().replace(/[^a-z0-9]/g, '-').slice(0, 20);
             const docId = `${currentMerchant.uid}_${safeTitle}`;
             const docRef = doc(collection(db, 'listings'), docId);
 
+            // 🚀 EXACT MAPPING FOR NATIVE APP COMPATIBILITY
             batch.set(docRef, {
+              // 1. Core Data
               title: row.title,
               desc: row.desc || '',
               price: row.price || '',
@@ -271,11 +274,22 @@
               lat: row.lat,
               lng: row.lng,
               expiryDate: row.expiryDate || null,
-              merchantId: currentMerchant.uid,
-              merchantName: currentMerchant.storeName, // Auto-fetched!
+              
+              // 2. Native App Linkage
+              uid: currentMerchant.uid,
+              owner: currentMerchant.storeName,
               geohash5: ghEncode(row.lat, row.lng, 5),
-              updatedAt: new Date().toISOString()
-            }, { merge: true }); // Merge ensures we update rather than overwrite stats
+              
+              // 3. UI Defaults & Tracking
+              status: 'active',
+              radius: 500,
+              color: '#FF5722',
+              bg: 'linear-gradient(135deg,#f7971e,#ffd200)',
+              updatedAt: new Date().toISOString(),
+              visits: 0,
+              popups: 0,
+              popupsSentToday: 0
+            }, { merge: true }); // Merge ensures we update existing deals rather than overwrite stats
           });
 
           // Error Retry Mechanism (Exponential Backoff)
