@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NearPop for Business — Merchant Portal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800;900&family=Syne:wght@700;800&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+
+<style>
+  :root { --bg: #0F0F13; --panel: #1A1A20; --text: #FFFFFF; --gray: #9CA3AF; --or: #FF5722; --bdr: #374151; }
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Nunito', sans-serif; }
+  body { background-color: var(--bg); color: var(--text); padding: 40px 20px; display: flex; justify-content: center; }
+  .container { max-width: 800px; width: 100%; }
+  .header { text-align: center; margin-bottom: 40px; }
+  .header h1 { font-family: 'Syne', sans-serif; font-size: 32px; font-weight: 800; margin-bottom: 10px; }
+  .header p { color: var(--gray); font-size: 15px; }
+  .card { background: var(--panel); border: 1px solid var(--bdr); border-radius: 20px; padding: 30px; margin-bottom: 24px; }
+  
+  #auth-section { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+  #dashboard-section { display: none; }
+  
+  .btn { background: var(--or); color: #fff; border: none; padding: 14px 28px; border-radius: 12px; font-weight: 800; font-size: 16px; cursor: pointer; transition: transform 0.2s; display: inline-block; }
+  .btn:active { transform: scale(0.97); }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-sm { padding: 6px 12px; font-size: 12px; border-radius: 8px; }
+  .btn-danger { background: #EF4444; }
+  
+  .input-group { margin-bottom: 20px; }
+  .input-group label { display: block; font-weight: 800; margin-bottom: 8px; color: #E5E7EB; }
+  .input-group input[type="file"] { width: 100%; padding: 14px; background: #27272F; border: 1px dashed var(--gray); border-radius: 10px; color: #fff; cursor: pointer; }
+  
+  .format-box { background: #27272F; border-radius: 10px; padding: 16px; margin-bottom: 24px; border: 1px solid var(--bdr); font-size: 13px; color: var(--gray); }
+  .format-box code { color: #10B981; font-weight: 800; font-family: monospace; }
+  
+  #log-area { background: #000; color: #10B981; font-family: monospace; padding: 16px; border-radius: 10px; font-size: 12px; height: 150px; overflow-y: auto; margin-top: 20px; border: 1px solid var(--bdr); display: none; }
+  .log-error { color: #EF4444; }
+  .log-warn { color: #F59E0B; }
+
+  .listing-row { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid var(--bdr); font-size: 14px; }
+  .listing-row:last-child { border-bottom: none; }
+  .listing-title { font-weight: 700; color: #fff; }
+  .listing-meta { font-size: 12px; color: var(--gray); }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <h1>NearPop for Business</h1>
+    <p>Bulk Upload Portal for Merchants</p>
+  </div>
+
+  <div class="card" id="auth-section">
+    <div style="font-size: 48px; margin-bottom: 16px;">🏪</div>
+    <h2 style="margin-bottom: 12px; font-family: 'Syne', sans-serif;">Merchant Login</h2>
+    <p style="color: var(--gray); margin-bottom: 24px; line-height: 1.5;">Sign in to securely manage your store's live listings.</p>
+    <button class="btn" id="btn-login">Sign in with Google</button>
+    <div id="auth-error" style="color:#EF4444; font-size:13px; margin-top:16px; display:none; font-weight:700;"></div>
+  </div>
+
+  <div id="dashboard-section">
+    <div class="card">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid var(--bdr);">
+        <div>
+          <h2 style="font-family: 'Syne', sans-serif; font-size: 22px;">Bulk Upload</h2>
+          <div style="font-size: 13px; color: #10B981; margin-top: 4px; font-weight:800;" id="merchant-id-display"></div>
+        </div>
+        <button class="btn btn-sm" id="btn-logout" style="background: #374151;">Logout</button>
+      </div>
+
+      <div class="format-box">
+        <div style="color: #fff; font-weight: 800; margin-bottom: 8px;">📊 Validation Rules:</div>
+        • <b>Max Size:</b> 5MB per CSV. Maximum 2,000 rows.<br>
+        • <b>Types Allowed:</b> <code>deal, rental, pg, job</code><br>
+        • <b>Expiry Format:</b> <code>YYYY-MM-DDTHH:MM:SS</code> (or leave blank)<br>
+        • <b>Duplicates:</b> Re-uploading an existing deal automatically updates it.
+      </div>
+
+      <div class="input-group">
+        <input type="file" id="csv-file" accept=".csv">
+      </div>
+      <button class="btn" id="btn-upload" style="width: 100%;">🚀 Validate & Upload to NearPop</button>
+      <div id="log-area"></div>
+    </div>
+
+    <div class="card">
+      <h2 style="font-family: 'Syne', sans-serif; font-size: 18px; margin-bottom: 16px;">Active Listings</h2>
+      <div id="active-listings">Loading your deals...</div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  import { app, db } from './js/app.js';
+  import { ghEncode } from './js/geohash.js';
+  import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js';
+  import { collection, doc, writeBatch, getDoc, getDocs, query, where, deleteDoc } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
+
+  const auth = getAuth(app);
+  const provider = new GoogleAuthProvider();
+  
+  let currentMerchant = { uid: null, storeName: null };
+  const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+  const MAX_ROWS = 2000;
+  const ALLOWED_TYPES = ['deal', 'rental', 'pg', 'job'];
+
+  const DOM = {
+    auth: document.getElementById('auth-section'),
+    dash: document.getElementById('dashboard-section'),
+    authErr: document.getElementById('auth-error'),
+    merchDisp: document.getElementById('merchant-id-display'),
+    file: document.getElementById('csv-file'),
+    btnUp: document.getElementById('btn-upload'),
+    log: document.getElementById('log-area'),
+    listArea: document.getElementById('active-listings')
+  };
+
+  function logMsg(msg, type = 'info') {
+    DOM.log.style.display = 'block';
+    const span = document.createElement('div');
+    span.className = type === 'error' ? 'log-error' : type === 'warn' ? 'log-warn' : '';
+    span.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+    DOM.log.appendChild(span);
+    DOM.log.scrollTop = DOM.log.scrollHeight;
+  }
+
+  // 1. MERCHANT AUTHORIZATION ENFORCEMENT
+  onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      try {
+        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        
+        // Strict Auth: Must exist in database AND have merchant role
+        if (!userDoc.exists() || userDoc.data().role !== 'merchant') {
+          DOM.authErr.textContent = "Access Denied: You do not have an authorized merchant profile.";
+          DOM.authErr.style.display = 'block';
+          await signOut(auth);
+          return;
+        }
+
+        currentMerchant = {
+          uid: user.uid,
+          storeName: userDoc.data().storeName || userDoc.data().name || 'Authorized Merchant'
+        };
+
+        DOM.auth.style.display = 'none';
+        DOM.dash.style.display = 'block';
+        DOM.merchDisp.textContent = `🏪 ${currentMerchant.storeName}`;
+        
+        loadActiveListings();
+      } catch (err) {
+        console.error(err);
+        signOut(auth);
+      }
+    } else {
+      currentMerchant = { uid: null, storeName: null };
+      DOM.auth.style.display = 'flex';
+      DOM.dash.style.display = 'none';
+      DOM.log.style.display = 'none';
+    }
+  });
+
+  document.getElementById('btn-login').onclick = () => signInWithPopup(auth, provider);
+  document.getElementById('btn-logout').onclick = () => signOut(auth);
+
+  // 2. FETCH AND DELETE ACTIVE LISTINGS
+  async function loadActiveListings() {
+    DOM.listArea.innerHTML = 'Fetching deals...';
+    const q = query(collection(db, 'listings'), where('merchantId', '==', currentMerchant.uid));
+    const snap = await getDocs(q);
+    
+    if (snap.empty) {
+      DOM.listArea.innerHTML = '<div style="color:#9CA3AF; font-size:14px;">No active listings found.</div>';
+      return;
+    }
+
+    DOM.listArea.innerHTML = '';
+    snap.forEach(d => {
+      const data = d.data();
+      const div = document.createElement('div');
+      div.className = 'listing-row';
+      div.innerHTML = `
+        <div>
+          <div class="listing-title">${data.emoji} ${data.title}</div>
+          <div class="listing-meta">${data.type.toUpperCase()} • ${data.price} • Views: ${data.visits || 0}</div>
+        </div>
+        <button class="btn btn-sm btn-danger" data-id="${d.id}">Delete</button>
+      `;
+      DOM.listArea.appendChild(div);
+    });
+
+    document.querySelectorAll('.btn-danger').forEach(btn => {
+      btn.onclick = async (e) => {
+        if (!confirm("Delete this listing permanently?")) return;
+        await deleteDoc(doc(db, 'listings', e.target.dataset.id));
+        loadActiveListings();
+      };
+    });
+  }
+
+  // 3. SECURE BATCH UPLOAD LOGIC
+  DOM.btnUp.onclick = () => {
+    const file = DOM.file.files[0];
+    if (!file) return alert("Select a CSV file first.");
+    if (file.size > MAX_FILE_SIZE) return alert("File too large. Maximum 5MB.");
+
+    DOM.btnUp.disabled = true;
+    DOM.log.innerHTML = ''; 
+    logMsg(`Reading ${file.name}...`);
+
+    Papa.parse(file, {
+      header: true, skipEmptyLines: true,
+      complete: async (results) => {
+        const rows = results.data;
+        if (rows.length === 0) return failUpload("CSV is empty.");
+        if (rows.length > MAX_ROWS) return failUpload(`Exceeded limit of ${MAX_ROWS} rows.`);
+
+        let validRows = [];
+        let errors = 0;
+
+        // Validation Loop
+        rows.forEach((row, idx) => {
+          const rNum = idx + 1;
+          const type = (row.type || '').toLowerCase();
+          
+          if (!row.title || !row.lat || !row.lng) {
+            logMsg(`Row ${rNum}: Missing title or coordinates.`, 'warn'); errors++; return;
+          }
+          if (!ALLOWED_TYPES.includes(type)) {
+            logMsg(`Row ${rNum}: Invalid type '${type}'.`, 'warn'); errors++; return;
+          }
+          if (row.expiryDate && !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/.test(row.expiryDate)) {
+             logMsg(`Row ${rNum}: Invalid expiry format.`, 'warn'); errors++; return;
+          }
+
+          validRows.push({ ...row, type, lat: parseFloat(row.lat), lng: parseFloat(row.lng) });
+        });
+
+        if (validRows.length === 0) return failUpload("No valid rows passed inspection.");
+        logMsg(`Validation complete: ${validRows.length} valid, ${errors} skipped.`);
+
+        // Dynamic Batch Splitting (Firebase limit is 500 ops/batch)
+        const CHUNK_SIZE = 450; 
+        const chunks = [];
+        for (let i = 0; i < validRows.length; i += CHUNK_SIZE) {
+          chunks.push(validRows.slice(i, i + CHUNK_SIZE));
+        }
+
+        logMsg(`Splitting upload into ${chunks.length} batches...`);
+        let uploadedCount = 0;
+
+        for (let i = 0; i < chunks.length; i++) {
+          const chunk = chunks[i];
+          const batch = writeBatch(db);
+
+          chunk.forEach(row => {
+            // DUPLICATE PREVENTION: Deterministic ID based on merchant + title
+            const safeTitle = row.title.toLowerCase().replace(/[^a-z0-9]/g, '-').slice(0, 20);
+            const docId = `${currentMerchant.uid}_${safeTitle}`;
+            const docRef = doc(collection(db, 'listings'), docId);
+
+            batch.set(docRef, {
+              title: row.title,
+              desc: row.desc || '',
+              price: row.price || '',
+              type: row.type,
+              emoji: row.emoji || '🏷️',
+              lat: row.lat,
+              lng: row.lng,
+              expiryDate: row.expiryDate || null,
+              merchantId: currentMerchant.uid,
+              merchantName: currentMerchant.storeName, // Auto-fetched!
+              geohash5: ghEncode(row.lat, row.lng, 5),
+              updatedAt: new Date().toISOString()
+            }, { merge: true }); // Merge ensures we update rather than overwrite stats
+          });
+
+          // Error Retry Mechanism (Exponential Backoff)
+          let success = false;
+          let attempts = 0;
+          while (!success && attempts < 3) {
+            try {
+              await batch.commit();
+              success = true;
+              uploadedCount += chunk.length;
+              logMsg(`Batch ${i+1}/${chunks.length} successful.`);
+            } catch (err) {
+              attempts++;
+              logMsg(`Batch ${i+1} failed. Retrying (${attempts}/3)...`, 'warn');
+              await new Promise(r => setTimeout(r, 1500 * attempts));
+            }
+          }
+          if (!success) logMsg(`Batch ${i+1} critically failed after 3 attempts.`, 'error');
+        }
+
+        logMsg(`✅ FINISHED: Successfully processed ${uploadedCount} deals.`);
+        DOM.btnUp.disabled = false;
+        DOM.file.value = '';
+        loadActiveListings(); // Refresh the UI table
+      }
+    });
+  };
+
+  function failUpload(msg) {
+    logMsg(msg, 'error');
+    DOM.btnUp.disabled = false;
+  }
+</script>
+</body>
+</html>
