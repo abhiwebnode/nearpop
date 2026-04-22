@@ -45,7 +45,6 @@
     position: relative;
   }
   
-  /* 🚀 NEW: Beautiful, rotating floating Emoji background */
   .bg-pattern {
     position: fixed;
     top: -50%; left: -50%; width: 200%; height: 200%;
@@ -64,7 +63,6 @@
     100% { background-position: 350px 350px; } 
   }
 
-  /* 🚀 NEW: Smooth entry animation for the card */
   .card { 
     width:100%; 
     max-width:400px; 
@@ -103,7 +101,6 @@
   .btn-google:active { transform:scale(0.97); background:var(--cream); }
   .btn-google img { width:20px; height:20px; }
 
-  /* Polished Checkbox */
   .checkbox-wrapper { display:flex; align-items:flex-start; gap:10px; margin-bottom:20px; text-align:left; padding:0 4px; }
   .custom-checkbox { width:20px; height:20px; accent-color:#FF5722; cursor:pointer; flex-shrink:0; margin-top:2px; background-color:#ffffff; box-shadow:0 0 0 2px #9CA3AF; border-radius:3px; outline:none; -webkit-appearance:auto; transition: transform 0.2s; }
   .custom-checkbox:active { transform: scale(0.9); }
@@ -152,11 +149,12 @@
 
 <script type="module">
 import { db, LS, SS, toast, cacheClear } from './js/app.js';
-import { getAuth, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js";
+// 🚀 FAST MOBILE UPDATE: Switched from signInWithPopup to signInWithRedirect
+import { getAuth, GoogleAuthProvider, signInWithRedirect, getRedirectResult } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js";
 import { doc, getDoc, setDoc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js";
 import { app } from './js/app.js';
 
-// If already logged in, redirect smoothly
+// If already logged in normally, redirect smoothly
 if (LS('uid')) { 
   const savedIntent = sessionStorage.getItem('np_intent');
   if (savedIntent) {
@@ -177,48 +175,50 @@ window.setRole = (r) => {
   document.getElementById('rt-mer').classList.toggle('on', r === 'merchant');
 };
 
-const urlP = new URLSearchParams(window.location.search);
-if (urlP.get('qr') === '1') {
-  document.getElementById('tag-line').innerHTML = "<span style='color:#FF5722; font-size:18px; font-weight:900;'>Store Found! 🏪</span><br>Sign in to unlock deals and claim visit points.";
-  setRole('consumer');
-  document.getElementById('role-box').style.display = 'none'; 
-}
-
 function showLdr(msg) {
   document.getElementById('btn-login').style.display = 'none';
   document.getElementById('ldr').style.display = 'block';
   document.getElementById('ldr-tx').textContent = msg;
 }
 
-window.loginWithGoogle = async () => {
-  if (!document.getElementById('agree-check').checked) return toast('⚠️', 'Please agree to the Terms & Privacy Policy.');
+// 🚀 Preserving QR tracking when the page unloads for Google Redirect
+const urlP = new URLSearchParams(window.location.search);
+const isQr = urlP.get('qr') === '1' || sessionStorage.getItem('np_pending_qr') === '1';
+const pendingMid = urlP.get('mid') || sessionStorage.getItem('np_pending_mid');
 
-  try {
-    showLdr('Connecting to Google...');
-    const result = await signInWithPopup(auth, provider);
-    const user = result.user; const uid = user.uid; const gName = user.displayName || 'User';
+if (isQr) {
+  document.getElementById('tag-line').innerHTML = "<span style='color:#FF5722; font-size:18px; font-weight:900;'>Store Found! 🏪</span><br>Sign in to unlock deals and claim visit points.";
+  setRole('consumer');
+  document.getElementById('role-box').style.display = 'none'; 
+}
+
+// 🚀 THE REDIRECT HANDLER (Runs automatically when they come back from Google)
+getRedirectResult(auth).then(async (result) => {
+  if (result) {
+    showLdr('Signing in...');
+    const user = result.user; 
+    const uid = user.uid; 
+    const gName = user.displayName || 'User';
+    
+    // Restore the role they picked before being redirected
+    window.loginRole = sessionStorage.getItem('np_pending_role') || 'consumer';
     
     SS('uid', uid); SS('name', gName); SS('role', window.loginRole);
-    
-    showLdr('Signing in...'); 
     
     const userRef = doc(db, 'users', uid);
     const userSnap = await getDoc(userRef);
     const isNewUser = !userSnap.exists(); 
     
-    // 🛑 NEW: CROSS-ROLE LOGIN PREVENTION
+    // 🛑 CROSS-ROLE LOGIN PREVENTION
     if (!isNewUser) {
       const existingRole = userSnap.data().role || 'consumer';
       
       if (existingRole !== window.loginRole) {
-        // Sign them back out of Firebase so they aren't stuck
         await auth.signOut(); 
-        
-        // Reset the UI buttons
         document.getElementById('ldr').style.display = 'none';
         document.getElementById('btn-login').style.display = 'flex';
+        sessionStorage.removeItem('np_pending_role'); 
         
-        // Show the warning toast
         if (existingRole === 'consumer') {
           return toast('⚠️', 'This Google account is registered as a Customer. You cannot log in as a Merchant.');
         } else {
@@ -226,11 +226,10 @@ window.loginWithGoogle = async () => {
         }
       }
     }
-    // 🛑 END OF PREVENTION LOGIC
 
     if (window.loginRole === 'merchant') {
       let bname = gName + "'s Business";
-      if (!userSnap.exists()) {
+      if (isNewUser) {
         bname = prompt('What is your business / shop name?') || bname;
         SS('mname', bname); SS('wallet', 500); 
         await setDoc(userRef, { name: gName, role: 'merchant', mname: bname, wallet: 500, points: 0, liked: [], createdAt: Date.now() });
@@ -241,22 +240,18 @@ window.loginWithGoogle = async () => {
         if (userSnap.data().plan) SS('plan', userSnap.data().plan);
       }
     } else {
-      if (!userSnap.exists()) await setDoc(userRef, { name: gName, role: 'consumer', wallet: 0, points: 50, liked: [], createdAt: Date.now() });
+      if (isNewUser) await setDoc(userRef, { name: gName, role: 'consumer', wallet: 0, points: 50, liked: [], createdAt: Date.now() });
     }
     
     cacheClear();
     const savedIntent = sessionStorage.getItem('np_intent');
     
-    // 🚀 Strict Preservation of QR & Analytics Logic
-    const qrMid = urlP.get('mid');
-    if (qrMid) {
+    // Log QR Scans from the saved parameters
+    if (pendingMid) {
       try {
-        if (isNewUser) {
-          await updateDoc(doc(db, 'users', qrMid), { qrNew: increment(1), qrScans: increment(1) });
-        } else {
-          await updateDoc(doc(db, 'users', qrMid), { qrRet: increment(1), qrScans: increment(1) });
-        }
-        sessionStorage.setItem('np_qr_logged_' + qrMid, 'true'); 
+        if (isNewUser) await updateDoc(doc(db, 'users', pendingMid), { qrNew: increment(1), qrScans: increment(1) });
+        else await updateDoc(doc(db, 'users', pendingMid), { qrRet: increment(1), qrScans: increment(1) });
+        sessionStorage.setItem('np_qr_logged_' + pendingMid, 'true'); 
       } catch (err) { console.warn("Rules blocked analytics:", err); }
     } else if (savedIntent && savedIntent.includes('utm_source=qr_standee')) {
       try {
@@ -271,20 +266,40 @@ window.loginWithGoogle = async () => {
       } catch (err) { console.warn("Rules blocked fallback analytics:", err); }
     }
     
+    // Clean up temporary variables
+    sessionStorage.removeItem('np_pending_role');
+    sessionStorage.removeItem('np_pending_qr');
+    sessionStorage.removeItem('np_pending_mid');
+    
     if (savedIntent) {
       sessionStorage.removeItem('np_intent');
       window.location.href = savedIntent;
     } else {
       window.location.href = window.loginRole === 'merchant' ? 'merchant.html?v=' + Date.now() : 'map.html?v=' + Date.now();
     }
-
-  } catch(e) {
-    toast('❌', 'Login failed.');
+  }
+}).catch(e => {
+    toast('❌', 'Login failed or cancelled.');
     document.getElementById('btn-login').style.display = 'flex';
     document.getElementById('ldr').style.display = 'none';
-  }
+});
+
+// 🚀 TRIGGER GOOGLE LOGIN
+window.loginWithGoogle = () => {
+  if (!document.getElementById('agree-check').checked) return toast('⚠️', 'Please agree to the Terms & Privacy Policy.');
+
+  // Save the state before we leave the page
+  sessionStorage.setItem('np_pending_role', window.loginRole);
+  if (urlP.get('qr')) sessionStorage.setItem('np_pending_qr', urlP.get('qr'));
+  if (urlP.get('mid')) sessionStorage.setItem('np_pending_mid', urlP.get('mid'));
+
+  showLdr('Connecting to Google...');
+  
+  // Lightning fast mobile redirect
+  signInWithRedirect(auth, provider);
 };
 </script>
+
 <div style="text-align: center; padding: 15px; font-size: 12px;">
   <a href="/privacy.html" style="color: #888; text-decoration: none;">Privacy Policy</a>
   <span style="color: #ccc; margin: 0 8px;">|</span>
