@@ -188,6 +188,7 @@
       
       <div class="tbar">
         <div class="lpill"><span>📍</span><span id="loclbl">Getting location…</span></div>
+        <button class="lbtn" onclick="window.toggleLang()" title="Language">🌐</button>
         <button class="lbtn" id="refresh-btn" onclick="window.forceRefresh()" title="Refresh Live Deals">🔄</button>
         <button class="lbtn" onclick="recenter()" title="Recenter Map">🎯</button>
       </div>
@@ -201,20 +202,20 @@
     <div class="bsht">
       <div class="bsht-h"></div>
       <div class="radius-bar">
-        <span class="radius-label">📡 Radius:</span>
+        <span class="radius-label" id="lbl-rad">📡 Radius:</span>
         <button class="rdist-btn on" onclick="setR(1,this)">1 km</button>
         <button class="rdist-btn" onclick="setR(2,this)">2 km</button>
         <button class="rdist-btn" onclick="setR(5,this)">5 km</button>
         <button class="rdist-btn" onclick="setR(10,this)">10 km</button>
         <button class="rdist-btn" onclick="setR(25,this)">25 km</button>
-        <button class="rdist-btn" onclick="setR(999,this)">Anywhere</button>
+        <button class="rdist-btn" id="lbl-any" onclick="setR(999,this)">Anywhere</button>
       </div>
       <div class="cat-pills" id="cat-pills">
-        <button class="pill" onclick="setCat('all',this)">All</button>
-        <button class="pill on" onclick="setCat('deal',this)">🏷️ Deals</button>
-        <button class="pill" onclick="setCat('rental',this)">🏠 Flats</button>
-        <button class="pill" onclick="setCat('pg',this)">🛋️ PG</button>
-        <button class="pill" onclick="setCat('job',this)">💼 Jobs</button>
+        <button class="pill" id="lbl-all" onclick="setCat('all',this)">All</button>
+        <button class="pill on" id="lbl-deal" onclick="setCat('deal',this)">🏷️ Deals</button>
+        <button class="pill" id="lbl-rental" onclick="setCat('rental',this)">🏠 Flats</button>
+        <button class="pill" id="lbl-pg" onclick="setCat('pg',this)">🛋️ PG</button>
+        <button class="pill" id="lbl-job" onclick="setCat('job',this)">💼 Jobs</button>
       </div>
       
       <div style="display:flex;align-items:center;justify-content:space-between;padding:0 16px 8px; flex-shrink:0;">
@@ -331,13 +332,29 @@
 </div>
 
 <script type="module">
-// 🚀 ALL imports natively restored
-import { app, db, LS, SS, TC, TE, distM, isExpired, toast, cacheGet, cacheSet, cacheClear, loadNavigation } from './js/app.js';
+// 🚀 NEW: Import toggleLang and t (Translation Dictionary)
+import { app, db, LS, SS, TC, TE, distM, isExpired, toast, cacheGet, cacheSet, cacheClear, loadNavigation, toggleLang, t } from './js/app.js';
 import { ghEncode, ghNeighbors, ghFilter } from './js/geohash.js';
 import { setLoc, setListings, checkProximity, dist, getPrefs, notifsToday, notifsThisHour, logNotif, inMarketZone, vendorCapReached, budgetThrottled, markVendorCapUsed, markBudgetUsed, markGeofenceNotified, applyDensityControl, getNotifType, showSoftBanner, trackEng, updateSpeed } from './js/notifications.js';
 import { getDocs, query, collection, orderBy, where, doc, updateDoc, increment } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js';
 import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-messaging.js";
+
+// 🚀 NEW: Bind toggleLang to window for HTML button access
+window.toggleLang = toggleLang;
+
+// 🚀 NEW: Apply Translations dynamically on page load
+document.addEventListener("DOMContentLoaded", () => {
+  if (document.getElementById('lbl-rad')) document.getElementById('lbl-rad').textContent = t('rad');
+  if (document.getElementById('lbl-any')) document.getElementById('lbl-any').textContent = t('any');
+  if (document.getElementById('lbl-all')) document.getElementById('lbl-all').textContent = t('all');
+  if (document.getElementById('lbl-deal')) document.getElementById('lbl-deal').textContent = t('deal');
+  if (document.getElementById('lbl-rental')) document.getElementById('lbl-rental').textContent = t('rental');
+  if (document.getElementById('lbl-pg')) document.getElementById('lbl-pg').textContent = t('pg');
+  if (document.getElementById('lbl-job')) document.getElementById('lbl-job').textContent = t('job');
+  if (document.getElementById('list-btn')) document.getElementById('list-btn').innerHTML = `📋 ${t('list')}`;
+  if (document.getElementById('disc-btn')) document.getElementById('disc-btn').innerHTML = `🔍 ${t('disc')}`;
+});
 
 // 🚀 THE UNIFIED NOTIFICATION PERMISSION ENGINE
 window.askForNotifs = async () => {
@@ -377,7 +394,6 @@ window.askForNotifs = async () => {
             fcmToken: currentToken 
           });
         }
-        toast('✅', 'Background alerts enabled!');
       } else {
         console.log('No registration token available.');
       }
@@ -439,7 +455,7 @@ window._markerCluster = L.markerClusterGroup({
 window._map.addLayer(window._markerCluster);
 
 document.querySelectorAll('.rdist-btn').forEach(b => {
-  const v = b.textContent === 'Anywhere' ? 999 : parseInt(b.textContent);
+  const v = (b.textContent === 'Anywhere' || b.textContent === t('any')) ? 999 : parseInt(b.textContent);
   b.classList.toggle('on', v === radiusKm);
 });
 
@@ -519,9 +535,14 @@ function geohashFilter(data) {
   return data.filter(l => !l.geohash5 || cells.has(l.geohash5));
 }
 
+// 🚀 NEW: Bulletproof fmtDist
 function fmtDist(l) {
-  if (!loc || !l.lat) return '—';
-  const d = distM(loc.lat, loc.lng, l.lat, l.lng);
+  if (!loc || !l.lat || !l.lng) return '—';
+  const safeLat = parseFloat(l.lat);
+  const safeLng = parseFloat(l.lng);
+  if (isNaN(safeLat) || isNaN(safeLng)) return '—';
+  
+  const d = distM(loc.lat, loc.lng, safeLat, safeLng);
   return d < 1000 ? Math.round(d) + 'm' : (d / 1000).toFixed(1) + 'km';
 }
 
@@ -541,21 +562,18 @@ async function loadListings() {
     const filters = [];
 
     // 1. SERVER-SIDE CATEGORY FILTER
-    // Only fetch the exact category the user is looking at. 
     if (cat !== 'all') {
       filters.push(where('type', '==', cat));
     }
 
     // 2. SERVER-SIDE GEOHASH FILTER
-    // Use the 5km precision grid to prevent downloading the whole city
     const userLoc = LS('lastLoc');
     if (userLoc) {
       const userHash5 = ghEncode(userLoc.lat, userLoc.lng, 5);
-      const activeCells = ghNeighbors(userHash5); // Gets the 9 surrounding grid cells
+      const activeCells = ghNeighbors(userHash5); 
       filters.push(where('geohash5', 'in', activeCells));
     }
 
-    // Apply the filters to the Firebase query
     if (filters.length > 0) {
       q = query(q, ...filters);
     }
@@ -575,16 +593,28 @@ async function loadListings() {
 }
 
 function redraw() {
+  // 🚀 NEW: Bulletproof Filter (The Vanishing Act Shield)
   let list = listings.filter(l => {
-    if (cat !== 'all' && l.type !== cat) return false;
-    if (radiusKm < 999) {
-        const d = loc && l.lat ? distM(loc.lat, loc.lng, l.lat, l.lng) : Infinity;
-        if (d > radiusKm * 1000) return false;
+    try {
+      if (!l || typeof l !== 'object') return false;
+      if (cat !== 'all' && l.type !== cat) return false;
+      if (isExpired(l)) return false;
+      
+      if (radiusKm < 999) {
+          const safeLat = parseFloat(l.lat);
+          const safeLng = parseFloat(l.lng);
+          if (isNaN(safeLat) || isNaN(safeLng)) return false; // Ignore bad coordinates
+          
+          const d = loc && loc.lat ? distM(loc.lat, loc.lng, safeLat, safeLng) : Infinity;
+          if (isNaN(d) || d > radiusKm * 1000) return false;
+      }
+      return true;
+    } catch (e) {
+      return false; // Never crash the loop
     }
-    if (isExpired(l)) return false;
-    return true;
   });
 
+  // 🚀 NEW: Bulletproof Fallback Radius Expansion
   if (list.length === 0 && radiusKm < 999 && loc && listings.length > 0) {
     const tiers = [1, 2, 5, 10, 25, 999];
     let foundRadius = null;
@@ -594,8 +624,11 @@ function redraw() {
         if (cat !== 'all' && l.type !== cat) return false;
         if (isExpired(l)) return false;
         if (r < 999) {
-          const d = l.lat ? distM(loc.lat, loc.lng, l.lat, l.lng) : Infinity;
-          if (d > r * 1000) return false;
+          const safeLat = parseFloat(l.lat);
+          const safeLng = parseFloat(l.lng);
+          if (isNaN(safeLat) || isNaN(safeLng)) return false;
+          const d = loc.lat ? distM(loc.lat, loc.lng, safeLat, safeLng) : Infinity;
+          if (isNaN(d) || d > r * 1000) return false;
         }
         return true;
       });
@@ -607,29 +640,36 @@ function redraw() {
     SS('searchRadius', radiusKm);
     
     document.querySelectorAll('.rdist-btn').forEach(b => {
-      const v = b.textContent === 'Anywhere' ? 999 : parseInt(b.textContent);
+      const v = (b.textContent === 'Anywhere' || b.textContent === t('any')) ? 999 : parseInt(b.textContent);
       b.classList.toggle('on', v === radiusKm);
     });
     
-    const rTxt = radiusKm === 999 ? 'Anywhere' : radiusKm + 'km';
+    const rTxt = radiusKm === 999 ? t('any') : radiusKm + 'km';
     toast('🔍', `No deals nearby. Auto-expanded to ${rTxt}!`);
     return redraw(); 
   }
 
+  // 🚀 NEW: Bulletproof Sort
   list.sort((a, b) => {
-      const da = loc && a.lat ? distM(loc.lat, loc.lng, a.lat, a.lng) : Infinity;
-      const db_dist = loc && b.lat ? distM(loc.lat, loc.lng, b.lat, b.lng) : Infinity;
+      const aLat = parseFloat(a.lat), aLng = parseFloat(a.lng);
+      const bLat = parseFloat(b.lat), bLng = parseFloat(b.lng);
+      
+      const da = loc && !isNaN(aLat) && !isNaN(aLng) ? distM(loc.lat, loc.lng, aLat, aLng) : Infinity;
+      const db_dist = loc && !isNaN(bLat) && !isNaN(bLng) ? distM(loc.lat, loc.lng, bLat, bLng) : Infinity;
       return da - db_dist;
   });
+  
   filteredList = list;
 
   window._markerCluster.clearLayers();
   let newMarkers = [];
 
   list.forEach(l => {
-    if (!l.lat || !l.lng) return;
-    const col = l.color || TC(l.type);
+    const safeLat = parseFloat(l.lat);
+    const safeLng = parseFloat(l.lng);
+    if (isNaN(safeLat) || isNaN(safeLng)) return;
     
+    const col = l.color || TC(l.type);
     const imgUrl = l.imageUrl || l.image;
     const pinInner = imgUrl 
       ? `<div style="width:100%;height:100%;border-radius:50%;background:#fff url('${imgUrl}') center/cover no-repeat;"></div>`
@@ -641,7 +681,7 @@ function redraw() {
       iconSize: [38, 46], iconAnchor: [19, 46]
     });
     
-    const m = L.marker([l.lat, l.lng], { icon: ico }).on('click', () => window.previewPin(l));
+    const m = L.marker([safeLat, safeLng], { icon: ico }).on('click', () => window.previewPin(l));
     newMarkers.push(m);
   });
   
@@ -655,22 +695,20 @@ function redraw() {
 
   renderCards();
   
-// 🚀 BUG FIX: Use sessionStorage so welcome popups don't re-fire on tab switches
+  // 🚀 BUG FIX (Kept from existing): Use sessionStorage so welcome popups don't re-fire
   if (!sessionStorage.getItem('welcome_popups_done') && loc && filteredList.length > 0) {
     sessionStorage.setItem('welcome_popups_done', 'true'); 
-    
     const popupsToShow = Math.min(3, filteredList.length); 
-    
     for (let i = 0; i < popupsToShow; i++) {
       const delay = 1200 + (i * 8500); 
       setTimeout(() => { showNotif(filteredList[i]); }, delay);
     }
   }
-  
 }
 
 window.previewPin = (l) => {
-  const d = loc && l.lat ? distM(loc.lat, loc.lng, l.lat, l.lng) : Infinity;
+  const safeLat = parseFloat(l.lat), safeLng = parseFloat(l.lng);
+  const d = loc && !isNaN(safeLat) ? distM(loc.lat, loc.lng, safeLat, safeLng) : Infinity;
   const distTxt = d < 1000 ? Math.round(d) + 'm' : (d / 1000).toFixed(1) + 'km';
   const col = l.color || TC(l.type);
   
@@ -707,9 +745,11 @@ window.previewPin = (l) => {
   }
   
   document.getElementById('pp-btn').onclick = () => window.openListing(l.id);
-  
   document.getElementById('pin-preview').classList.add('on');
-  window._map.flyTo([l.lat, l.lng], 16, { duration: 0.4 });
+  
+  if (!isNaN(safeLat) && !isNaN(safeLng)) {
+    window._map.flyTo([safeLat, safeLng], 16, { duration: 0.4 });
+  }
 };
 
 window.closePreview = () => {
@@ -754,7 +794,8 @@ function renderCards() {
 
   const vgrid = document.getElementById('vgrid');
   if (total === 0) {
-    vgrid.innerHTML = `<div style="grid-column: 1 / -1; text-align:center; padding: 40px 20px; color:#6B7280; font-weight:700; font-size:14px;">No offers match your current filters.</div>`;
+    // 🚀 NEW: Translated No Deals message
+    vgrid.innerHTML = `<div style="grid-column: 1 / -1; text-align:center; padding: 40px 20px; color:#6B7280; font-weight:700; font-size:14px;">${t('no_deals')}</div>`;
   } else {
     vgrid.innerHTML = filteredList.map(l => {
       const imgUrl = l.imageUrl || l.image;
@@ -850,7 +891,8 @@ window.toggleListView = () => {
     vgrid.style.display = 'grid';
     discBtn.style.display = 'none';
     
-    listBtn.innerHTML = '🗺️ Map View';
+    // 🚀 NEW: Translated map toggle
+    listBtn.innerHTML = `🗺️ Map View`;
     listBtn.style.background = '#111827';
     listBtn.style.color = '#fff';
     listBtn.style.borderColor = '#111827';
@@ -861,7 +903,8 @@ window.toggleListView = () => {
     vgrid.style.display = 'none';
     discBtn.style.display = 'flex';
     
-    listBtn.innerHTML = '📋 List View';
+    // 🚀 NEW: Translated list toggle
+    listBtn.innerHTML = `📋 ${t('list')}`;
     listBtn.style.background = '#fff';
     listBtn.style.color = '#4B5563';
     listBtn.style.borderColor = '#E5E7EB';
@@ -950,13 +993,13 @@ window.toggleDiscovery = () => {
     btn.textContent = '✕ Exit Discovery';
     redraw();
     if (filteredList.length) {
-      const bounds = L.latLngBounds(filteredList.filter(l => l.lat).map(l => [l.lat, l.lng]));
+      const bounds = L.latLngBounds(filteredList.filter(l => !isNaN(parseFloat(l.lat))).map(l => [parseFloat(l.lat), parseFloat(l.lng)]));
       if (bounds.isValid()) window._map.fitBounds(bounds, { padding: [40, 40] });
     }
     toast('🔍', 'Discovery Mode: tap any marker to view offer');
   } else {
     btn.style.background = '#fff'; btn.style.color = '#4B5563'; btn.style.borderColor = '#E5E7EB';
-    btn.textContent = '🔍 Discover';
+    btn.innerHTML = `🔍 ${t('disc')}`;
     redraw();
     toast('📍', 'Auto-alerts resumed');
   }
@@ -966,18 +1009,26 @@ window.hideNotif = () => document.getElementById('notif').classList.remove('on')
 window.recenter = getLoc;
 window.go = href => window.location.href = href;
 window.openListing = id => { SS('viewId', id); window.location.href = 'detail.html?id=' + encodeURIComponent(id); };
+
 window.setCat = async (c, btn) => { 
   cat = c; 
   page = 0; 
   document.querySelectorAll('#cat-pills .pill').forEach(b => b.classList.remove('on')); 
   btn.classList.add('on'); 
   
-  // 🚀 Force the app to fetch the new category from the server
   toast('⏳', `Loading...`);
-  cacheClear(); // Wipes the old category from local memory
-  await loadListings(); // Grabs the new category from Firebase
+  cacheClear(); 
+  await loadListings(); 
 };
-window.setR = (km, btn) => { radiusKm = km; page = 0; SS('searchRadius', km); document.querySelectorAll('.rdist-btn').forEach(b => b.classList.remove('on')); btn.classList.add('on'); redraw(); };
+
+window.setR = (km, btn) => { 
+  radiusKm = km; 
+  page = 0; 
+  SS('searchRadius', km); 
+  document.querySelectorAll('.rdist-btn').forEach(b => b.classList.remove('on')); 
+  btn.classList.add('on'); 
+  redraw(); 
+};
 
 async function initApp() {
   await loadNavigation();
@@ -1006,21 +1057,16 @@ async function initApp() {
 const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
 const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
 
-// Only show the banner if notifications are off by default
 setTimeout(() => {
   if ('Notification' in window) {
     if (Notification.permission === 'default') {
-      // 1. Show Notif Banner for new users
       const notifPrompt = document.getElementById('notif-prompt');
       if (notifPrompt) notifPrompt.style.display = 'flex';
     } else if (Notification.permission === 'granted') {
-      // 🚀 NEW: Auto-heal! If they already gave permission in the past, 
-      // silently grab the correct token in the background and update the database.
       window.askForNotifs();
     }
   }
   
-  // 2. Keep the app install prompt logic intact
   if (!isStandalone && (window.deferredPWA || isIOS)) {
     if (!sessionStorage.getItem('hide_install')) window.showInstallPopup();
   }
