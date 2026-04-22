@@ -221,8 +221,8 @@
       <div style="display:flex;align-items:center;justify-content:space-between;padding:0 16px 8px; flex-shrink:0;">
         <div class="mcnt" id="mcnt" style="font-size:11px; font-weight:800; color:#6B7280;">Finding local deals...</div>
         <div style="display:flex; gap:6px;">
-          <button id="list-btn" onclick="toggleListView()" style="display:flex;align-items:center;gap:4px;padding:4px 12px;border-radius:100px;border:2px solid #E5E7EB;background:#fff;font-size:11px;font-weight:800;color:#4B5563;font-family:inherit;transition:all 0.2s;cursor:pointer">List</button>
-          <button id="disc-btn" onclick="toggleDiscovery()" style="display:flex;align-items:center;gap:4px;padding:4px 12px;border-radius:100px;border:2px solid #E5E7EB;background:#fff;font-size:11px;font-weight:800;color:#4B5563;font-family:inherit;transition:all 0.2s;cursor:pointer">Discover</button>
+          <button id="list-btn" onclick="toggleListView()" style="display:flex;align-items:center;gap:4px;padding:4px 12px;border-radius:100px;border:2px solid #E5E7EB;background:#fff;font-size:11px;font-weight:800;color:#4B5563;font-family:inherit;transition:all 0.2s;cursor:pointer">📋 List</button>
+          <button id="disc-btn" onclick="toggleDiscovery()" style="display:flex;align-items:center;gap:4px;padding:4px 12px;border-radius:100px;border:2px solid #E5E7EB;background:#fff;font-size:11px;font-weight:800;color:#4B5563;font-family:inherit;transition:all 0.2s;cursor:pointer">🔍 Discover</button>
         </div>
       </div>
 
@@ -332,7 +332,6 @@
 </div>
 
 <script type="module">
-// 🚀 NEW: Import toggleLang and t (Translation Dictionary)
 import { app, db, LS, SS, TC, TE, distM, isExpired, toast, cacheGet, cacheSet, cacheClear, loadNavigation, toggleLang, t } from './js/app.js';
 import { ghEncode, ghNeighbors, ghFilter } from './js/geohash.js';
 import { setLoc, setListings, checkProximity, dist, getPrefs, notifsToday, notifsThisHour, logNotif, inMarketZone, vendorCapReached, budgetThrottled, markVendorCapUsed, markBudgetUsed, markGeofenceNotified, applyDensityControl, getNotifType, showSoftBanner, trackEng, updateSpeed } from './js/notifications.js';
@@ -340,10 +339,9 @@ import { getDocs, query, collection, orderBy, where, doc, updateDoc, increment }
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js';
 import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-messaging.js";
 
-// 🚀 NEW: Bind toggleLang to window for HTML button access
 window.toggleLang = toggleLang;
 
-// 🚀 NEW: Apply Translations dynamically on page load
+// 🚀 FIXED: Removed duplicate emojis. Now pulls purely from your dictionary!
 document.addEventListener("DOMContentLoaded", () => {
   if (document.getElementById('lbl-rad')) document.getElementById('lbl-rad').textContent = t('rad');
   if (document.getElementById('lbl-any')) document.getElementById('lbl-any').textContent = t('any');
@@ -352,8 +350,8 @@ document.addEventListener("DOMContentLoaded", () => {
   if (document.getElementById('lbl-rental')) document.getElementById('lbl-rental').textContent = t('rental');
   if (document.getElementById('lbl-pg')) document.getElementById('lbl-pg').textContent = t('pg');
   if (document.getElementById('lbl-job')) document.getElementById('lbl-job').textContent = t('job');
-  if (document.getElementById('list-btn')) document.getElementById('list-btn').innerHTML = `📋 ${t('list')}`;
-  if (document.getElementById('disc-btn')) document.getElementById('disc-btn').innerHTML = `🔍 ${t('disc')}`;
+  if (document.getElementById('list-btn')) document.getElementById('list-btn').innerHTML = t('list');
+  if (document.getElementById('disc-btn')) document.getElementById('disc-btn').innerHTML = t('disc');
 });
 
 // 🚀 THE UNIFIED NOTIFICATION PERMISSION ENGINE
@@ -366,20 +364,16 @@ window.askForNotifs = async () => {
       
       const swRegistration = await navigator.serviceWorker.register('/sw.js');
       
-      // 1. Safely initialize messaging ONLY after permission is granted
       const messaging = getMessaging(app);
 
-      // 2. 🚀 THE FOREGROUND LISTENER (Mobile Safe)
       onMessage(messaging, (payload) => {
         console.log('Foreground message:', payload);
-        // Mobile browsers require swRegistration to show notifications!
         swRegistration.showNotification(payload.notification.title, {
           body: payload.notification.body,
           icon: '/icons/icon-192.png'
         });
       });
 
-      // 3. Fetch the unique Device Token using YOUR VAPID key
       const currentToken = await getToken(messaging, { 
         vapidKey: 'BKybN5UdJys9wB137592emPk83awpfTy_97V45LeM3MByP6FZA3fPhXqY6N1k5vP5--CUKXrnWUmeyG7dFLJMwQ',
         serviceWorkerRegistration: swRegistration
@@ -387,8 +381,6 @@ window.askForNotifs = async () => {
 
       if (currentToken) {
         console.log('Got FCM Device Token:', currentToken);
-        
-        // Save this token to the user's database profile
         if (LS('uid')) {
           await updateDoc(doc(db, 'users', LS('uid')), { 
             fcmToken: currentToken 
@@ -535,7 +527,6 @@ function geohashFilter(data) {
   return data.filter(l => !l.geohash5 || cells.has(l.geohash5));
 }
 
-// 🚀 NEW: Bulletproof fmtDist
 function fmtDist(l) {
   if (!loc || !l.lat || !l.lng) return '—';
   const safeLat = parseFloat(l.lat);
@@ -561,12 +552,10 @@ async function loadListings() {
     let q = collection(db, 'listings');
     const filters = [];
 
-    // 1. SERVER-SIDE CATEGORY FILTER
     if (cat !== 'all') {
       filters.push(where('type', '==', cat));
     }
 
-    // 2. SERVER-SIDE GEOHASH FILTER
     const userLoc = LS('lastLoc');
     if (userLoc) {
       const userHash5 = ghEncode(userLoc.lat, userLoc.lng, 5);
@@ -593,7 +582,6 @@ async function loadListings() {
 }
 
 function redraw() {
-  // 🚀 NEW: Bulletproof Filter (The Vanishing Act Shield)
   let list = listings.filter(l => {
     try {
       if (!l || typeof l !== 'object') return false;
@@ -603,18 +591,17 @@ function redraw() {
       if (radiusKm < 999) {
           const safeLat = parseFloat(l.lat);
           const safeLng = parseFloat(l.lng);
-          if (isNaN(safeLat) || isNaN(safeLng)) return false; // Ignore bad coordinates
+          if (isNaN(safeLat) || isNaN(safeLng)) return false; 
           
           const d = loc && loc.lat ? distM(loc.lat, loc.lng, safeLat, safeLng) : Infinity;
           if (isNaN(d) || d > radiusKm * 1000) return false;
       }
       return true;
     } catch (e) {
-      return false; // Never crash the loop
+      return false; 
     }
   });
 
-  // 🚀 NEW: Bulletproof Fallback Radius Expansion
   if (list.length === 0 && radiusKm < 999 && loc && listings.length > 0) {
     const tiers = [1, 2, 5, 10, 25, 999];
     let foundRadius = null;
@@ -649,7 +636,6 @@ function redraw() {
     return redraw(); 
   }
 
-  // 🚀 NEW: Bulletproof Sort
   list.sort((a, b) => {
       const aLat = parseFloat(a.lat), aLng = parseFloat(a.lng);
       const bLat = parseFloat(b.lat), bLng = parseFloat(b.lng);
@@ -695,7 +681,6 @@ function redraw() {
 
   renderCards();
   
-  // 🚀 BUG FIX (Kept from existing): Use sessionStorage so welcome popups don't re-fire
   if (!sessionStorage.getItem('welcome_popups_done') && loc && filteredList.length > 0) {
     sessionStorage.setItem('welcome_popups_done', 'true'); 
     const popupsToShow = Math.min(3, filteredList.length); 
@@ -794,7 +779,6 @@ function renderCards() {
 
   const vgrid = document.getElementById('vgrid');
   if (total === 0) {
-    // 🚀 NEW: Translated No Deals message
     vgrid.innerHTML = `<div style="grid-column: 1 / -1; text-align:center; padding: 40px 20px; color:#6B7280; font-weight:700; font-size:14px;">${t('no_deals')}</div>`;
   } else {
     vgrid.innerHTML = filteredList.map(l => {
@@ -828,7 +812,6 @@ function renderCards() {
     }).join('');
   }
 
-  // Pagination Logic
   const pgn = document.getElementById('pgn');
   if (totalPages <= 1) { pgn.innerHTML = ''; return; }
   
@@ -891,7 +874,6 @@ window.toggleListView = () => {
     vgrid.style.display = 'grid';
     discBtn.style.display = 'none';
     
-    // 🚀 NEW: Translated map toggle
     listBtn.innerHTML = `🗺️ Map View`;
     listBtn.style.background = '#111827';
     listBtn.style.color = '#fff';
@@ -903,8 +885,8 @@ window.toggleListView = () => {
     vgrid.style.display = 'none';
     discBtn.style.display = 'flex';
     
-    // 🚀 NEW: Translated list toggle
-    listBtn.innerHTML = `📋 ${t('list')}`;
+    // 🚀 FIXED: Removed duplicate emoji
+    listBtn.innerHTML = t('list');
     listBtn.style.background = '#fff';
     listBtn.style.color = '#4B5563';
     listBtn.style.borderColor = '#E5E7EB';
@@ -978,7 +960,7 @@ window.startApp = () => {
 
 window.skipWelcome = () => {
   sessionStorage.setItem('welcome_seen', 'true');
-  welcomeType = 'deal'; // 🚀 DEFAULT TO DEALS INSTEAD OF ALL  
+  welcomeType = 'deal'; 
   document.getElementById('modal-welcome').classList.remove('on');
   setTimeout(() => { if (window._map) window._map.invalidateSize(); }, 300); 
   getLoc();
@@ -999,7 +981,8 @@ window.toggleDiscovery = () => {
     toast('🔍', 'Discovery Mode: tap any marker to view offer');
   } else {
     btn.style.background = '#fff'; btn.style.color = '#4B5563'; btn.style.borderColor = '#E5E7EB';
-    btn.innerHTML = `🔍 ${t('disc')}`;
+    // 🚀 FIXED: Removed duplicate emoji
+    btn.innerHTML = t('disc');
     redraw();
     toast('📍', 'Auto-alerts resumed');
   }
