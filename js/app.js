@@ -10,8 +10,6 @@ import { initializeFirestore, persistentLocalCache, doc, setDoc, updateDoc } fro
 import { getAuth, setPersistence, browserLocalPersistence, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js";
 import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-messaging.js";
 
-
-
 // ── Firebase config ──────────────────────────────────────
 const FB_CONFIG = {
     apiKey: "AIzaSyDYUm3VV8iuLHQKJuU9fWgaRaYU0t5Dlzk",
@@ -53,6 +51,27 @@ export const SS = (k, v) => {
   try { localStorage.setItem('np_' + k, JSON.stringify(v)); }
   catch {}
 };
+
+// 🚀 2. MULTILINGUAL SUPPORT (Hindi / English)
+const DICTIONARY = {
+  en: {
+    rad: "📡 Radius:", any: "Anywhere", all: "All",
+    deal: "🏷️ Deals", rental: "🏠 Flats", pg: "🛋️ PG", job: "💼 Jobs",
+    list: "📋 List", disc: "🔍 Discover", no_deals: "No offers match your current filters."
+  },
+  hi: {
+    rad: "📡 दायरा:", any: "कहीं भी", all: "सभी",
+    deal: "🏷️ सौदे", rental: "🏠 मकान", pg: "🛋️ पीजी", job: "💼 नौकरी",
+    list: "📋 सूची", disc: "🔍 खोजें", no_deals: "आपके फ़िल्टर से कोई सौदा नहीं मिला।"
+  }
+};
+
+export const getLang = () => LS('pref_lang') || 'en';
+export const toggleLang = () => { 
+  SS('pref_lang', getLang() === 'en' ? 'hi' : 'en'); 
+  window.location.reload(); 
+};
+export const t = (key) => DICTIONARY[getLang()][key] || key;
 
 // ── Type → colour / emoji maps ───────────────────────────
 export const TC = t => ({ deal:'#FF5722', rental:'#3B82F6', pg:'#8B5CF6', job:'#10B981' }[t] || '#666');
@@ -229,7 +248,7 @@ export async function requestPushPermissions(uid) {
     
     const permission = await Notification.requestPermission();
     if (permission === 'granted') {
-      toast('🔔', 'Alerts enabled! You are ready to explore.');
+      // 🚀 PROCESS MADE SILENT: Removed the success toast here
       fetchAndSaveToken(uid);
     } else {
       toast('⚠️', 'Alerts blocked. You can enable them in your browser settings later.');
