@@ -523,12 +523,12 @@ async function loadListings() {
     // 🚀 MASTER FIX: Removed the Firebase category filter here.
     // We now download ALL types of nearby deals once, which bypasses the missing 
     // Firebase Composite Index entirely, fixing the crash!
-    const userLoc = LS('lastLoc');
+    /*const userLoc = LS('lastLoc');
     if (userLoc) {
       const userHash5 = ghEncode(userLoc.lat, userLoc.lng, 5);
       const activeCells = ghNeighbors(userHash5); 
       filters.push(where('geohash5', 'in', activeCells));
-    }
+    }*/
 
     if (filters.length > 0) { q = query(q, ...filters); }
     const snap = await getDocs(q);
