@@ -60,11 +60,8 @@
 .pill { padding: 6px 12px; border-radius: 100px; font-size: 11px; font-weight: 800; background: #fff; border: 2px solid #E5E7EB; color: #4B5563; cursor: pointer; transition: all 0.2s; white-space: nowrap; font-family: inherit; }
 .pill.on { background: #111827; border-color: #111827; color: #fff; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
 
-.pgn { 
-  display: flex; align-items: center; justify-content: center; gap: 4px; 
-  padding: 4px 16px calc(80px + env(safe-area-inset-bottom)); /* 🚀 Pushes pagination up */
-  flex-shrink: 0; 
-}
+/* 🚀 PUSHED PAGINATION UP */
+.pgn { display: flex; align-items: center; justify-content: center; gap: 4px; padding: 4px 16px calc(80px + env(safe-area-inset-bottom)); flex-shrink: 0; }
 .pgn-btn { min-width: 32px; height: 32px; padding: 0 4px; border-radius: 8px; font-size: 12px; font-weight: 800; border: 2px solid #E5E7EB; background: #fff; color: #4B5563; cursor: pointer; font-family: inherit; transition: all 0.2s; }
 .pgn-btn.txt { padding: 0 10px; } 
 .pgn-btn.on { background: #FF5722; border-color: #FF5722; color: #fff; }
@@ -77,10 +74,8 @@
 .hcd { background: #fff; border-radius: 18px; padding: 14px; cursor: pointer; flex-shrink: 0; border: 1px solid rgba(0,0,0,0.05); box-shadow: 0 4px 15px rgba(0,0,0,0.03); transition: all 0.15s; position: relative; overflow: hidden; }
 .hcd:active { transform: scale(0.97); border-color: #FF5722; }
 
-.deals-grid { 
-  display: grid; grid-template-columns: 1fr 1fr; gap: 12px; 
-  padding: 0 16px calc(120px + env(safe-area-inset-bottom)); /* 🚀 Pushes list up */
-}
+/* 🚀 PUSHED LIST VIEW UP */
+.deals-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 0 16px calc(80px + env(safe-area-inset-bottom)); }
 .deal-card { border-radius: 20px; padding: 12px; display: flex; flex-direction: column; gap: 10px; border: 1px solid rgba(0,0,0,0.04); box-shadow: 0 6px 16px rgba(0,0,0,0.04); text-decoration: none; cursor: pointer; position: relative; overflow: hidden; background: #fff; }
 .deal-card:nth-child(4n+1) { background: #FFF5F2; border-color: #FFE4D6; } 
 .deal-card:nth-child(4n+2) { background: #F0F9FF; border-color: #DBEAFE; } 
@@ -145,6 +140,7 @@
 
 #geo-error-banner { display: none; position: fixed; top: env(safe-area-inset-top, 0px); left: 0; right: 0; background: #EF4444; color: #fff; font-size: 13px; font-weight: 700; padding: 12px 16px; z-index: 9999; text-align: center; }
 
+/* 🚀 Skeletons and FOMO */
 .skeleton {
   background: #E5E7EB;
   background: linear-gradient(90deg, #E5E7EB 25%, #F3F4F6 50%, #E5E7EB 75%);
@@ -194,7 +190,6 @@
       
       <div class="tbar">
         <div class="lpill"><span>📍</span><span id="loclbl">Getting location…</span></div>
-        <button class="lbtn" onclick="window.toggleLang()" title="Language">🌐</button>
         <button class="lbtn" id="refresh-btn" onclick="window.forceRefresh()" title="Refresh Live Deals">🔄</button>
         <button class="lbtn" onclick="recenter()" title="Recenter Map">🎯</button>
       </div>
@@ -208,20 +203,20 @@
     <div class="bsht">
       <div class="bsht-h"></div>
       <div class="radius-bar">
-        <span class="radius-label" id="lbl-rad">📡 Radius:</span>
+        <span class="radius-label">📡 Radius:</span>
         <button class="rdist-btn on" onclick="setR(1,this)">1 km</button>
         <button class="rdist-btn" onclick="setR(2,this)">2 km</button>
         <button class="rdist-btn" onclick="setR(5,this)">5 km</button>
         <button class="rdist-btn" onclick="setR(10,this)">10 km</button>
         <button class="rdist-btn" onclick="setR(25,this)">25 km</button>
-        <button class="rdist-btn" id="lbl-any" onclick="setR(999,this)">Anywhere</button>
+        <button class="rdist-btn" onclick="setR(999,this)">Anywhere</button>
       </div>
       <div class="cat-pills" id="cat-pills">
-        <button class="pill on" id="lbl-all" onclick="setCat('all',this)">All</button>
-        <button class="pill" id="lbl-deal" onclick="setCat('deal',this)">🏷️ Deals</button>
-        <button class="pill" id="lbl-rental" onclick="setCat('rental',this)">🏠 Flats</button>
-        <button class="pill" id="lbl-pg" onclick="setCat('pg',this)">🛋️ PG</button>
-        <button class="pill" id="lbl-job" onclick="setCat('job',this)">💼 Jobs</button>
+        <button class="pill" onclick="setCat('all',this)">All</button>
+        <button class="pill on" onclick="setCat('deal',this)">🏷️ Deals</button>
+        <button class="pill" onclick="setCat('rental',this)">🏠 Flats</button>
+        <button class="pill" onclick="setCat('pg',this)">🛋️ PG</button>
+        <button class="pill" onclick="setCat('job',this)">💼 Jobs</button>
       </div>
       
       <div style="display:flex;align-items:center;justify-content:space-between;padding:0 16px 8px; flex-shrink:0;">
@@ -338,49 +333,55 @@
 </div>
 
 <script type="module">
-import { app, db, LS, SS, TC, TE, distM, isExpired, toast, cacheGet, cacheSet, cacheClear, loadNavigation, toggleLang, t } from './js/app.js';
+// 🚀 ALL imports natively restored
+import { app, db, LS, SS, TC, TE, distM, isExpired, toast, cacheGet, cacheSet, cacheClear, loadNavigation } from './js/app.js';
 import { ghEncode, ghNeighbors, ghFilter } from './js/geohash.js';
 import { setLoc, setListings, checkProximity, dist, getPrefs, notifsToday, notifsThisHour, logNotif, inMarketZone, vendorCapReached, budgetThrottled, markVendorCapUsed, markBudgetUsed, markGeofenceNotified, applyDensityControl, getNotifType, showSoftBanner, trackEng, updateSpeed } from './js/notifications.js';
 import { getDocs, query, collection, orderBy, where, doc, updateDoc, increment } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js';
 import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-messaging.js";
 
-window.toggleLang = toggleLang;
-
-document.addEventListener("DOMContentLoaded", () => {
-  if (document.getElementById('lbl-rad')) document.getElementById('lbl-rad').textContent = t('rad');
-  if (document.getElementById('lbl-any')) document.getElementById('lbl-any').textContent = t('any');
-  if (document.getElementById('lbl-all')) document.getElementById('lbl-all').textContent = t('all');
-  if (document.getElementById('lbl-deal')) document.getElementById('lbl-deal').textContent = t('deal');
-  if (document.getElementById('lbl-rental')) document.getElementById('lbl-rental').textContent = t('rental');
-  if (document.getElementById('lbl-pg')) document.getElementById('lbl-pg').textContent = t('pg');
-  if (document.getElementById('lbl-job')) document.getElementById('lbl-job').textContent = t('job');
-  if (document.getElementById('list-btn')) document.getElementById('list-btn').innerHTML = t('list');
-  if (document.getElementById('disc-btn')) document.getElementById('disc-btn').innerHTML = t('disc');
-});
-
+// 🚀 THE UNIFIED NOTIFICATION PERMISSION ENGINE
 window.askForNotifs = async () => {
   try {
     const perm = await Notification.requestPermission();
     if (perm === 'granted') {
       document.getElementById('notif-prompt').style.display = 'none';
+      console.log('Notification permission granted.');
+      
       const swRegistration = await navigator.serviceWorker.register('/sw.js');
+      
+      // 1. Safely initialize messaging ONLY after permission is granted
       const messaging = getMessaging(app);
 
+      // 2. 🚀 THE FOREGROUND LISTENER (Mobile Safe)
       onMessage(messaging, (payload) => {
+        console.log('Foreground message:', payload);
+        // Mobile browsers require swRegistration to show notifications!
         swRegistration.showNotification(payload.notification.title, {
           body: payload.notification.body,
           icon: '/icons/icon-192.png'
         });
       });
 
+      // 3. Fetch the unique Device Token using YOUR VAPID key
       const currentToken = await getToken(messaging, { 
         vapidKey: 'BKybN5UdJys9wB137592emPk83awpfTy_97V45LeM3MByP6FZA3fPhXqY6N1k5vP5--CUKXrnWUmeyG7dFLJMwQ',
         serviceWorkerRegistration: swRegistration
       });
 
-      if (currentToken && LS('uid')) {
-        await updateDoc(doc(db, 'users', LS('uid')), { fcmToken: currentToken });
+      if (currentToken) {
+        console.log('Got FCM Device Token:', currentToken);
+        
+        // Save this token to the user's database profile
+        if (LS('uid')) {
+          await updateDoc(doc(db, 'users', LS('uid')), { 
+            fcmToken: currentToken 
+          });
+        }
+        toast('✅', 'Background alerts enabled!');
+      } else {
+        console.log('No registration token available.');
       }
     } else {
       document.getElementById('notif-prompt').style.display = 'none';
@@ -389,6 +390,7 @@ window.askForNotifs = async () => {
     console.error('An error occurred while retrieving token. ', error);
   }
 };
+
 
 function handleGeoError(err) {
   if (err.code === 1) { 
@@ -426,15 +428,20 @@ window._map = L.map('map', { center: initCenter, zoom: savedLoc ? 15 : 13, zoomC
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(window._map);
 
 window._markerCluster = L.markerClusterGroup({
-  maxClusterRadius: 45, showCoverageOnHover: false,
+  maxClusterRadius: 45, 
+  showCoverageOnHover: false,
   iconCreateFunction: function(cluster) {
-    return L.divIcon({ html: `<div class="np-cluster">${cluster.getChildCount()}</div>`, className: 'custom-cluster', iconSize: [42, 42] });
+    return L.divIcon({
+      html: `<div class="np-cluster">${cluster.getChildCount()}</div>`,
+      className: 'custom-cluster',
+      iconSize: [42, 42]
+    });
   }
 });
 window._map.addLayer(window._markerCluster);
 
 document.querySelectorAll('.rdist-btn').forEach(b => {
-  const v = (b.textContent === 'Anywhere' || b.textContent === t('any')) ? 999 : parseInt(b.textContent);
+  const v = b.textContent === 'Anywhere' ? 999 : parseInt(b.textContent);
   b.classList.toggle('on', v === radiusKm);
 });
 
@@ -475,8 +482,10 @@ function onPosition(p, forceProcess = false) {
     }
   }
 
-  lastProcLat = lat; lastProcLng = lng; loc = { lat, lng };
-  setLoc(loc); SS('lastLoc', loc); 
+  lastProcLat = lat; lastProcLng = lng;
+  loc = { lat, lng };
+  setLoc(loc);
+  SS('lastLoc', loc); 
 
   const spd = speed > 1 ? (' · ' + (speed < 15 ? '🚶' : '🚗') + Math.round(speed) + 'km/h') : '';
   document.getElementById('loclbl').textContent = '📍 Live GPS' + spd;
@@ -484,8 +493,12 @@ function onPosition(p, forceProcess = false) {
   
   if (!hasLiveCentered) {
     window._map.flyTo([loc.lat, loc.lng], 15, { duration: 0.5 }); 
-    hasLiveCentered = true; redraw();
-  } else { redraw(); }
+    hasLiveCentered = true; 
+    redraw();
+  } else {
+    redraw();
+  }
+  
   checkProximity(showNotif, (zone, cnt) => console.log('Market zone alert:', zone.name, cnt));
 }
 
@@ -494,15 +507,23 @@ function getLoc() { startWatch(); }
 function setFallback() {
   loc = LS('lastLoc') || { lat: 28.4089, lng: 77.3178 };
   document.getElementById('loclbl').textContent = 'Faridabad (demo 📍)';
-  window._map.setView([loc.lat, loc.lng], 14); redraw();
+  window._map.setView([loc.lat, loc.lng], 14);
+  redraw();
+}
+
+function geohashFilter(data) {
+  const userLoc = LS('lastLoc');
+  if (!userLoc || !data.length) return data;
+  const withHash = data.filter(l => l.geohash5);
+  if (withHash.length < data.length * 0.3) return data;
+  const userHash5 = ghEncode(userLoc.lat, userLoc.lng, 5);
+  const cells = new Set(ghNeighbors(userHash5));
+  return data.filter(l => !l.geohash5 || cells.has(l.geohash5));
 }
 
 function fmtDist(l) {
-  if (!loc || !l.lat || !l.lng) return '—';
-  const safeLat = parseFloat(l.lat);
-  const safeLng = parseFloat(l.lng);
-  if (isNaN(safeLat) || isNaN(safeLng)) return '—';
-  const d = distM(loc.lat, loc.lng, safeLat, safeLng);
+  if (!loc || !l.lat) return '—';
+  const d = distM(loc.lat, loc.lng, l.lat, l.lng);
   return d < 1000 ? Math.round(d) + 'm' : (d / 1000).toFixed(1) + 'km';
 }
 
@@ -510,7 +531,8 @@ window.forceRefresh = async () => {
   const btn = document.getElementById('refresh-btn');
   if (btn) btn.classList.add('spinning');
   toast('⏳', 'Refreshing live deals...');
-  cacheClear(); await loadListings();
+  cacheClear();
+  await loadListings();
   if (btn) btn.classList.remove('spinning');
   toast('✅', 'Map updated!');
 };
@@ -520,21 +542,33 @@ async function loadListings() {
     let q = collection(db, 'listings');
     const filters = [];
 
-    // 🚀 MASTER FIX: Removed the Firebase category filter here.
-    // We now download ALL types of nearby deals once, which bypasses the missing 
-    // Firebase Composite Index entirely, fixing the crash!
-    /*const userLoc = LS('lastLoc');
+    // 1. SERVER-SIDE CATEGORY FILTER
+    // Only fetch the exact category the user is looking at. 
+    if (cat !== 'all') {
+      filters.push(where('type', '==', cat));
+    }
+
+    
+    const userLoc = LS('lastLoc');
     if (userLoc) {
       const userHash5 = ghEncode(userLoc.lat, userLoc.lng, 5);
       const activeCells = ghNeighbors(userHash5); 
       filters.push(where('geohash5', 'in', activeCells));
-    }*/
+    }
+    
 
-    if (filters.length > 0) { q = query(q, ...filters); }
+    // Apply the filters to the Firebase query
+    if (filters.length > 0) {
+      q = query(q, ...filters);
+    }
+
     const snap = await getDocs(q);
     const all = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     
-    cacheSet(all); listings = all; setListings(all); redraw();
+    cacheSet(all); 
+    listings = all; 
+    setListings(all); 
+    redraw();
   } catch(e) {
     console.error("Fetch error:", e);
     const c = cacheGet(); 
@@ -544,21 +578,13 @@ async function loadListings() {
 
 function redraw() {
   let list = listings.filter(l => {
-    try {
-      if (!l || typeof l !== 'object') return false;
-      // 🚀 MASTER FIX: JavaScript instantly filters the category locally now.
-      if (cat !== 'all' && l.type !== cat) return false;
-      if (isExpired(l)) return false;
-      
-      if (radiusKm < 999) {
-          const safeLat = parseFloat(l.lat);
-          const safeLng = parseFloat(l.lng);
-          if (isNaN(safeLat) || isNaN(safeLng)) return false; 
-          const d = loc && loc.lat ? distM(loc.lat, loc.lng, safeLat, safeLng) : Infinity;
-          if (isNaN(d) || d > radiusKm * 1000) return false;
-      }
-      return true;
-    } catch (e) { return false; }
+    if (cat !== 'all' && l.type !== cat) return false;
+    if (radiusKm < 999) {
+        const d = loc && l.lat ? distM(loc.lat, loc.lng, l.lat, l.lng) : Infinity;
+        if (d > radiusKm * 1000) return false;
+    }
+    if (isExpired(l)) return false;
+    return true;
   });
 
   if (list.length === 0 && radiusKm < 999 && loc && listings.length > 0) {
@@ -570,11 +596,8 @@ function redraw() {
         if (cat !== 'all' && l.type !== cat) return false;
         if (isExpired(l)) return false;
         if (r < 999) {
-          const safeLat = parseFloat(l.lat);
-          const safeLng = parseFloat(l.lng);
-          if (isNaN(safeLat) || isNaN(safeLng)) return false;
-          const d = loc.lat ? distM(loc.lat, loc.lng, safeLat, safeLng) : Infinity;
-          if (isNaN(d) || d > r * 1000) return false;
+          const d = l.lat ? distM(loc.lat, loc.lng, l.lat, l.lng) : Infinity;
+          if (d > r * 1000) return false;
         }
         return true;
       });
@@ -582,43 +605,45 @@ function redraw() {
     }
     
     const nextR = foundRadius || 999;
-    radiusKm = nextR; SS('searchRadius', radiusKm);
+    radiusKm = nextR;
+    SS('searchRadius', radiusKm);
     
     document.querySelectorAll('.rdist-btn').forEach(b => {
-      const v = (b.textContent === 'Anywhere' || b.textContent === t('any')) ? 999 : parseInt(b.textContent);
+      const v = b.textContent === 'Anywhere' ? 999 : parseInt(b.textContent);
       b.classList.toggle('on', v === radiusKm);
     });
     
-    const rTxt = radiusKm === 999 ? t('any') : radiusKm + 'km';
+    const rTxt = radiusKm === 999 ? 'Anywhere' : radiusKm + 'km';
     toast('🔍', `No deals nearby. Auto-expanded to ${rTxt}!`);
     return redraw(); 
   }
 
   list.sort((a, b) => {
-      const aLat = parseFloat(a.lat), aLng = parseFloat(a.lng);
-      const bLat = parseFloat(b.lat), bLng = parseFloat(b.lng);
-      const da = loc && !isNaN(aLat) && !isNaN(aLng) ? distM(loc.lat, loc.lng, aLat, aLng) : Infinity;
-      const db_dist = loc && !isNaN(bLat) && !isNaN(bLng) ? distM(loc.lat, loc.lng, bLat, bLng) : Infinity;
+      const da = loc && a.lat ? distM(loc.lat, loc.lng, a.lat, a.lng) : Infinity;
+      const db_dist = loc && b.lat ? distM(loc.lat, loc.lng, b.lat, b.lng) : Infinity;
       return da - db_dist;
   });
-  
   filteredList = list;
+
   window._markerCluster.clearLayers();
   let newMarkers = [];
 
   list.forEach(l => {
-    const safeLat = parseFloat(l.lat);
-    const safeLng = parseFloat(l.lng);
-    if (isNaN(safeLat) || isNaN(safeLng)) return;
-    
+    if (!l.lat || !l.lng) return;
     const col = l.color || TC(l.type);
+    
     const imgUrl = l.imageUrl || l.image;
     const pinInner = imgUrl 
       ? `<div style="width:100%;height:100%;border-radius:50%;background:#fff url('${imgUrl}') center/cover no-repeat;"></div>`
       : `<div class="pin-emo">${l.emoji || TE(l.type)}</div>`;
     
-    const ico = L.divIcon({ className: '', html: `<div class="custom-pin" style="background:${col};">${pinInner}<div class="pin-caret" style="border-top-color:${col};"></div></div>`, iconSize: [38, 46], iconAnchor: [19, 46] });
-    const m = L.marker([safeLat, safeLng], { icon: ico }).on('click', () => window.previewPin(l));
+    const ico = L.divIcon({
+      className: '',
+      html: `<div class="custom-pin" style="background:${col};">${pinInner}<div class="pin-caret" style="border-top-color:${col};"></div></div>`,
+      iconSize: [38, 46], iconAnchor: [19, 46]
+    });
+    
+    const m = L.marker([l.lat, l.lng], { icon: ico }).on('click', () => window.previewPin(l));
     newMarkers.push(m);
   });
   
@@ -632,33 +657,42 @@ function redraw() {
 
   renderCards();
   
+// 🚀 BUG FIX: Use sessionStorage so welcome popups don't re-fire on tab switches
   if (!sessionStorage.getItem('welcome_popups_done') && loc && filteredList.length > 0) {
     sessionStorage.setItem('welcome_popups_done', 'true'); 
+    
     const popupsToShow = Math.min(3, filteredList.length); 
+    
     for (let i = 0; i < popupsToShow; i++) {
       const delay = 1200 + (i * 8500); 
       setTimeout(() => { showNotif(filteredList[i]); }, delay);
     }
   }
+  
 }
 
 window.previewPin = (l) => {
-  const safeLat = parseFloat(l.lat), safeLng = parseFloat(l.lng);
-  const d = loc && !isNaN(safeLat) ? distM(loc.lat, loc.lng, safeLat, safeLng) : Infinity;
+  const d = loc && l.lat ? distM(loc.lat, loc.lng, l.lat, l.lng) : Infinity;
   const distTxt = d < 1000 ? Math.round(d) + 'm' : (d / 1000).toFixed(1) + 'km';
   const col = l.color || TC(l.type);
+  
   const imgUrl = l.imageUrl || l.image;
   const ppIc = document.getElementById('pp-ic');
   
   if (imgUrl) {
-    ppIc.textContent = ''; ppIc.style.background = `#ffffff url('${imgUrl}') center/contain no-repeat`; ppIc.style.border = `1px solid #E5E7EB`;
+    ppIc.textContent = '';
+    ppIc.style.background = `#ffffff url('${imgUrl}') center/contain no-repeat`;
+    ppIc.style.border = `1px solid #E5E7EB`;
   } else {
-    ppIc.textContent = l.emoji || TE(l.type); ppIc.style.background = `${col}20`; ppIc.style.border = `1px solid ${col}40`;
+    ppIc.textContent = l.emoji || TE(l.type);
+    ppIc.style.background = `${col}20`; 
+    ppIc.style.border = `1px solid ${col}40`;
   }
   
   document.getElementById('pp-title').textContent = l.title || 'Special Offer';
   document.getElementById('pp-price').textContent = l.price || 'View Details';
   document.getElementById('pp-dist').textContent = `📍 ${distTxt} from you`;
+  
   document.getElementById('pp-type').textContent = (l.type || 'Offer').toUpperCase();
   document.getElementById('pp-type').style.color = col;
   document.getElementById('pp-type').style.background = `${col}20`;
@@ -667,16 +701,22 @@ window.previewPin = (l) => {
     const hrs = (new Date(l.expiryDate) - new Date()) / 3600000;
     if (hrs > 0 && hrs <= 24) {
       document.getElementById('pp-fomo').innerHTML = `<span class="fomo-badge" style="position:static; animation:fomo-pulse 1.5s infinite; font-size:10px; margin-right:4px;">🔥 ${Math.ceil(hrs)}h left</span>`;
-    } else { document.getElementById('pp-fomo').innerHTML = ''; }
-  } else { document.getElementById('pp-fomo').innerHTML = ''; }
+    } else {
+      document.getElementById('pp-fomo').innerHTML = '';
+    }
+  } else {
+    document.getElementById('pp-fomo').innerHTML = '';
+  }
   
   document.getElementById('pp-btn').onclick = () => window.openListing(l.id);
-  document.getElementById('pin-preview').classList.add('on');
   
-  if (!isNaN(safeLat) && !isNaN(safeLng)) { window._map.flyTo([safeLat, safeLng], 16, { duration: 0.4 }); }
+  document.getElementById('pin-preview').classList.add('on');
+  window._map.flyTo([l.lat, l.lng], 16, { duration: 0.4 });
 };
 
-window.closePreview = () => document.getElementById('pin-preview').classList.remove('on');
+window.closePreview = () => {
+  document.getElementById('pin-preview').classList.remove('on');
+};
 
 function renderCards() {
   const total = filteredList.length;
@@ -688,62 +728,111 @@ function renderCards() {
 
   document.getElementById('hscr').innerHTML = items.map(l => {
     const imgUrl = l.imageUrl || l.image;
+    
     let fomoHtml = '';
     if (l.expiryDate) {
       const hrs = (new Date(l.expiryDate) - new Date()) / 3600000;
       if (hrs > 0 && hrs <= 24) fomoHtml = `<div class="fomo-badge" style="top:-4px; left:-4px; font-size:8px; padding:3px 6px;">🔥 ${Math.ceil(hrs)}h</div>`;
     }
+    
     const thumb = imgUrl 
       ? `<div style="position:relative; width:44px;height:44px;border-radius:12px;background:#fff url('${imgUrl}') center/contain no-repeat; border:1px solid #E5E7EB; flex-shrink:0;">${fomoHtml}</div>`
       : `<div style="position:relative; width:44px;height:44px;border-radius:12px;background:${l.color||TC(l.type)}20; display:flex;align-items:center;justify-content:center;font-size:20px; flex-shrink:0;">${l.emoji||TE(l.type)}${fomoHtml}</div>`;
       
     return `<div class="hcd" onclick="openListing('${l.id}')" style="min-width:200px; max-width:200px;">
-      <div style="display:flex; gap:10px; margin-bottom:8px; align-items:flex-start;">${thumb}<div style="flex:1; overflow:hidden;"><div class="hcd-type" style="color:${l.color||TC(l.type)}; margin-bottom:2px; text-transform: capitalize;">${l.type||''}</div><div class="hcd-title" style="margin-bottom:0; font-size:13px;">${(l.title||'').slice(0,35)}</div></div></div>
-      <div style="display:flex; justify-content:space-between; align-items:center;"><div class="hcd-price" style="font-size:14px; font-weight:900; color:#FF5722;">${l.price||''}</div><div class="hcd-dist" style="margin-top:0; font-size:11px; color:#6B7280; font-weight:700; background:#F3F4F6; padding:2px 6px; border-radius:6px;">📍 ${fmtDist(l)}</div></div>
+      <div style="display:flex; gap:10px; margin-bottom:8px; align-items:flex-start;">
+        ${thumb}
+        <div style="flex:1; overflow:hidden;">
+          <div class="hcd-type" style="color:${l.color||TC(l.type)}; margin-bottom:2px; text-transform: capitalize;">${l.type||''}</div>
+          <div class="hcd-title" style="margin-bottom:0; font-size:13px;">${(l.title||'').slice(0,35)}</div>
+        </div>
+      </div>
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <div class="hcd-price" style="font-size:14px; font-weight:900; color:#FF5722;">${l.price||''}</div>
+        <div class="hcd-dist" style="margin-top:0; font-size:11px; color:#6B7280; font-weight:700; background:#F3F4F6; padding:2px 6px; border-radius:6px;">📍 ${fmtDist(l)}</div>
+      </div>
     </div>`;
   }).join('');
 
   const vgrid = document.getElementById('vgrid');
   if (total === 0) {
-    vgrid.innerHTML = `<div style="grid-column: 1 / -1; text-align:center; padding: 40px 20px; color:#6B7280; font-weight:700; font-size:14px;">${t('no_deals')}</div>`;
+    vgrid.innerHTML = `<div style="grid-column: 1 / -1; text-align:center; padding: 40px 20px; color:#6B7280; font-weight:700; font-size:14px;">No offers match your current filters.</div>`;
   } else {
     vgrid.innerHTML = filteredList.map(l => {
       const imgUrl = l.imageUrl || l.image;
-      const iconHtml = imgUrl ? `<div class="d-ic" style="background: #ffffff url('${imgUrl}') center/contain no-repeat; border: 1px solid #E5E7EB;"></div>` : `<div class="d-ic">${l.emoji || TE(l.type)}</div>`;
+      const iconHtml = imgUrl 
+        ? `<div class="d-ic" style="background: #ffffff url('${imgUrl}') center/contain no-repeat; border: 1px solid #E5E7EB;"></div>`
+        : `<div class="d-ic">${l.emoji || TE(l.type)}</div>`;
       const col = l.color || TC(l.type);
+      
       let fomoHtml = '';
       if (l.expiryDate) {
         const hrs = (new Date(l.expiryDate) - new Date()) / 3600000;
         if (hrs > 0 && hrs <= 24) fomoHtml = `<div class="fomo-badge">🔥 Ends in ${Math.ceil(hrs)}h!</div>`;
       }
-      return `<div class="deal-card" onclick="window.openListing('${l.id}')">${fomoHtml}${iconHtml}<div class="d-inf"><div class="d-ti">${l.title}</div><div class="d-pr">${l.price || 'Special Deal'}</div></div><div class="dc-bot"><div class="d-tag" style="background:${col}20; color:${col};">${(l.type || 'Offer').toUpperCase()}</div><div class="d-arrow">➔</div></div><div style="position:absolute; top:8px; right:8px; background:rgba(255,255,255,0.9); padding:2px 6px; border-radius:6px; font-size:9px; font-weight:800; color:#4B5563; box-shadow:0 2px 4px rgba(0,0,0,0.1);">📍 ${fmtDist(l)}</div></div>`;
+      
+      return `
+        <div class="deal-card" onclick="window.openListing('${l.id}')">
+          ${fomoHtml}
+          ${iconHtml}
+          <div class="d-inf">
+            <div class="d-ti">${l.title}</div>
+            <div class="d-pr">${l.price || 'Special Deal'}</div>
+          </div>
+          <div class="dc-bot">
+            <div class="d-tag" style="background:${col}20; color:${col};">${(l.type || 'Offer').toUpperCase()}</div>
+            <div class="d-arrow">➔</div>
+          </div>
+          <div style="position:absolute; top:8px; right:8px; background:rgba(255,255,255,0.9); padding:2px 6px; border-radius:6px; font-size:9px; font-weight:800; color:#4B5563; box-shadow:0 2px 4px rgba(0,0,0,0.1);">📍 ${fmtDist(l)}</div>
+        </div>
+      `;
     }).join('');
   }
 
+  // Pagination Logic
   const pgn = document.getElementById('pgn');
   if (totalPages <= 1) { pgn.innerHTML = ''; return; }
+  
   let html = `<button class="pgn-btn txt" onclick="goPage(${page - 1})" ${page === 0 ? 'disabled' : ''}>Prev</button>`;
+  
   if (totalPages <= 5) {
-    for (let i = 0; i < totalPages; i++) html += `<button class="pgn-btn ${i === page ? 'on' : ''}" onclick="goPage(${i})">${i + 1}</button>`;
+    for (let i = 0; i < totalPages; i++) {
+      html += `<button class="pgn-btn ${i === page ? 'on' : ''}" onclick="goPage(${i})">${i + 1}</button>`;
+    }
   } else {
     if (page < 3) {
-      for (let i = 0; i < 4; i++) html += `<button class="pgn-btn ${i === page ? 'on' : ''}" onclick="goPage(${i})">${i + 1}</button>`;
-      html += `<span class="pgn-dots">...</span><button class="pgn-btn" onclick="goPage(${totalPages - 1})">${totalPages}</button>`;
+      for (let i = 0; i < 4; i++) {
+         html += `<button class="pgn-btn ${i === page ? 'on' : ''}" onclick="goPage(${i})">${i + 1}</button>`;
+      }
+      html += `<span class="pgn-dots">...</span>`;
+      html += `<button class="pgn-btn" onclick="goPage(${totalPages - 1})">${totalPages}</button>`;
     } else if (page >= totalPages - 3) {
-      html += `<button class="pgn-btn" onclick="goPage(0)">1</button><span class="pgn-dots">...</span>`;
-      for (let i = totalPages - 4; i < totalPages; i++) html += `<button class="pgn-btn ${i === page ? 'on' : ''}" onclick="goPage(${i})">${i + 1}</button>`;
+      html += `<button class="pgn-btn" onclick="goPage(0)">1</button>`;
+      html += `<span class="pgn-dots">...</span>`;
+      for (let i = totalPages - 4; i < totalPages; i++) {
+         html += `<button class="pgn-btn ${i === page ? 'on' : ''}" onclick="goPage(${i})">${i + 1}</button>`;
+      }
     } else {
-      html += `<button class="pgn-btn" onclick="goPage(0)">1</button><span class="pgn-dots">...</span><button class="pgn-btn" onclick="goPage(${page - 1})">${page}</button><button class="pgn-btn on" onclick="goPage(${page})">${page + 1}</button><button class="pgn-btn" onclick="goPage(${page + 1})">${page + 2}</button><span class="pgn-dots">...</span><button class="pgn-btn" onclick="goPage(${totalPages - 1})">${totalPages}</button>`;
+      html += `<button class="pgn-btn" onclick="goPage(0)">1</button>`;
+      html += `<span class="pgn-dots">...</span>`;
+      html += `<button class="pgn-btn" onclick="goPage(${page - 1})">${page}</button>`;
+      html += `<button class="pgn-btn on" onclick="goPage(${page})">${page + 1}</button>`;
+      html += `<button class="pgn-btn" onclick="goPage(${page + 1})">${page + 2}</button>`;
+      html += `<span class="pgn-dots">...</span>`;
+      html += `<button class="pgn-btn" onclick="goPage(${totalPages - 1})">${totalPages}</button>`;
     }
   }
-  html += `<button class="pgn-btn txt" onclick="goPage(${page + 1})" ${page === totalPages - 1 ? 'disabled' : ''}>Next</button>`;
+  
+  html += `<button class=\"pgn-btn txt\" onclick=\"goPage(${page + 1})\" ${page === totalPages - 1 ? 'disabled' : ''}>Next</button>`;
   pgn.innerHTML = html;
 }
 
 window.goPage = p => {
   const totalPages = Math.ceil(filteredList.length / PAGE_SIZE);
   if (p < 0 || p >= totalPages) return;
-  page = p; renderCards(); document.getElementById('hscr').scrollLeft = 0;
+  page = p;
+  renderCards();
+  document.getElementById('hscr').scrollLeft = 0;
 };
 
 let isListView = false;
@@ -758,32 +847,68 @@ window.toggleListView = () => {
 
   if (isListView) {
     bsht.classList.add('list-mode');
-    hscr.style.display = 'none'; pgn.style.display = 'none'; vgrid.style.display = 'grid'; discBtn.style.display = 'none';
-    listBtn.innerHTML = `🗺️ Map View`; listBtn.style.background = '#111827'; listBtn.style.color = '#fff'; listBtn.style.borderColor = '#111827';
+    hscr.style.display = 'none';
+    pgn.style.display = 'none';
+    vgrid.style.display = 'grid';
+    discBtn.style.display = 'none';
+    
+    listBtn.innerHTML = '🗺️ Map View';
+    listBtn.style.background = '#111827';
+    listBtn.style.color = '#fff';
+    listBtn.style.borderColor = '#111827';
   } else {
     bsht.classList.remove('list-mode');
-    hscr.style.display = 'flex'; pgn.style.display = 'flex'; vgrid.style.display = 'none'; discBtn.style.display = 'flex';
-    listBtn.innerHTML = t('list'); listBtn.style.background = '#fff'; listBtn.style.color = '#4B5563'; listBtn.style.borderColor = '#E5E7EB';
+    hscr.style.display = 'flex';
+    pgn.style.display = 'flex';
+    vgrid.style.display = 'none';
+    discBtn.style.display = 'flex';
+    
+    listBtn.innerHTML = '📋 List View';
+    listBtn.style.background = '#fff';
+    listBtn.style.color = '#4B5563';
+    listBtn.style.borderColor = '#E5E7EB';
   }
 };
 
 function showNotif(l) {
   if (!LS('pop_seen_' + l.id)) {
     SS('pop_seen_' + l.id, Date.now()); 
-    try { updateDoc(doc(db, 'listings', l.id), { popups: increment(1), popupsSentToday: increment(1) }); if (l.uid) updateDoc(doc(db, 'users', l.uid), { wallet: increment(-0.1) }); } catch(e) {}
+    try {
+      updateDoc(doc(db, 'listings', l.id), { popups: increment(1), popupsSentToday: increment(1) });
+      if (l.uid) updateDoc(doc(db, 'users', l.uid), { wallet: increment(-0.1) });
+    } catch(e) {}
   }
+
   const col = l.color || TC(l.type);
-  document.getElementById('n-badge').textContent = (l.type || '').toUpperCase(); document.getElementById('n-badge').style.background = col;
+  document.getElementById('n-badge').textContent = (l.type || '').toUpperCase();
+  document.getElementById('n-badge').style.background = col;
+  
   const imgUrl = l.imageUrl || l.image;
   const nic = document.getElementById('n-ic');
-  if (imgUrl) { nic.textContent = ''; nic.style.background = `#ffffff url('${imgUrl}') center/contain no-repeat`; } else { nic.textContent = l.emoji || TE(l.type); nic.style.background = `${col}20`; }
+  if (imgUrl) {
+    nic.textContent = '';
+    nic.style.background = `#ffffff url('${imgUrl}') center/contain no-repeat`;
+  } else {
+    nic.textContent = l.emoji || TE(l.type);
+    nic.style.background = `${col}20`;
+  }
+
   document.getElementById('n-dist').textContent = fmtDist(l);
   document.getElementById('n-title2').textContent = (l.title || '').slice(0, 60);
   document.getElementById('n-body').textContent = (l.desc || '').slice(0, 100) + '…';
-  document.getElementById('n-view').onclick = () => { trackEng(l.id, 8); if (typeof window.gtag === 'function') gtag('event', 'funnel_step', { step_name: 'popup_clicked', listing_id: l.id }); try { updateDoc(doc(db, 'listings', l.id), { visits: increment(1) }); } catch(e) {} hideNotif(); openListing(l.id); };
+  
+  document.getElementById('n-view').onclick = () => {
+    trackEng(l.id, 8);
+    if (typeof window.gtag === 'function') gtag('event', 'funnel_step', { step_name: 'popup_clicked', listing_id: l.id });
+    try { updateDoc(doc(db, 'listings', l.id), { visits: increment(1) }); } catch(e) {}
+    hideNotif(); openListing(l.id);
+  };
+  
   document.querySelector('#notif .mn-btn.s').onclick = () => { trackEng(l.id, -5); hideNotif(); };
+  
   document.getElementById('notif').classList.add('on');
-  clearTimeout(window._nt); window._nt = setTimeout(hideNotif, 8000);
+  clearTimeout(window._nt);
+  window._nt = setTimeout(hideNotif, 8000);
 }
 
 window.trackEng = trackEng; 
@@ -802,15 +927,20 @@ window.startApp = () => {
   });
   const interestMap = {'all':['deal','rental','pg','job'],'deal':['deal'],'rental':['rental'],'pg':['pg'],'job':['job']};
   SS('pref_interests', interestMap[welcomeType] || ['deal','rental','pg','job']);
+  
   sessionStorage.setItem('welcome_seen', 'true');
+  
   document.getElementById('modal-welcome').classList.remove('on');
-  setTimeout(() => { if (window._map) window._map.invalidateSize(); }, 300); getLoc();
+  setTimeout(() => { if (window._map) window._map.invalidateSize(); }, 300); 
+  getLoc();
 };
 
 window.skipWelcome = () => {
-  sessionStorage.setItem('welcome_seen', 'true'); welcomeType = 'deal'; 
+  sessionStorage.setItem('welcome_seen', 'true');
+  welcomeType = 'deal'; // 🚀 DEFAULT TO DEALS INSTEAD OF ALL  
   document.getElementById('modal-welcome').classList.remove('on');
-  setTimeout(() => { if (window._map) window._map.invalidateSize(); }, 300); getLoc();
+  setTimeout(() => { if (window._map) window._map.invalidateSize(); }, 300); 
+  getLoc();
 };
 
 let discoveryMode = false;
@@ -818,16 +948,19 @@ window.toggleDiscovery = () => {
   discoveryMode = !discoveryMode;
   const btn = document.getElementById('disc-btn');
   if (discoveryMode) {
-    btn.style.background = '#FF5722'; btn.style.color = '#fff'; btn.style.borderColor = '#FF5722'; btn.textContent = '✕ Exit Discovery';
+    btn.style.background = '#FF5722'; btn.style.color = '#fff'; btn.style.borderColor = '#FF5722';
+    btn.textContent = '✕ Exit Discovery';
     redraw();
     if (filteredList.length) {
-      const bounds = L.latLngBounds(filteredList.filter(l => !isNaN(parseFloat(l.lat))).map(l => [parseFloat(l.lat), parseFloat(l.lng)]));
+      const bounds = L.latLngBounds(filteredList.filter(l => l.lat).map(l => [l.lat, l.lng]));
       if (bounds.isValid()) window._map.fitBounds(bounds, { padding: [40, 40] });
     }
     toast('🔍', 'Discovery Mode: tap any marker to view offer');
   } else {
-    btn.style.background = '#fff'; btn.style.color = '#4B5563'; btn.style.borderColor = '#E5E7EB'; btn.innerHTML = t('disc');
-    redraw(); toast('📍', 'Auto-alerts resumed');
+    btn.style.background = '#fff'; btn.style.color = '#4B5563'; btn.style.borderColor = '#E5E7EB';
+    btn.textContent = '🔍 Discover';
+    redraw();
+    toast('📍', 'Auto-alerts resumed');
   }
 };
 
@@ -835,46 +968,61 @@ window.hideNotif = () => document.getElementById('notif').classList.remove('on')
 window.recenter = getLoc;
 window.go = href => window.location.href = href;
 window.openListing = id => { SS('viewId', id); window.location.href = 'detail.html?id=' + encodeURIComponent(id); };
-
-// 🚀 MASTER FIX: No more fetching from Firebase on category click! 
-// It instantly switches tabs using JavaScript filtering!
 window.setCat = async (c, btn) => { 
   cat = c; 
   page = 0; 
   document.querySelectorAll('#cat-pills .pill').forEach(b => b.classList.remove('on')); 
   btn.classList.add('on'); 
-  redraw(); 
+  
+  // 🚀 Force the app to fetch the new category from the server
+  toast('⏳', `Loading...`);
+  cacheClear(); // Wipes the old category from local memory
+  await loadListings(); // Grabs the new category from Firebase
 };
-
-window.setR = (km, btn) => { 
-  radiusKm = km; page = 0; SS('searchRadius', km); 
-  document.querySelectorAll('.rdist-btn').forEach(b => b.classList.remove('on')); 
-  btn.classList.add('on'); redraw(); 
-};
+window.setR = (km, btn) => { radiusKm = km; page = 0; SS('searchRadius', km); document.querySelectorAll('.rdist-btn').forEach(b => b.classList.remove('on')); btn.classList.add('on'); redraw(); };
 
 async function initApp() {
   await loadNavigation();
+
   const _cached = cacheGet(); 
-  if (_cached) { listings = _cached; setListings(_cached); redraw(); }
+  if (_cached) {
+    listings = _cached;    
+    setListings(_cached);
+    redraw();
+  }
+
   const auth = getAuth();
-  onAuthStateChanged(auth, (user) => { if (user) { loadListings(); } });
+  onAuthStateChanged(auth, (user) => {
+    if (user) { loadListings(); }
+  });
+
   setInterval(() => { if (auth.currentUser) loadListings(); }, 5 * 60 * 1000);
+
   if (sessionStorage.getItem('welcome_seen')) {
     document.getElementById('modal-welcome').classList.remove('on');
-    setTimeout(() => { if (window._map) window._map.invalidateSize(); }, 500); getLoc();
+    setTimeout(() => { if (window._map) window._map.invalidateSize(); }, 500);
+    getLoc();
   }
 }
 
 const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
 const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
 
+// Only show the banner if notifications are off by default
 setTimeout(() => {
   if ('Notification' in window) {
     if (Notification.permission === 'default') {
+      // 1. Show Notif Banner for new users
       const notifPrompt = document.getElementById('notif-prompt');
       if (notifPrompt) notifPrompt.style.display = 'flex';
-    } else if (Notification.permission === 'granted') { window.askForNotifs(); }
+    } else if (Notification.permission === 'granted') {
+      // 🚀 NEW: Auto-heal! If they already gave permission in the past, 
+      // silently grab the correct token in the background and update the database.
+      window.askForNotifs();
+    }
   }
+  
+  // 2. Keep the app install prompt logic intact
   if (!isStandalone && (window.deferredPWA || isIOS)) {
     if (!sessionStorage.getItem('hide_install')) window.showInstallPopup();
   }
@@ -882,14 +1030,39 @@ setTimeout(() => {
 
 window.showInstallPopup = () => {
   const mod = document.getElementById('mod-install');
-  if (mod) { mod.classList.add('on'); if (isIOS) { document.getElementById('install-android-ui').style.display = 'none'; document.getElementById('install-ios-ui').style.display = 'block'; } }
+  if (mod) {
+    mod.classList.add('on');
+    if (isIOS) {
+      document.getElementById('install-android-ui').style.display = 'none';
+      document.getElementById('install-ios-ui').style.display = 'block';
+    }
+  }
 };
-window.closeInstallPopup = () => { document.getElementById('mod-install').classList.remove('on'); sessionStorage.setItem('hide_install', 'true'); };
-window.triggerNativeInstall = async () => { if (window.deferredPWA) { window.deferredPWA.prompt(); const { outcome } = await window.deferredPWA.userChoice; window.deferredPWA = null; } window.closeInstallPopup(); };
-window.addEventListener('appinstalled', () => { window.closeInstallPopup(); toast('📲', 'NearPop installed successfully!'); });
+
+window.closeInstallPopup = () => {
+  document.getElementById('mod-install').classList.remove('on');
+  sessionStorage.setItem('hide_install', 'true');
+};
+
+window.triggerNativeInstall = async () => {
+  if (window.deferredPWA) {
+    window.deferredPWA.prompt();
+    const { outcome } = await window.deferredPWA.userChoice;
+    window.deferredPWA = null;
+  }
+  window.closeInstallPopup();
+};
+
+window.addEventListener('appinstalled', () => {
+  window.closeInstallPopup();
+  toast('📲', 'NearPop installed successfully!');
+});
 
 initApp();
-document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && typeof loadListings === 'function') loadListings(true); });
+
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && typeof loadListings === 'function') loadListings(true); 
+});
 </script>
 </body>
 </html>
