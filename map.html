@@ -140,7 +140,6 @@
 
 #geo-error-banner { display: none; position: fixed; top: env(safe-area-inset-top, 0px); left: 0; right: 0; background: #EF4444; color: #fff; font-size: 13px; font-weight: 700; padding: 12px 16px; z-index: 9999; text-align: center; }
 
-/* Skeletons and FOMO */
 .skeleton {
   background: #E5E7EB;
   background: linear-gradient(90deg, #E5E7EB 25%, #F3F4F6 50%, #E5E7EB 75%);
@@ -402,7 +401,6 @@ function initDragToScroll() {
     slider.scrollLeft = scrollLeft - walk;
   });
 
-  // Prevents accidentally clicking a deal while dragging
   slider.addEventListener('click', (e) => {
     if (isDragging) {
       e.preventDefault();
@@ -573,19 +571,12 @@ function setFallback() {
   redraw();
 }
 
-function geohashFilter(data) {
-  const userLoc = LS('lastLoc');
-  if (!userLoc || !data.length) return data;
-  const withHash = data.filter(l => l.geohash5);
-  if (withHash.length < data.length * 0.3) return data;
-  const userHash5 = ghEncode(userLoc.lat, userLoc.lng, 5);
-  const cells = new Set(ghNeighbors(userHash5));
-  return data.filter(l => !l.geohash5 || cells.has(l.geohash5));
-}
-
 function fmtDist(l) {
-  if (!loc || !l.lat) return '—';
-  const d = distM(loc.lat, loc.lng, l.lat, l.lng);
+  if (!loc || !l.lat || !l.lng) return '—';
+  const safeLat = parseFloat(l.lat);
+  const safeLng = parseFloat(l.lng);
+  if (isNaN(safeLat) || isNaN(safeLng)) return '—';
+  const d = distM(loc.lat, loc.lng, safeLat, safeLng);
   return d < 1000 ? Math.round(d) + 'm' : (d / 1000).toFixed(1) + 'km';
 }
 
@@ -604,17 +595,15 @@ async function loadListings() {
     let q = collection(db, 'listings');
     const filters = [];
 
-    if (cat !== 'all') {
-      filters.push(where('type', '==', cat));
-    }
-/* --- TEMPORARILY DISABLED ---
+    // 🚀 MASTER FIX (From mapold): Download all deals once!
+    // No more Firebase category filtering. This speeds up tab switching immensely.
     const userLoc = LS('lastLoc');
     if (userLoc) {
       const userHash5 = ghEncode(userLoc.lat, userLoc.lng, 5);
       const activeCells = ghNeighbors(userHash5); 
       filters.push(where('geohash5', 'in', activeCells));
     }
------------------------------ */
+
     if (filters.length > 0) {
       q = query(q, ...filters);
     }
@@ -635,13 +624,21 @@ async function loadListings() {
 
 function redraw() {
   let list = listings.filter(l => {
-    if (cat !== 'all' && l.type !== cat) return false;
-    if (radiusKm < 999) {
-        const d = loc && l.lat ? distM(loc.lat, loc.lng, l.lat, l.lng) : Infinity;
-        if (d > radiusKm * 1000) return false;
-    }
-    if (isExpired(l)) return false;
-    return true;
+    try {
+      if (!l || typeof l !== 'object') return false;
+      // 🚀 MASTER FIX (From mapold): JavaScript instantly filters the category locally now.
+      if (cat !== 'all' && l.type !== cat) return false;
+      if (isExpired(l)) return false;
+      
+      if (radiusKm < 999) {
+          const safeLat = parseFloat(l.lat);
+          const safeLng = parseFloat(l.lng);
+          if (isNaN(safeLat) || isNaN(safeLng)) return false; 
+          const d = loc && loc.lat ? distM(loc.lat, loc.lng, safeLat, safeLng) : Infinity;
+          if (isNaN(d) || d > radiusKm * 1000) return false;
+      }
+      return true;
+    } catch (e) { return false; }
   });
 
   if (list.length === 0 && radiusKm < 999 && loc && listings.length > 0) {
@@ -653,8 +650,11 @@ function redraw() {
         if (cat !== 'all' && l.type !== cat) return false;
         if (isExpired(l)) return false;
         if (r < 999) {
-          const d = l.lat ? distM(loc.lat, loc.lng, l.lat, l.lng) : Infinity;
-          if (d > r * 1000) return false;
+          const safeLat = parseFloat(l.lat);
+          const safeLng = parseFloat(l.lng);
+          if (isNaN(safeLat) || isNaN(safeLng)) return false;
+          const d = loc.lat ? distM(loc.lat, loc.lng, safeLat, safeLng) : Infinity;
+          if (isNaN(d) || d > r * 1000) return false;
         }
         return true;
       });
@@ -676,19 +676,23 @@ function redraw() {
   }
 
   list.sort((a, b) => {
-      const da = loc && a.lat ? distM(loc.lat, loc.lng, a.lat, a.lng) : Infinity;
-      const db_dist = loc && b.lat ? distM(loc.lat, loc.lng, b.lat, b.lng) : Infinity;
+      const aLat = parseFloat(a.lat), aLng = parseFloat(a.lng);
+      const bLat = parseFloat(b.lat), bLng = parseFloat(b.lng);
+      const da = loc && !isNaN(aLat) && !isNaN(aLng) ? distM(loc.lat, loc.lng, aLat, aLng) : Infinity;
+      const db_dist = loc && !isNaN(bLat) && !isNaN(bLng) ? distM(loc.lat, loc.lng, bLat, bLng) : Infinity;
       return da - db_dist;
   });
+  
   filteredList = list;
-
   window._markerCluster.clearLayers();
   let newMarkers = [];
 
   list.forEach(l => {
-    if (!l.lat || !l.lng) return;
-    const col = l.color || TC(l.type);
+    const safeLat = parseFloat(l.lat);
+    const safeLng = parseFloat(l.lng);
+    if (isNaN(safeLat) || isNaN(safeLng)) return;
     
+    const col = l.color || TC(l.type);
     const imgUrl = l.imageUrl || l.image;
     const pinInner = imgUrl 
       ? `<div style="width:100%;height:100%;border-radius:50%;background:#fff url('${imgUrl}') center/cover no-repeat;"></div>`
@@ -700,7 +704,7 @@ function redraw() {
       iconSize: [38, 46], iconAnchor: [19, 46]
     });
     
-    const m = L.marker([l.lat, l.lng], { icon: ico }).on('click', () => window.previewPin(l));
+    const m = L.marker([safeLat, safeLng], { icon: ico }).on('click', () => window.previewPin(l));
     newMarkers.push(m);
   });
   
@@ -725,7 +729,8 @@ function redraw() {
 }
 
 window.previewPin = (l) => {
-  const d = loc && l.lat ? distM(loc.lat, loc.lng, l.lat, l.lng) : Infinity;
+  const safeLat = parseFloat(l.lat), safeLng = parseFloat(l.lng);
+  const d = loc && !isNaN(safeLat) ? distM(loc.lat, loc.lng, safeLat, safeLng) : Infinity;
   const distTxt = d < 1000 ? Math.round(d) + 'm' : (d / 1000).toFixed(1) + 'km';
   const col = l.color || TC(l.type);
   
@@ -764,7 +769,7 @@ window.previewPin = (l) => {
   document.getElementById('pp-btn').onclick = () => window.openListing(l.id);
   
   document.getElementById('pin-preview').classList.add('on');
-  window._map.flyTo([l.lat, l.lng], 16, { duration: 0.4 });
+  if (!isNaN(safeLat) && !isNaN(safeLng)) { window._map.flyTo([safeLat, safeLng], 16, { duration: 0.4 }); }
 };
 
 window.closePreview = () => {
@@ -842,6 +847,7 @@ function renderCards() {
     }).join('');
   }
 
+  // Pagination Logic
   const pgn = document.getElementById('pgn');
   if (totalPages <= 1) { pgn.innerHTML = ''; return; }
   
@@ -1017,17 +1023,21 @@ window.hideNotif = () => document.getElementById('notif').classList.remove('on')
 window.recenter = getLoc;
 window.go = href => window.location.href = href;
 window.openListing = id => { SS('viewId', id); window.location.href = 'detail.html?id=' + encodeURIComponent(id); };
+
+// 🚀 MASTER FIX (From mapold): Instant tab switching, no Firebase fetch!
 window.setCat = async (c, btn) => { 
   cat = c; 
   page = 0; 
   document.querySelectorAll('#cat-pills .pill').forEach(b => b.classList.remove('on')); 
   btn.classList.add('on'); 
-  
-  toast('⏳', `Loading...`);
-  cacheClear(); 
-  await loadListings(); 
+  redraw(); 
 };
-window.setR = (km, btn) => { radiusKm = km; page = 0; SS('searchRadius', km); document.querySelectorAll('.rdist-btn').forEach(b => b.classList.remove('on')); btn.classList.add('on'); redraw(); };
+
+window.setR = (km, btn) => { 
+  radiusKm = km; page = 0; SS('searchRadius', km); 
+  document.querySelectorAll('.rdist-btn').forEach(b => b.classList.remove('on')); 
+  btn.classList.add('on'); redraw(); 
+};
 
 async function initApp() {
   await loadNavigation();
