@@ -42,7 +42,7 @@
 .zbtn { width: 40px; height: 40px; border-radius: 12px; background: rgba(255,255,255,0.9); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 700; color: var(--deep); box-shadow: 0 4px 15px rgba(0,0,0,0.1); border: 1px solid rgba(0,0,0,0.05); line-height: 1; transition: transform 0.1s; cursor: pointer; }
 .zbtn:active { transform: scale(0.9); }
 
-.bsht { position: absolute; top: 50%; left: 0; right: 0; bottom: 10%; background: #F9FAFB; border-radius: 28px 28px 0 0; padding: 10px 0 16px; box-shadow: 0 -8px 30px rgba(0,0,0,.15); z-index: 800; display: flex; flex-direction: column; overflow-y: auto; transition: top 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
+.bsht { position: absolute; top: 50%; left: 0; right: 0; bottom: 0; background: #F9FAFB; border-radius: 28px 28px 0 0; padding: 10px 0 16px; box-shadow: 0 -8px 30px rgba(0,0,0,.15); z-index: 800; display: flex; flex-direction: column; overflow-y: auto; transition: top 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
 .bsht.list-mode { top: 75px; }
 
 .bsht-h { width: 42px; height: 5px; background: #D1D5DB; border-radius: 3px; margin: 0 auto 10px; flex-shrink: 0; }
@@ -60,7 +60,6 @@
 .pill { padding: 6px 12px; border-radius: 100px; font-size: 11px; font-weight: 800; background: #fff; border: 2px solid #E5E7EB; color: #4B5563; cursor: pointer; transition: all 0.2s; white-space: nowrap; font-family: inherit; }
 .pill.on { background: #111827; border-color: #111827; color: #fff; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
 
-/* 🚀 PUSHED PAGINATION UP */
 .pgn { display: flex; align-items: center; justify-content: center; gap: 4px; padding: 4px 16px calc(80px + env(safe-area-inset-bottom)); flex-shrink: 0; }
 .pgn-btn { min-width: 32px; height: 32px; padding: 0 4px; border-radius: 8px; font-size: 12px; font-weight: 800; border: 2px solid #E5E7EB; background: #fff; color: #4B5563; cursor: pointer; font-family: inherit; transition: all 0.2s; }
 .pgn-btn.txt { padding: 0 10px; } 
@@ -68,13 +67,14 @@
 .pgn-btn:disabled { opacity: 0.4; cursor: not-allowed; border-color: transparent; background: transparent; color: #9CA3AF; }
 .pgn-dots { color: #9CA3AF; font-weight: 800; padding: 0 2px; font-size: 14px; }
 
-.hscr { display: flex; gap: 12px; padding: 0 16px 12px; overflow-x: auto; scrollbar-width: none; flex-shrink: 0; }
+/* 🚀 DESKTOP DRAG-TO-SCROLL CSS */
+.hscr { display: flex; gap: 12px; padding: 0 16px 12px; overflow-x: auto; scrollbar-width: none; flex-shrink: 0; cursor: grab; user-select: none; }
 .hscr::-webkit-scrollbar { display: none; }
+.hscr:active { cursor: grabbing; }
 
-.hcd { background: #fff; border-radius: 18px; padding: 14px; cursor: pointer; flex-shrink: 0; border: 1px solid rgba(0,0,0,0.05); box-shadow: 0 4px 15px rgba(0,0,0,0.03); transition: all 0.15s; position: relative; overflow: hidden; }
+.hcd { background: #fff; border-radius: 18px; padding: 14px; cursor: pointer; flex-shrink: 0; border: 1px solid rgba(0,0,0,0.05); box-shadow: 0 4px 15px rgba(0,0,0,0.03); transition: all 0.15s; position: relative; overflow: hidden; pointer-events: auto; }
 .hcd:active { transform: scale(0.97); border-color: #FF5722; }
 
-/* 🚀 PUSHED LIST VIEW UP */
 .deals-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 0 16px calc(80px + env(safe-area-inset-bottom)); }
 .deal-card { border-radius: 20px; padding: 12px; display: flex; flex-direction: column; gap: 10px; border: 1px solid rgba(0,0,0,0.04); box-shadow: 0 6px 16px rgba(0,0,0,0.04); text-decoration: none; cursor: pointer; position: relative; overflow: hidden; background: #fff; }
 .deal-card:nth-child(4n+1) { background: #FFF5F2; border-color: #FFE4D6; } 
@@ -140,7 +140,7 @@
 
 #geo-error-banner { display: none; position: fixed; top: env(safe-area-inset-top, 0px); left: 0; right: 0; background: #EF4444; color: #fff; font-size: 13px; font-weight: 700; padding: 12px 16px; z-index: 9999; text-align: center; }
 
-/* 🚀 Skeletons and FOMO */
+/* Skeletons and FOMO */
 .skeleton {
   background: #E5E7EB;
   background: linear-gradient(90deg, #E5E7EB 25%, #F3F4F6 50%, #E5E7EB 75%);
@@ -161,6 +161,42 @@
   0% { box-shadow: 0 0 0 0 rgba(239,68,68,0.7); }
   70% { box-shadow: 0 0 0 6px rgba(239,68,68,0); }
   100% { box-shadow: 0 0 0 0 rgba(239,68,68,0); }
+}
+
+/* 🚀 PREMIUM DARK MODE STYLES */
+@media (prefers-color-scheme: dark) {
+  .bsht { background: #111827; }
+  .bsht-h { background: #374151; }
+  .radius-bar, .cat-pills, .hscr, .deals-grid { border-color: #374151; }
+  
+  .rdist-btn, .pill, .pgn-btn { background: #1F2937; color: #D1D5DB; border-color: #374151; }
+  .rdist-btn.on, .pill.on, .pgn-btn.on { background: #FF5722; color: #fff; border-color: #FF5722; }
+  
+  /* Dark Mode Deal Cards */
+  .hcd { background: #1F2937; border-color: #374151; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+  .deal-card { box-shadow: 0 6px 16px rgba(0,0,0,0.3); }
+  
+  /* Alternating Jewel Tones for Grid in Dark Mode */
+  .deal-card:nth-child(4n+1) { background: #2A1A15; border-color: #3D261D; } 
+  .deal-card:nth-child(4n+2) { background: #15222E; border-color: #1E3142; } 
+  .deal-card:nth-child(4n+3) { background: #1C1929; border-color: #2B263D; } 
+  .deal-card:nth-child(4n+4) { background: #16271D; border-color: #213A2B; } 
+  
+  /* Text and Icon Overrides */
+  .d-ti, .hcd-title, .pp-title, #notif-prompt div:first-child { color: #F9FAFB !important; }
+  .d-arrow { background: #374151; color: #F9FAFB; }
+  .custom-pin { border-color: #111827; }
+  
+  /* Modals and Sheets */
+  .pin-preview { background: #111827; }
+  .mnotif { background: #1F2937; border-color: #374151; }
+  .mn-title { color: #F9FAFB; }
+  .mn-btn.s { background: #374151; color: #D1D5DB; }
+  .mn-dist { background: #374151; color: #D1D5DB; }
+  
+  /* Top Toggle Buttons */
+  .view-toggle-btn { background: #1F2937 !important; color: #D1D5DB !important; border-color: #374151 !important; }
+  .view-toggle-btn.on { background: #FF5722 !important; color: #fff !important; border-color: #FF5722 !important; }
 }
 </style>
 </head>
@@ -222,8 +258,8 @@
       <div style="display:flex;align-items:center;justify-content:space-between;padding:0 16px 8px; flex-shrink:0;">
         <div class="mcnt" id="mcnt" style="font-size:11px; font-weight:800; color:#6B7280;">Finding local deals...</div>
         <div style="display:flex; gap:6px;">
-          <button id="list-btn" onclick="toggleListView()" style="display:flex;align-items:center;gap:4px;padding:4px 12px;border-radius:100px;border:2px solid #E5E7EB;background:#fff;font-size:11px;font-weight:800;color:#4B5563;font-family:inherit;transition:all 0.2s;cursor:pointer">📋 List</button>
-          <button id="disc-btn" onclick="toggleDiscovery()" style="display:flex;align-items:center;gap:4px;padding:4px 12px;border-radius:100px;border:2px solid #E5E7EB;background:#fff;font-size:11px;font-weight:800;color:#4B5563;font-family:inherit;transition:all 0.2s;cursor:pointer">🔍 Discover</button>
+          <button id="list-btn" class="view-toggle-btn" onclick="toggleListView()" style="display:flex;align-items:center;gap:4px;padding:4px 12px;border-radius:100px;border:2px solid #E5E7EB;background:#fff;font-size:11px;font-weight:800;color:#4B5563;font-family:inherit;transition:all 0.2s;cursor:pointer">📋 List</button>
+          <button id="disc-btn" class="view-toggle-btn" onclick="toggleDiscovery()" style="display:flex;align-items:center;gap:4px;padding:4px 12px;border-radius:100px;border:2px solid #E5E7EB;background:#fff;font-size:11px;font-weight:800;color:#4B5563;font-family:inherit;transition:all 0.2s;cursor:pointer">🔍 Discover</button>
         </div>
       </div>
 
@@ -333,7 +369,6 @@
 </div>
 
 <script type="module">
-// 🚀 ALL imports natively restored
 import { app, db, LS, SS, TC, TE, distM, isExpired, toast, cacheGet, cacheSet, cacheClear, loadNavigation } from './js/app.js';
 import { ghEncode, ghNeighbors, ghFilter } from './js/geohash.js';
 import { setLoc, setListings, checkProximity, dist, getPrefs, notifsToday, notifsThisHour, logNotif, inMarketZone, vendorCapReached, budgetThrottled, markVendorCapUsed, markBudgetUsed, markGeofenceNotified, applyDensityControl, getNotifType, showSoftBanner, trackEng, updateSpeed } from './js/notifications.js';
@@ -341,7 +376,41 @@ import { getDocs, query, collection, orderBy, where, doc, updateDoc, increment }
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js';
 import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-messaging.js";
 
-// 🚀 THE UNIFIED NOTIFICATION PERMISSION ENGINE
+// 🚀 DESKTOP DRAG TO SCROLL INITIALIZER
+function initDragToScroll() {
+  const slider = document.getElementById('hscr');
+  let isDown = false;
+  let startX;
+  let scrollLeft;
+  let isDragging = false;
+
+  slider.addEventListener('mousedown', (e) => {
+    isDown = true;
+    isDragging = false;
+    slider.style.cursor = 'grabbing';
+    startX = e.pageX - slider.offsetLeft;
+    scrollLeft = slider.scrollLeft;
+  });
+  slider.addEventListener('mouseleave', () => { isDown = false; slider.style.cursor = 'grab'; });
+  slider.addEventListener('mouseup', () => { isDown = false; slider.style.cursor = 'grab'; });
+  slider.addEventListener('mousemove', (e) => {
+    if (!isDown) return;
+    e.preventDefault();
+    isDragging = true;
+    const x = e.pageX - slider.offsetLeft;
+    const walk = (x - startX) * 2; 
+    slider.scrollLeft = scrollLeft - walk;
+  });
+
+  // Prevents accidentally clicking a deal while dragging
+  slider.addEventListener('click', (e) => {
+    if (isDragging) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  }, true);
+}
+
 window.askForNotifs = async () => {
   try {
     const perm = await Notification.requestPermission();
@@ -350,21 +419,16 @@ window.askForNotifs = async () => {
       console.log('Notification permission granted.');
       
       const swRegistration = await navigator.serviceWorker.register('/sw.js');
-      
-      // 1. Safely initialize messaging ONLY after permission is granted
       const messaging = getMessaging(app);
 
-      // 2. 🚀 THE FOREGROUND LISTENER (Mobile Safe)
       onMessage(messaging, (payload) => {
         console.log('Foreground message:', payload);
-        // Mobile browsers require swRegistration to show notifications!
         swRegistration.showNotification(payload.notification.title, {
           body: payload.notification.body,
           icon: '/icons/icon-192.png'
         });
       });
 
-      // 3. Fetch the unique Device Token using YOUR VAPID key
       const currentToken = await getToken(messaging, { 
         vapidKey: 'BKybN5UdJys9wB137592emPk83awpfTy_97V45LeM3MByP6FZA3fPhXqY6N1k5vP5--CUKXrnWUmeyG7dFLJMwQ',
         serviceWorkerRegistration: swRegistration
@@ -372,14 +436,12 @@ window.askForNotifs = async () => {
 
       if (currentToken) {
         console.log('Got FCM Device Token:', currentToken);
-        
-        // Save this token to the user's database profile
         if (LS('uid')) {
           await updateDoc(doc(db, 'users', LS('uid')), { 
             fcmToken: currentToken 
           });
         }
-        toast('✅', 'Background alerts enabled!');
+        // 🚀 FIX: Removed the Toast to keep the process completely silent
       } else {
         console.log('No registration token available.');
       }
@@ -542,22 +604,17 @@ async function loadListings() {
     let q = collection(db, 'listings');
     const filters = [];
 
-    // 1. SERVER-SIDE CATEGORY FILTER
-    // Only fetch the exact category the user is looking at. 
     if (cat !== 'all') {
       filters.push(where('type', '==', cat));
     }
 
-    
     const userLoc = LS('lastLoc');
     if (userLoc) {
       const userHash5 = ghEncode(userLoc.lat, userLoc.lng, 5);
       const activeCells = ghNeighbors(userHash5); 
       filters.push(where('geohash5', 'in', activeCells));
     }
-    
 
-    // Apply the filters to the Firebase query
     if (filters.length > 0) {
       q = query(q, ...filters);
     }
@@ -657,18 +714,14 @@ function redraw() {
 
   renderCards();
   
-// 🚀 BUG FIX: Use sessionStorage so welcome popups don't re-fire on tab switches
   if (!sessionStorage.getItem('welcome_popups_done') && loc && filteredList.length > 0) {
     sessionStorage.setItem('welcome_popups_done', 'true'); 
-    
     const popupsToShow = Math.min(3, filteredList.length); 
-    
     for (let i = 0; i < popupsToShow; i++) {
       const delay = 1200 + (i * 8500); 
       setTimeout(() => { showNotif(filteredList[i]); }, delay);
     }
   }
-  
 }
 
 window.previewPin = (l) => {
@@ -789,7 +842,6 @@ function renderCards() {
     }).join('');
   }
 
-  // Pagination Logic
   const pgn = document.getElementById('pgn');
   if (totalPages <= 1) { pgn.innerHTML = ''; return; }
   
@@ -852,10 +904,9 @@ window.toggleListView = () => {
     vgrid.style.display = 'grid';
     discBtn.style.display = 'none';
     
+    // 🚀 USE CSS CLASSES NOW SO IT SUPPORTS DARK MODE
+    listBtn.classList.add('on');
     listBtn.innerHTML = '🗺️ Map View';
-    listBtn.style.background = '#111827';
-    listBtn.style.color = '#fff';
-    listBtn.style.borderColor = '#111827';
   } else {
     bsht.classList.remove('list-mode');
     hscr.style.display = 'flex';
@@ -863,10 +914,8 @@ window.toggleListView = () => {
     vgrid.style.display = 'none';
     discBtn.style.display = 'flex';
     
+    listBtn.classList.remove('on');
     listBtn.innerHTML = '📋 List View';
-    listBtn.style.background = '#fff';
-    listBtn.style.color = '#4B5563';
-    listBtn.style.borderColor = '#E5E7EB';
   }
 };
 
@@ -937,7 +986,7 @@ window.startApp = () => {
 
 window.skipWelcome = () => {
   sessionStorage.setItem('welcome_seen', 'true');
-  welcomeType = 'deal'; // 🚀 DEFAULT TO DEALS INSTEAD OF ALL  
+  welcomeType = 'deal'; 
   document.getElementById('modal-welcome').classList.remove('on');
   setTimeout(() => { if (window._map) window._map.invalidateSize(); }, 300); 
   getLoc();
@@ -948,7 +997,7 @@ window.toggleDiscovery = () => {
   discoveryMode = !discoveryMode;
   const btn = document.getElementById('disc-btn');
   if (discoveryMode) {
-    btn.style.background = '#FF5722'; btn.style.color = '#fff'; btn.style.borderColor = '#FF5722';
+    btn.classList.add('on');
     btn.textContent = '✕ Exit Discovery';
     redraw();
     if (filteredList.length) {
@@ -957,7 +1006,7 @@ window.toggleDiscovery = () => {
     }
     toast('🔍', 'Discovery Mode: tap any marker to view offer');
   } else {
-    btn.style.background = '#fff'; btn.style.color = '#4B5563'; btn.style.borderColor = '#E5E7EB';
+    btn.classList.remove('on');
     btn.textContent = '🔍 Discover';
     redraw();
     toast('📍', 'Auto-alerts resumed');
@@ -974,15 +1023,16 @@ window.setCat = async (c, btn) => {
   document.querySelectorAll('#cat-pills .pill').forEach(b => b.classList.remove('on')); 
   btn.classList.add('on'); 
   
-  // 🚀 Force the app to fetch the new category from the server
   toast('⏳', `Loading...`);
-  cacheClear(); // Wipes the old category from local memory
-  await loadListings(); // Grabs the new category from Firebase
+  cacheClear(); 
+  await loadListings(); 
 };
 window.setR = (km, btn) => { radiusKm = km; page = 0; SS('searchRadius', km); document.querySelectorAll('.rdist-btn').forEach(b => b.classList.remove('on')); btn.classList.add('on'); redraw(); };
 
 async function initApp() {
   await loadNavigation();
+
+  initDragToScroll(); // 🚀 ACTIVATING DESKTOP SCROLLING
 
   const _cached = cacheGet(); 
   if (_cached) {
@@ -1008,21 +1058,16 @@ async function initApp() {
 const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
 const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
 
-// Only show the banner if notifications are off by default
 setTimeout(() => {
   if ('Notification' in window) {
     if (Notification.permission === 'default') {
-      // 1. Show Notif Banner for new users
       const notifPrompt = document.getElementById('notif-prompt');
       if (notifPrompt) notifPrompt.style.display = 'flex';
     } else if (Notification.permission === 'granted') {
-      // 🚀 NEW: Auto-heal! If they already gave permission in the past, 
-      // silently grab the correct token in the background and update the database.
       window.askForNotifs();
     }
   }
   
-  // 2. Keep the app install prompt logic intact
   if (!isStandalone && (window.deferredPWA || isIOS)) {
     if (!sessionStorage.getItem('hide_install')) window.showInstallPopup();
   }
