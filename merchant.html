@@ -117,7 +117,6 @@
 .qr-stat-sub { font-size: 10px; color: var(--gray); font-weight: 600; display: block; margin-top: 2px; }
 .qr-stat-val { font-size: 16px; font-weight: 900; color: var(--or); }
 
-/* 🚀 Skeletons and FOMO */
 .skeleton {
   background: #E5E7EB;
   background: linear-gradient(90deg, #E5E7EB 25%, #F3F4F6 50%, #E5E7EB 75%);
@@ -141,7 +140,15 @@
 <div id="app-shell"><div id="wrap">
   <div class="mhdr">
     <button class="mbtn" onclick="window.logout()">Logout</button>
-    <img id="m-logo" style="width: 56px; height: 56px; border-radius: 14px; background: #fff; object-fit: contain; margin-bottom: 12px; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.15); border: 2px solid rgba(255,255,255,0.3);">
+    
+    <div style="position:relative; display:inline-block; margin-bottom: 12px; cursor:pointer;" onclick="document.getElementById('logo-upload').click()">
+      <img id="m-logo" style="width: 56px; height: 56px; border-radius: 14px; background: #fff; object-fit: contain; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.15); border: 2px solid rgba(255,255,255,0.3);">
+      <div id="m-logo-placeholder" style="width: 56px; height: 56px; border-radius: 14px; background: rgba(255,255,255,0.2); border: 2px dashed rgba(255,255,255,0.5); display: flex; align-items: center; justify-content: center; font-size:20px; color:#fff;" title="Upload Shop Logo">📷</div>
+      <div style="position:absolute; bottom:-6px; right:-6px; background:#111827; border-radius:50%; width:22px; height:22px; display:flex; align-items:center; justify-content:center; font-size:10px; border:2px solid #FF5722; color:#fff; box-shadow:0 2px 4px rgba(0,0,0,0.2);">✏️</div>
+    </div>
+    <input type="file" id="logo-upload" accept="image/*" style="display:none;" onchange="window.handleLogoUpload(this)">
+    <div id="logo-status" style="font-size:11px; color:#fff; font-weight:bold; margin-top:-4px; margin-bottom:12px;"></div>
+
     <h2 id="mbiz">My Business</h2>
     <p>Merchant Dashboard</p>
   </div>
@@ -267,26 +274,6 @@
           <div class="skeleton" style="height:28px; border-radius:8px;"></div>
         </div>
       </div>
-      
-      <div class="mcd" style="border:none; box-shadow:none;">
-        <div style="display:flex; gap:12px;">
-          <div class="skeleton" style="width:42px; height:42px; border-radius:12px; flex-shrink:0;"></div>
-          <div style="flex:1;">
-            <div class="skeleton" style="width:60%; height:16px; margin-bottom:8px;"></div>
-            <div class="skeleton" style="width:40%; height:12px; margin-bottom:8px;"></div>
-            <div class="skeleton" style="width:100%; height:3px; border-radius:3px;"></div>
-          </div>
-          <div style="width:40px;">
-            <div class="skeleton" style="width:100%; height:16px; margin-bottom:4px;"></div>
-            <div class="skeleton" style="width:80%; height:10px; margin-left:auto;"></div>
-          </div>
-        </div>
-        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-top:12px; padding-top:12px; border-top:1px solid var(--bdr);">
-          <div class="skeleton" style="height:28px; border-radius:8px;"></div>
-          <div class="skeleton" style="height:28px; border-radius:8px;"></div>
-          <div class="skeleton" style="height:28px; border-radius:8px;"></div>
-        </div>
-      </div>
     </div>
   </div>
 </div>
@@ -340,6 +327,13 @@
     <input type="hidden" id="edit-id">
     <div class="edit-grp"><label class="edit-lbl">Title</label><input type="text" id="edit-title" class="a-inp"></div>
     <div class="edit-grp"><label class="edit-lbl">Description</label><textarea id="edit-desc" class="a-inp" style="height: 80px; resize: none;"></textarea></div>
+    
+    <div class="edit-grp">
+      <label class="edit-lbl">Update Shop/Deal Image</label>
+      <input type="file" id="edit-img" accept="image/*" class="a-inp" style="padding: 10px;">
+      <div id="edit-img-status" style="font-size:11px; color:var(--or); margin-top:4px; font-weight:800;"></div>
+    </div>
+
     <div class="a-inp-row">
       <div class="edit-grp" style="flex:1"><label class="edit-lbl">Price/Text</label><input type="text" id="edit-price" class="a-inp"></div>
       <div class="edit-grp" style="flex:1"><label class="edit-lbl">Daily Budget (₹)</label><input type="number" id="edit-budget" class="a-inp" min="25" step="25"></div>
@@ -353,6 +347,7 @@
     </div>
   </div>
 </div>
+
 <div class="modal" id="mod-premium" onclick="if(event.target===this)this.classList.remove('on')">
   <div class="msht">
     <div class="mh"></div>
@@ -386,6 +381,8 @@ if (logoUrl) {
   const mLogo = document.getElementById('m-logo');
   mLogo.src = logoUrl;
   mLogo.style.display = 'block';
+  const ph = document.getElementById('m-logo-placeholder');
+  if(ph) ph.style.display = 'none';
 }
 
 let userPlan = LS('plan') || 'free';
@@ -397,6 +394,109 @@ if (userPlan === 'premium') {
 
 document.getElementById('mwal').textContent = '₹'+parseFloat(wallet).toFixed(2);
 document.getElementById('walbal').textContent = '₹'+parseFloat(wallet).toFixed(2);
+
+// 🚀 NEW: The Image Optimization Engine (Client-Side Compression & Resize)
+const optimizeImage = (file, targetW, targetH) => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (event) => {
+      const img = new Image();
+      img.src = event.target.result;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = targetW;
+        canvas.height = targetH;
+        const ctx = canvas.getContext('2d');
+        
+        // 1. Draw solid white background padding
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(0, 0, targetW, targetH);
+        
+        // 2. Calculate scaling to fit perfectly without stretching
+        const scale = Math.min(targetW / img.width, targetH / img.height);
+        const w = img.width * scale;
+        const h = img.height * scale;
+        
+        // 3. Center the image inside the box
+        const dx = (targetW - w) / 2;
+        const dy = (targetH - h) / 2;
+        
+        ctx.drawImage(img, dx, dy, w, h);
+        
+        // 4. Export as highly compressed .webp
+        canvas.toBlob((blob) => {
+          if (blob) {
+            const newFile = new File([blob], "image.webp", { type: "image/webp" });
+            resolve(newFile);
+          } else {
+            reject(new Error("Compression failed"));
+          }
+        }, 'image/webp', 0.8); // 80% quality is the sweet spot
+      };
+      img.onerror = error => reject(error);
+    };
+    reader.onerror = error => reject(error);
+  });
+};
+
+// 🚀 THE CORE IMGBB UPLOAD ENGINE
+window.uploadImageToFreeServer = async (file, statusElId, targetW = 800, targetH = 600) => {
+  const apiKey = "4dd5a19986e0ffeabe66a2eb0114d358";
+  const statusEl = document.getElementById(statusElId);
+  
+  try {
+    if(statusEl) statusEl.textContent = "⏳ Optimizing image...";
+    
+    // Process the image locally first!
+    const optimizedFile = await optimizeImage(file, targetW, targetH);
+    
+    if(statusEl) statusEl.textContent = "⏳ Uploading photo...";
+    const formData = new FormData();
+    formData.append("image", optimizedFile);
+    
+    const response = await fetch(`https://api.imgbb.com/1/upload?key=${apiKey}`, {
+      method: "POST",
+      body: formData
+    });
+    
+    const data = await response.json();
+    if (data.success) {
+      if(statusEl) statusEl.textContent = "✅ Photo ready!";
+      return data.data.url;
+    } else {
+      throw new Error("Upload failed");
+    }
+  } catch (error) {
+    if(statusEl) statusEl.textContent = "❌ Failed to upload photo.";
+    console.error("ImgBB Error:", error);
+    return null;
+  }
+};
+
+// 🚀 HANDLE SHOP LOGO UPLOAD (400x400 Square)
+window.handleLogoUpload = async (input) => {
+  if (!input.files || input.files.length === 0) return;
+  const file = input.files[0];
+  
+  // Notice we pass 400x400 for a perfect square logo
+  const url = await uploadImageToFreeServer(file, 'logo-status', 400, 400);
+  
+  if (url) {
+    await updateDoc(doc(db, 'users', uid), { logoUrl: url });
+    SS('logoUrl', url);
+    
+    const mLogo = document.getElementById('m-logo');
+    mLogo.src = url;
+    mLogo.style.display = 'block';
+    
+    const placeholder = document.getElementById('m-logo-placeholder');
+    if (placeholder) placeholder.style.display = 'none';
+    
+    toast('✅', 'Shop logo updated!');
+    setTimeout(() => { document.getElementById('logo-status').textContent = ''; }, 2000);
+  }
+};
 
 async function loadListings(force=true) {
   try {
@@ -522,7 +622,6 @@ function renderCards(mine) {
     const sent = l.popupsSentToday || 0;
     const capPctFixed = Math.min(100, Math.round((sent / dailyCap) * 100));
     
-    // 🚀 FIX: Injecting FOMO Badge exactly as requested
     const isUnlimited = !l.expiryDate; 
     const hrsLeft = !isUnlimited ? (new Date(l.expiryDate) - new Date()) / 3600000 : null;
     const daysLeft = !isUnlimited ? Math.ceil(hrsLeft / 24) : null;
@@ -564,8 +663,62 @@ function renderCards(mine) {
   }).join('');
 }
 
-window.openEdit = (id) => { const l = currentListings.find(x => x.id === id); if (!l) return; document.getElementById('edit-id').value = l.id; document.getElementById('edit-title').value = l.title || ''; document.getElementById('edit-desc').value = l.desc || ''; document.getElementById('edit-price').value = l.price || ''; document.getElementById('edit-budget').value = l.budget || 25; document.getElementById('edit-radius').value = l.radius || 300; document.getElementById('mod-edit').classList.add('on'); };
-window.saveEdit = async () => { const id = document.getElementById('edit-id').value; const budget = parseInt(document.getElementById('edit-budget').value) || 25; if (budget < 25 || budget % 25 !== 0) return toast('⚠️', 'Budget must be a multiple of ₹25'); const btn = document.querySelector('#mod-edit .btn-or'); btn.textContent = 'Saving...'; try { await updateDoc(doc(db, 'listings', id), { title: document.getElementById('edit-title').value.trim(), desc: document.getElementById('edit-desc').value.trim(), price: document.getElementById('edit-price').value.trim(), budget: budget, dailyPopupLimit: budget * 10, radius: parseInt(document.getElementById('edit-radius').value) || 300 }); toast('✅', 'Listing updated successfully!'); document.getElementById('mod-edit').classList.remove('on'); loadListings(true); } catch(e) { toast('❌', 'Error updating'); } btn.textContent = '💾 Save Changes'; };
+window.openEdit = (id) => { 
+  const l = currentListings.find(x => x.id === id); 
+  if (!l) return; 
+  document.getElementById('edit-id').value = l.id; 
+  document.getElementById('edit-title').value = l.title || ''; 
+  document.getElementById('edit-desc').value = l.desc || ''; 
+  document.getElementById('edit-price').value = l.price || ''; 
+  document.getElementById('edit-budget').value = l.budget || 25; 
+  document.getElementById('edit-radius').value = l.radius || 300; 
+  
+  document.getElementById('edit-img').value = ''; 
+  document.getElementById('edit-img-status').textContent = '';
+  
+  document.getElementById('mod-edit').classList.add('on'); 
+};
+
+window.saveEdit = async () => { 
+  const id = document.getElementById('edit-id').value; 
+  const budget = parseInt(document.getElementById('edit-budget').value) || 25; 
+  
+  if (budget < 25 || budget % 25 !== 0) return toast('⚠️', 'Budget must be a multiple of ₹25'); 
+  
+  const btn = document.querySelector('#mod-edit .btn-or'); 
+  btn.textContent = 'Saving...'; 
+  
+  try { 
+    let updateData = { 
+      title: document.getElementById('edit-title').value.trim(), 
+      desc: document.getElementById('edit-desc').value.trim(), 
+      price: document.getElementById('edit-price').value.trim(), 
+      budget: budget, 
+      dailyPopupLimit: budget * 10, 
+      radius: parseInt(document.getElementById('edit-radius').value) || 300 
+    };
+
+    const fileInput = document.getElementById('edit-img');
+    if (fileInput.files && fileInput.files.length > 0) {
+       // Notice we pass 800x600 for a perfect 4:3 Deal Image
+       const newImgUrl = await uploadImageToFreeServer(fileInput.files[0], 'edit-img-status', 800, 600);
+       if (newImgUrl) {
+         updateData.imageUrl = newImgUrl;
+         updateData.image = newImgUrl; 
+       }
+    }
+
+    await updateDoc(doc(db, 'listings', id), updateData); 
+    toast('✅', 'Listing updated successfully!'); 
+    document.getElementById('mod-edit').classList.remove('on'); 
+    loadListings(true); 
+  } catch(e) { 
+    toast('❌', 'Error updating'); 
+  } 
+  
+  btn.textContent = '💾 Save Changes'; 
+};
+
 window.togglePause = async (id, currentStatus) => { const newStatus = currentStatus === 'paused' ? 'active' : 'paused'; try { await updateDoc(doc(db, 'listings', id), { status: newStatus }); toast('✅', `Listing ${newStatus}!`); loadListings(true); } catch(e) { toast('❌', 'Error updating status'); } };
 window.deleteListing = async (id) => { if (!confirm("🚨 Are you sure you want to permanently delete this listing?")) return; try { await deleteDoc(doc(db, 'listings', id)); toast('🗑️', 'Listing deleted.'); loadListings(true); } catch(e) { toast('❌', 'Error deleting'); } };
 
@@ -574,14 +727,42 @@ window.closeWalModal = () => { document.getElementById('modwal').classList.remov
 window.selectTopUp = (n) => { pendingAmount = n; document.getElementById('pay-amt').textContent = '₹' + n; document.getElementById('wal-step-1').style.display = 'none'; document.getElementById('wal-step-2').style.display = 'block'; };
 window.backToAmounts = () => { document.getElementById('wal-step-2').style.display = 'none'; document.getElementById('wal-step-3').style.display = 'none'; document.getElementById('wal-step-1').style.display = 'block'; };
 window.processPayment = async (method) => { document.getElementById('wal-step-2').style.display = 'none'; document.getElementById('wal-step-3').style.display = 'block'; setTimeout(async () => { wallet += pendingAmount; SS('wallet', wallet); localStorage.setItem('np_wallet', wallet); if (LS('uid')) { try { await setDoc(doc(db, 'users', LS('uid')), { wallet: wallet }, { merge: true }); } catch(e) { } } document.getElementById('mwal').textContent = '₹'+parseFloat(wallet).toFixed(2); document.getElementById('walbal').textContent = '₹'+parseFloat(wallet).toFixed(2); window.closeWalModal(); toast('✅', `₹${pendingAmount} added via ${method}!`); }, 1500); };
-window.logout = async () => { try { await signOut(auth); } catch(e) { } ['uid','role','mname','wallet','phone', 'plan'].forEach(k=>localStorage.removeItem('np_'+k)); sessionStorage.clear(); window.location.href = 'index.html'; };
+window.logout = async () => { try { await signOut(auth); } catch(e) { } ['uid','role','mname','wallet','phone', 'plan', 'logoUrl'].forEach(k=>localStorage.removeItem('np_'+k)); sessionStorage.clear(); window.location.href = 'index.html'; };
 window.toast = toast;
 
 onAuthStateChanged(auth, (user) => { if (user) { loadListings(true); } });
 setInterval(()=> { if (auth.currentUser) loadListings(true); }, CACHE_TTL);
 
+// 🚀 FIXED THE DOUBLE-SAVE BUG HERE
+window.upgradePremium = async () => { 
+  if (wallet < 499) { 
+    toast('⚠️', 'Insufficient funds.'); 
+    document.getElementById('mod-premium').classList.remove('on'); 
+    document.getElementById('modwal').classList.add('on'); 
+    return; 
+  } 
+  const btn = document.querySelector('#mod-premium .btn-or'); 
+  btn.textContent = 'Upgrading...'; 
+  try { 
+    const newWallet = wallet - 499; 
+    await setDoc(doc(db, 'users', uid), { wallet: newWallet, plan: 'premium' }, { merge: true }); 
+    wallet = newWallet; 
+    SS('wallet', wallet); 
+    SS('plan', 'premium'); 
+    userPlan = 'premium'; 
+    document.getElementById('mwal').textContent = '₹'+parseFloat(wallet).toFixed(2); 
+    document.getElementById('walbal').textContent = '₹'+parseFloat(wallet).toFixed(2); 
+    document.getElementById('mbiz').innerHTML = mname + ' <span style="font-size:14px">👑</span>'; 
+    toast('👑', 'Welcome to Premium!'); 
+    document.getElementById('mod-premium').classList.remove('on'); 
+    setTimeout(() => { window.location.href = 'create.html'; }, 1200); 
+  } catch(e) { 
+    toast('❌', 'Upgrade failed.'); 
+    btn.textContent = '⚡ Upgrade for ₹499'; 
+  } 
+};
+
 window.checkPremium = () => { if (userPlan === 'premium' || currentListings.length === 0) { window.location.href = 'create.html'; } else { document.getElementById('mod-premium').classList.add('on'); } };
-window.upgradePremium = async () => { if (wallet < 499) { toast('⚠️', 'Insufficient funds.'); document.getElementById('mod-premium').classList.remove('on'); document.getElementById('modwal').classList.add('on'); return; } const btn = document.querySelector('#mod-premium .btn-or'); btn.textContent = 'Upgrading...'; try { const newWallet = wallet - 499; await setDoc(doc(db, 'users', uid), { wallet: newWallet, plan: 'premium' }, { merge: true }); wallet = newWallet; SS('wallet', wallet); localStorage.setItem('np_wallet', wallet); SS('plan', 'premium'); localStorage.setItem('np_plan', 'premium'); userPlan = 'premium'; document.getElementById('mwal').textContent = '₹'+parseFloat(wallet).toFixed(2); document.getElementById('walbal').textContent = '₹'+parseFloat(wallet).toFixed(2); document.getElementById('mbiz').innerHTML = mname + ' <span style="font-size:14px">👑</span>'; toast('👑', 'Welcome to Premium!'); document.getElementById('mod-premium').classList.remove('on'); setTimeout(() => { window.location.href = 'create.html'; }, 1200); } catch(e) { toast('❌', 'Upgrade failed.'); btn.textContent = '⚡ Upgrade for ₹499'; } };
 
 window.showStoreQR = () => { const uid = LS('uid'); if(!uid) return alert("Error: Merchant not logged in."); const box = document.getElementById('qrcode-box'); box.innerHTML = ''; new QRCode(box, { text: "NEARPOP_CLAIM:" + uid, width: 220, height: 220, colorDark : "#000000", colorLight : "#ffffff", correctLevel : QRCode.CorrectLevel.H }); document.getElementById('mod-qr').classList.add('on'); };
 
@@ -622,7 +803,6 @@ window.generatePermanentStandee = () => {
           body { padding: 0; background: #fff; display: block; } 
           .no-print { display: none !important; }
           
-          /* 🚀 FIX: This creates the 15mm white frame around the paper */
           .standee-container { 
               padding: 15mm; 
               display: flex; 
@@ -632,7 +812,6 @@ window.generatePermanentStandee = () => {
               box-sizing: border-box;
           }
           
-          /* 🚀 FIX: Use 100% height instead of 98vh so it fits perfectly inside the 15mm frame */
           .standee { 
               max-width: 100%; 
               width: 100%; 
