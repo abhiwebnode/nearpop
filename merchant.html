@@ -653,7 +653,9 @@ function renderCards(mine) {
     return `
       <div class="mcd">
         <div style="display:flex; gap:12px;">
-          <div class="mcd-ic">${l.emoji||TE(l.type)}</div>
+          <div class="mcd-ic" style="overflow: hidden; padding: 0;">
+  ${l.image ? '<img src="' + l.image + '" style="width: 100%; height: 100%; object-fit: cover;">' : (l.emoji||'📍')}
+</div>
           <div style="flex:1;">
             <div class="mcd-t">${l.title||''}</div>
             <div class="mcd-m">${l.radius||300}m radius · ₹${l.budget||25}/day <span class="badge ${l.status==='paused'?'pause':'live'}">${l.status==='paused'?'⏸ PAUSED':'● LIVE'}</span> ${expiryBadge}</div>
@@ -782,7 +784,8 @@ window.generatePermanentStandee = () => {
   const targetUrl = `https://nearpop.in/store.html?mid=${merchantUid}&utm_source=qr_standee&utm_medium=offline`;
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(targetUrl)}&margin=10`;
 
-  const currLogoUrl = LS('logoUrl');
+  const mLogo = document.getElementById('m-logo');
+const currLogoUrl = (mLogo && mLogo.style.display !== 'none' && mLogo.src) ? mLogo.src : null;
   const shopLogoHtml = currLogoUrl 
     ? `<img src="${currLogoUrl}" style="width: 90px; height: 90px; border-radius: 20px; object-fit: contain; background: #fff; margin-bottom: 15px; box-shadow: 0 8px 24px rgba(0,0,0,0.1); border: 2px solid #e5e7eb; display: block; margin-left: auto; margin-right: auto;">` 
     : '';
