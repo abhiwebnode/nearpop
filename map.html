@@ -595,14 +595,15 @@ async function loadListings() {
     let q = collection(db, 'listings');
     const filters = [];
 
-    // 🚀 MASTER FIX (From mapold): Download all deals once!
+   
     // No more Firebase category filtering. This speeds up tab switching immensely.
-    const userLoc = LS('lastLoc');
+    /*
+	const userLoc = LS('lastLoc');
     if (userLoc) {
       const userHash5 = ghEncode(userLoc.lat, userLoc.lng, 5);
       const activeCells = ghNeighbors(userHash5); 
       filters.push(where('geohash5', 'in', activeCells));
-    }
+    }*/
 
     if (filters.length > 0) {
       q = query(q, ...filters);
