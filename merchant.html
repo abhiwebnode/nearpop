@@ -484,7 +484,7 @@ window.handleLogoUpload = async (input) => {
   
   if (url) {
     await updateDoc(doc(db, 'users', uid), { logoUrl: url });
-    SS('logoUrl', url);
+    localStorage.setItem('np_logoUrl', url);
     
     const mLogo = document.getElementById('m-logo');
     mLogo.src = url;
@@ -507,6 +507,17 @@ async function loadListings(force=true) {
     const userDocSnap = await getDoc(userDocRef);
     const userData = userDocSnap.exists() ? userDocSnap.data() : {};
     
+	
+    if (userData.logoUrl) {
+      localStorage.setItem('np_logoUrl', userData.logoUrl); // Puts it back in cache
+      const mLogo = document.getElementById('m-logo');
+      mLogo.src = userData.logoUrl;
+      mLogo.style.display = 'block';
+      const ph = document.getElementById('m-logo-placeholder');
+      if(ph) ph.style.display = 'none';
+    }
+    
+	
     if(c && !force){
       renderFromData(c, userData);
       return;
