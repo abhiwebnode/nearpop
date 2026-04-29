@@ -380,9 +380,13 @@ window.doCreate = async () => {
       showLdr('Finalizing listing...');
     }
 
+    // 🚀 FIXED: Standardize coordinates exactly to 6 decimal places to sync perfectly with bulk.html
+    const finalLat = +pickLat.toFixed(6);
+    const finalLng = +pickLng.toFixed(6);
+
     const ext = TYPE_EXTRAS[selType];
-    const geohash6 = ghEncode(pickLat, pickLng, 6); 
-    const geohash5 = ghEncode(pickLat, pickLng, 5); 
+    const geohash6 = ghEncode(finalLat, finalLng, 6); 
+    const geohash5 = ghEncode(finalLat, finalLng, 5); 
 
     const listing = {
       type:selType, title, desc, price,
@@ -390,7 +394,9 @@ window.doCreate = async () => {
       emoji:ext.emoji, bg:ext.bg, color:ext.color, amenities:ext.amenities,
       owner: LS('mname')||'Business Owner',
       ownerEmoji:'🏪', ownerTag:'NearPop Merchant', verified:true,
-      contact, lat:pickLat, lng:pickLng,
+      contact, 
+      lat: finalLat, 
+      lng: finalLng,
       geohash6, geohash5,
       radius, 
       budget: budget, 
