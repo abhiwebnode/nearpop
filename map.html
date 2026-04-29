@@ -40,7 +40,6 @@
 .zbtn { width: 40px; height: 40px; border-radius: 12px; background: rgba(255,255,255,0.9); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 700; color: var(--deep); box-shadow: 0 4px 15px rgba(0,0,0,0.1); border: 1px solid rgba(0,0,0,0.05); line-height: 1; transition: transform 0.1s; cursor: pointer; }
 .zbtn:active { transform: scale(0.9); }
 
-/* 🚀 NEW: MAP WATERMARK STYLES */
 .map-watermark {
   position: absolute;
   bottom: 10px;
@@ -129,14 +128,11 @@
 .pp-btn { background: #FF5722; color: #fff; border: none; padding: 16px; border-radius: 16px; font-size: 16px; font-weight: 900; cursor: pointer; font-family: inherit; box-shadow: 0 4px 15px rgba(255,87,34,0.3); transition: transform 0.2s; }
 .pp-btn:active { transform: scale(0.97); }
 
-/* 🚀 BRANDED MAP CLUSTERS */
 .np-cluster { width: 46px; height: 46px; background: linear-gradient(135deg, #FF5722, #D97706); color: #fff; border-radius: 50%; border: 3px solid #fff; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 900; box-shadow: 0 6px 16px rgba(255, 87, 34, 0.4); font-family: 'Nunito', sans-serif; transition: transform 0.2s; }
+.custom-cluster { background: transparent; border: none; }
 
-/* 🚀 BRANDED USER RADAR ANIMATION */
 @keyframes radar-pulse { 0% { transform: scale(0.8); opacity: 0.8; } 100% { transform: scale(2.5); opacity: 0; } }
 .user-radar { position: absolute; width: 100%; height: 100%; background: #FF5722; border-radius: 50%; animation: radar-pulse 2s infinite cubic-bezier(0.215, 0.61, 0.355, 1); z-index: 1; }
-
-.custom-cluster { background: transparent; border: none; }
 
 .custom-pin { width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.3); position: relative; border: 3px solid #fff; }
 .pin-emo { font-size: 18px; }
@@ -180,7 +176,6 @@
   100% { box-shadow: 0 0 0 0 rgba(239,68,68,0); }
 }
 
-/* 🚀 PREMIUM DARK MODE STYLES */
 @media (prefers-color-scheme: dark) {
   .bsht { background: #111827; }
   .bsht-h { background: #374151; }
@@ -210,7 +205,6 @@
   .view-toggle-btn { background: #1F2937 !important; color: #D1D5DB !important; border-color: #374151 !important; }
   .view-toggle-btn.on { background: #FF5722 !important; color: #fff !important; border-color: #FF5722 !important; }
 
-  /* 🚀 DARK MODE WATERMARK */
   .map-watermark img { filter: invert(1) brightness(100%); }
   .map-watermark span { color: #fff; }
 }
@@ -242,7 +236,7 @@
 
       <div class="map-watermark">
         <img src="https://nearpop.in/icons/logo.png" alt="NearPop">
-        
+        <span>NearPop</span>
       </div>
       
       <div class="tbar">
@@ -397,10 +391,15 @@ import { getDocs, query, collection, orderBy, where, doc, updateDoc, increment, 
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js';
 import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-messaging.js";
 
-// 🚀 TRANSLATION ENGINE
 window.lang = localStorage.getItem('app_lang') || 'en';
 
+// 🚀 NEW: Global Haptic Feedback Engine
+window.haptic = (ms = 50) => {
+  try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) {}
+};
+
 window.toggleLang = () => {
+  window.haptic(30);
   window.lang = window.lang === 'en' ? 'hi' : 'en';
   try { localStorage.setItem('app_lang', window.lang); } catch(e){}
   window.applyLang();
@@ -456,6 +455,7 @@ function initDragToScroll() {
 }
 
 window.askForNotifs = async () => {
+  window.haptic(50);
   try {
     const perm = await Notification.requestPermission();
     if (perm === 'granted') {
@@ -512,6 +512,7 @@ window.onerror = (msg, src, line) => {
   console.error('NearPop error L' + line + ':', msg);
   if (!window.go) window.go = href => window.location.href = href;
   if (!window.skipWelcome) window.skipWelcome = () => {
+    window.haptic(30);
     document.getElementById('modal-welcome')?.classList.remove('on');
     setTimeout(() => { if (window._map) window._map.invalidateSize(); }, 300); 
     if (navigator.geolocation) {
@@ -623,6 +624,7 @@ function fmtDist(l) {
 }
 
 window.forceRefresh = async () => {
+  window.haptic(50);
   const btn = document.getElementById('refresh-btn');
   if (btn) btn.classList.add('spinning');
   toast('⏳', window.lang === 'hi' ? 'लाइव डील्स ताज़ा हो रही हैं...' : 'Refreshing live deals...');
@@ -634,6 +636,7 @@ window.forceRefresh = async () => {
 
 // 🚀 RECENTER FIX: Immediately animates camera to live loc instead of just restarting GPS watch
 window.recenterMap = () => {
+  window.haptic(50);
   if (loc && loc.lat) {
     window._map.flyTo([loc.lat, loc.lng], 15, { duration: 0.5 });
     toast('🎯', window.lang === 'hi' ? 'आपके स्थान पर वापस' : 'Centered on your location');
@@ -797,6 +800,7 @@ function redraw() {
 }
 
 window.previewPin = (l) => {
+  window.haptic(50);
   const safeLat = parseFloat(l.lat), safeLng = parseFloat(l.lng);
   const d = loc && !isNaN(safeLat) ? distM(loc.lat, loc.lng, safeLat, safeLng) : Infinity;
   const distTxt = d < 1000 ? Math.round(d) + 'm' : (d / 1000).toFixed(1) + 'km';
@@ -841,6 +845,7 @@ window.previewPin = (l) => {
 };
 
 window.closePreview = () => {
+  window.haptic(30);
   document.getElementById('pin-preview').classList.remove('on');
 };
 
@@ -854,38 +859,57 @@ function renderCards() {
       ? `${total} लिस्टिंग${radiusKm < 999 ? ` ${radiusKm}km के भीतर` : ''} · सबसे करीब पहले`
       : `${total} listing${total === 1 ? '' : 's'}${radiusKm < 999 ? ` within ${radiusKm} km` : ''} · nearest first`;
 
-  document.getElementById('hscr').innerHTML = items.map(l => {
-    const imgUrl = l.imageUrl || l.image;
-    
-    let fomoHtml = '';
-    if (l.expiryDate) {
-      const hrs = (new Date(l.expiryDate) - new Date()) / 3600000;
-      if (hrs > 0 && hrs <= 24) fomoHtml = `<div class="fomo-badge" style="top:-4px; left:-4px; font-size:8px; padding:3px 6px;">🔥 ${Math.ceil(hrs)}h</div>`;
-    }
-    
-    const thumb = imgUrl 
-      ? `<div style="position:relative; width:44px;height:44px;border-radius:12px;background:#fff url('${imgUrl}') center/contain no-repeat; border:1px solid #E5E7EB; flex-shrink:0;">${fomoHtml}</div>`
-      : `<div style="position:relative; width:44px;height:44px;border-radius:12px;background:${l.color||TC(l.type)}20; display:flex;align-items:center;justify-content:center;font-size:20px; flex-shrink:0;">${l.emoji||TE(l.type)}${fomoHtml}</div>`;
-      
-    return `<div class="hcd" onclick="openListing('${l.id}')" style="min-width:200px; max-width:200px;">
-      <div style="display:flex; gap:10px; margin-bottom:8px; align-items:flex-start;">
-        ${thumb}
-        <div style="flex:1; overflow:hidden;">
-          <div class="hcd-type" style="color:${l.color||TC(l.type)}; margin-bottom:2px; text-transform: capitalize;">${l.type||''}</div>
-          <div class="hcd-title" style="margin-bottom:0; font-size:13px;">${(l.title||'').slice(0,35)}</div>
-        </div>
-      </div>
-      <div style="display:flex; justify-content:space-between; align-items:center;">
-        <div class="hcd-price" style="font-size:14px; font-weight:900; color:#FF5722;">${l.price||''}</div>
-        <div class="hcd-dist" style="margin-top:0; font-size:11px; color:#6B7280; font-weight:700; background:#F3F4F6; padding:2px 6px; border-radius:6px;">📍 ${fmtDist(l)}</div>
-      </div>
-    </div>`;
-  }).join('');
-
   const vgrid = document.getElementById('vgrid');
+
   if (total === 0) {
-    vgrid.innerHTML = `<div style="grid-column: 1 / -1; text-align:center; padding: 40px 20px; color:#6B7280; font-weight:700; font-size:14px;">${window.lang === 'hi' ? 'आपके वर्तमान फ़िल्टर से कोई ऑफ़र मेल नहीं खाता।' : 'No offers match your current filters.'}</div>`;
+    // 🚀 INLINE HORIZONTAL EMPTY STATE
+    document.getElementById('hscr').innerHTML = `<div style="width:100%; text-align:center; padding:20px; background:var(--card); border-radius:18px; border:1px dashed var(--bdr); color:var(--gray); font-size:12px; font-weight:800;">${window.lang === 'hi' ? 'कोई ऑफ़र नहीं मिला' : 'No deals found nearby'}</div>`;
+    
+    // 🚀 FULL BRANDED SVG EMPTY STATE FOR GRID
+    vgrid.innerHTML = `
+      <div style="grid-column: 1 / -1; text-align:center; padding: 50px 20px; display:flex; flex-direction:column; align-items:center; background:var(--card); border-radius:24px; border:1px solid var(--bdr); box-shadow:0 10px 30px rgba(0,0,0,0.03);">
+        <svg width="100" height="100" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-bottom:16px;">
+          <rect x="20" y="20" width="80" height="80" rx="16" fill="var(--bg-app)" stroke="var(--bdr)" stroke-width="4"/>
+          <path d="M45 20V100M75 20V100M20 45H100M20 75H100" stroke="var(--bdr)" stroke-width="2" stroke-dasharray="4 4"/>
+          <circle cx="60" cy="60" r="24" fill="var(--card)" stroke="#FF5722" stroke-width="6"/>
+          <path d="M78 78L95 95" stroke="#FF5722" stroke-width="8" stroke-linecap="round"/>
+          <path d="M50 55H54M66 55H70" stroke="var(--gray)" stroke-width="3" stroke-linecap="round"/>
+          <path d="M55 65C55 65 58 62 65 62C72 62 75 65 75 65" stroke="var(--gray)" stroke-width="3" stroke-linecap="round"/>
+        </svg>
+        <h3 style="color:var(--deep); font-size:18px; font-weight:900; margin-bottom:6px; font-family:'Syne', sans-serif;">${window.lang === 'hi' ? 'कोई ऑफ़र नहीं मिला' : 'No matches found'}</h3>
+        <p style="color:var(--gray); font-weight:600; font-size:13px; line-height:1.5; max-width:280px; margin-bottom:20px;">${window.lang === 'hi' ? 'इस क्षेत्र में आपके फ़िल्टर से मेल खाने वाला कुछ भी नहीं है। कोई अन्य श्रेणी या बड़ा दायरा आज़माएँ।' : 'Nothing matches your filters in this exact area. Try a different category or expand your search radius.'}</p>
+        <button onclick="setR(999, Array.from(document.querySelectorAll('.rdist-btn')).find(b => b.textContent === 'Anywhere' || b.textContent === 'कहीं भी'))" style="background:var(--bg-body); border:2px solid var(--bdr); color:var(--deep); padding:12px 24px; border-radius:100px; font-size:13px; font-weight:800; font-family:inherit; cursor:pointer; box-shadow:0 4px 12px rgba(0,0,0,0.05); transition:transform 0.2s;" onmousedown="this.style.transform='scale(0.95)'" onmouseup="this.style.transform='scale(1)'">${window.lang === 'hi' ? 'कहीं भी खोजें' : 'Search Anywhere'}</button>
+      </div>
+    `;
   } else {
+    document.getElementById('hscr').innerHTML = items.map(l => {
+      const imgUrl = l.imageUrl || l.image;
+      
+      let fomoHtml = '';
+      if (l.expiryDate) {
+        const hrs = (new Date(l.expiryDate) - new Date()) / 3600000;
+        if (hrs > 0 && hrs <= 24) fomoHtml = `<div class="fomo-badge" style="top:-4px; left:-4px; font-size:8px; padding:3px 6px;">🔥 ${Math.ceil(hrs)}h</div>`;
+      }
+      
+      const thumb = imgUrl 
+        ? `<div style="position:relative; width:44px;height:44px;border-radius:12px;background:#fff url('${imgUrl}') center/contain no-repeat; border:1px solid #E5E7EB; flex-shrink:0;">${fomoHtml}</div>`
+        : `<div style="position:relative; width:44px;height:44px;border-radius:12px;background:${l.color||TC(l.type)}20; display:flex;align-items:center;justify-content:center;font-size:20px; flex-shrink:0;">${l.emoji||TE(l.type)}${fomoHtml}</div>`;
+        
+      return `<div class="hcd" onclick="openListing('${l.id}')" style="min-width:200px; max-width:200px;">
+        <div style="display:flex; gap:10px; margin-bottom:8px; align-items:flex-start;">
+          ${thumb}
+          <div style="flex:1; overflow:hidden;">
+            <div class="hcd-type" style="color:${l.color||TC(l.type)}; margin-bottom:2px; text-transform: capitalize;">${l.type||''}</div>
+            <div class="hcd-title" style="margin-bottom:0; font-size:13px;">${(l.title||'').slice(0,35)}</div>
+          </div>
+        </div>
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <div class="hcd-price" style="font-size:14px; font-weight:900; color:#FF5722;">${l.price||''}</div>
+          <div class="hcd-dist" style="margin-top:0; font-size:11px; color:#6B7280; font-weight:700; background:#F3F4F6; padding:2px 6px; border-radius:6px;">📍 ${fmtDist(l)}</div>
+        </div>
+      </div>`;
+    }).join('');
+
     vgrid.innerHTML = filteredList.map(l => {
       const imgUrl = l.imageUrl || l.image;
       const iconHtml = imgUrl 
@@ -955,6 +979,7 @@ function renderCards() {
 }
 
 window.goPage = p => {
+  window.haptic(30);
   const totalPages = Math.ceil(filteredList.length / PAGE_SIZE);
   if (p < 0 || p >= totalPages) return;
   page = p;
@@ -964,6 +989,7 @@ window.goPage = p => {
 
 let isListView = false;
 window.toggleListView = () => {
+  window.haptic(50);
   isListView = !isListView;
   const bsht = document.querySelector('.bsht');
   const hscr = document.getElementById('hscr');
@@ -1021,13 +1047,14 @@ function showNotif(l) {
   document.getElementById('n-body').textContent = (l.desc || '').slice(0, 100) + '…';
   
   document.getElementById('n-view').onclick = () => {
+    window.haptic(50);
     trackEng(l.id, 8);
     if (typeof window.gtag === 'function') gtag('event', 'funnel_step', { step_name: 'popup_clicked', listing_id: l.id });
     try { updateDoc(doc(db, 'listings', l.id), { visits: increment(1) }); } catch(e) {}
     hideNotif(); openListing(l.id);
   };
   
-  document.querySelector('#notif .mn-btn.s').onclick = () => { trackEng(l.id, -5); hideNotif(); };
+  document.querySelector('#notif .mn-btn.s').onclick = () => { window.haptic(30); trackEng(l.id, -5); hideNotif(); };
   
   document.getElementById('notif').classList.add('on');
   clearTimeout(window._nt);
@@ -1037,12 +1064,14 @@ function showNotif(l) {
 window.trackEng = trackEng; 
 
 window.pickType = (t, btn) => {
+  window.haptic(30);
   welcomeType = t;
   document.querySelectorAll('.wtype').forEach(b => b.classList.remove('on'));
   btn.classList.add('on');
 };
 
 window.startApp = () => {
+  window.haptic(50);
   cat = welcomeType;
   document.querySelectorAll('#cat-pills .pill').forEach(b => {
     const txt = b.getAttribute('data-en');
@@ -1060,6 +1089,7 @@ window.startApp = () => {
 };
 
 window.skipWelcome = () => {
+  window.haptic(30);
   sessionStorage.setItem('welcome_seen', 'true');
   welcomeType = 'deal'; 
   document.getElementById('modal-welcome').classList.remove('on');
@@ -1069,6 +1099,7 @@ window.skipWelcome = () => {
 
 let discoveryMode = false;
 window.toggleDiscovery = () => {
+  window.haptic(50);
   discoveryMode = !discoveryMode;
   const btn = document.getElementById('disc-btn');
   if (discoveryMode) {
@@ -1088,11 +1119,12 @@ window.toggleDiscovery = () => {
   }
 };
 
-window.hideNotif = () => document.getElementById('notif').classList.remove('on');
+window.hideNotif = () => { window.haptic(30); document.getElementById('notif').classList.remove('on'); };
 window.go = href => window.location.href = href;
-window.openListing = id => { SS('viewId', id); window.location.href = 'detail.html?id=' + encodeURIComponent(id); };
+window.openListing = id => { window.haptic(50); SS('viewId', id); window.location.href = 'detail.html?id=' + encodeURIComponent(id); };
 
 window.setCat = async (c, btn) => { 
+  window.haptic(50);
   cat = c; 
   page = 0; 
   document.querySelectorAll('#cat-pills .pill').forEach(b => b.classList.remove('on')); 
@@ -1101,6 +1133,7 @@ window.setCat = async (c, btn) => {
 };
 
 window.setR = async (km, btn) => { 
+  window.haptic(50);
   const oldKm = radiusKm;
   radiusKm = km; 
   page = 0; 
