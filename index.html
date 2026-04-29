@@ -41,36 +41,39 @@
     padding:16px; 
     overflow:hidden; 
     position: relative;
+    margin: 0;
   }
   
-  /* 🚀 PREMIUM, HIGH-PERFORMANCE BACKGROUND */
-  .bg-grid {
-    position: fixed; inset: 0; z-index: 0; pointer-events: none;
-    background-image: radial-gradient(var(--gray) 1px, transparent 1px);
-    background-size: 24px 24px; opacity: 0.15;
+  /* 🚀 ULTRA-PREMIUM AURORA MESH BACKGROUND */
+  .premium-bg {
+    position: fixed; inset: 0; z-index: 0; overflow: hidden;
+    background: var(--bg-body);
+  }
+  
+  /* Tactile Noise Overlay (The "Apple Glass" secret) */
+  .premium-bg::after {
+    content: ''; position: absolute; inset: -50%;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+    opacity: 0.06; pointer-events: none; z-index: 2;
   }
 
-  /* GPU-Accelerated floating orbs */
-  .orb { 
-    position: fixed; border-radius: 50%; filter: blur(100px); 
-    z-index: 0; pointer-events: none; 
-    animation: float 15s infinite ease-in-out alternate; 
+  /* GPU-Accelerated Liquid Shapes */
+  .shape {
+    position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.55;
+    animation: aurora 25s infinite alternate ease-in-out;
+    z-index: 1; pointer-events: none;
   }
-  .orb-1 { 
-    width: 50vw; height: 50vw; max-width: 600px; max-height: 600px; 
-    background: rgba(255, 87, 34, 0.15); 
-    top: -10%; left: -10%; 
-  }
-  .orb-2 { 
-    width: 60vw; height: 60vw; max-width: 700px; max-height: 700px; 
-    background: rgba(59, 130, 246, 0.15); 
-    bottom: -10%; right: -10%; 
-    animation-delay: -7.5s; 
-  }
+  
+  .shape-1 { background: #FF5722; width: 55vw; height: 55vw; top: -10%; left: -10%; animation-delay: 0s; }
+  .shape-2 { background: #3B82F6; width: 50vw; height: 50vw; bottom: -15%; right: -10%; animation-delay: -5s; }
+  .shape-3 { background: #F59E0B; width: 45vw; height: 45vw; top: 35%; right: 10%; animation-delay: -10s; }
+  .shape-4 { background: #10B981; width: 40vw; height: 40vw; bottom: 20%; left: -15%; animation-delay: -15s; }
 
-  @keyframes float {
-    0% { transform: translate(0, 0) scale(1); }
-    100% { transform: translate(40px, 60px) scale(1.1); }
+  @keyframes aurora {
+    0% { transform: translate(0, 0) scale(1) rotate(0deg); }
+    33% { transform: translate(12vw, -12vh) scale(1.15) rotate(90deg); }
+    66% { transform: translate(-8vw, 15vh) scale(0.9) rotate(180deg); }
+    100% { transform: translate(15vw, 8vh) scale(1.2) rotate(270deg); }
   }
 
   .card { 
@@ -81,10 +84,10 @@
     text-align:center; 
     position:relative; 
     z-index: 10; 
-    background-color: rgba(255, 255, 255, 0.85); 
-    backdrop-filter: blur(24px); 
-    -webkit-backdrop-filter: blur(24px); 
-    box-shadow: 0 30px 60px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.05); 
+    background-color: rgba(255, 255, 255, 0.75); 
+    backdrop-filter: blur(30px); 
+    -webkit-backdrop-filter: blur(30px); 
+    box-shadow: 0 30px 60px rgba(0,0,0,0.1), 0 0 0 1px rgba(255,255,255,0.4) inset; 
     border: none; 
     animation: slideUpFade 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
@@ -95,10 +98,11 @@
   }
   
   @media (prefers-color-scheme: dark) {
-    .bg-grid { opacity: 0.08; }
-    .orb-1 { background: rgba(255, 87, 34, 0.20); }
-    .orb-2 { background: rgba(59, 130, 246, 0.20); }
-    .card { background-color: rgba(30, 41, 59, 0.85); box-shadow: 0 30px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.1); }
+    .shape { opacity: 0.35; filter: blur(100px); }
+    .shape-1 { background: #FF3D00; }
+    .shape-2 { background: #2563EB; }
+    .premium-bg::after { opacity: 0.08; }
+    .card { background-color: rgba(15, 15, 19, 0.75); box-shadow: 0 30px 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.08) inset; }
   }
   
   .brand { display:flex; align-items:center; justify-content:center; gap:10px; margin-bottom:12px; }
@@ -119,9 +123,12 @@
 </head>
 <body>
 
-<div class="bg-grid"></div>
-<div class="orb orb-1"></div>
-<div class="orb orb-2"></div>
+<div class="premium-bg">
+  <div class="shape shape-1"></div>
+  <div class="shape shape-2"></div>
+  <div class="shape shape-3"></div>
+  <div class="shape shape-4"></div>
+</div>
 
 <div class="card" id="login-card">
   <div class="brand" style="margin-bottom: 20px;">
@@ -297,7 +304,7 @@ window.loginWithGoogle = async () => {
   }
 };
 </script>
-<div style="text-align: center; padding: 15px; font-size: 12px;">
+<div style="text-align: center; padding: 15px; font-size: 12px; z-index: 10; position: relative;">
   <a href="/privacy.html" style="color: #888; text-decoration: none;">Privacy Policy</a>
   <span style="color: #ccc; margin: 0 8px;">|</span>
   <a href="/terms.html" style="color: #888; text-decoration: none;">Terms of Service</a>
