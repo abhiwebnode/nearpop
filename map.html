@@ -273,15 +273,15 @@
 /* 🚀 FIX: Premium Floating Glassmorphism Pagination */
 .pgn { 
   position: fixed; 
-  bottom: calc(85px + env(safe-area-inset-bottom)); 
+  bottom: calc(75px + env(safe-area-inset-bottom)); 
   left: 50%; 
   transform: translateX(-50%); 
   display: none; /* Changed dynamically by JS */
   align-items: center; 
   justify-content: center; 
-  gap: 6px; 
-  padding: 8px 12px; 
-  background: rgba(255, 255, 255, 0.35); 
+  gap: 4px; 
+  padding: 4px 8px; 
+  background: rgba(255, 255, 255, 0.25); 
   -webkit-backdrop-filter: blur(20px); 
   backdrop-filter: blur(20px); 
   border-radius: 100px; 
@@ -890,7 +890,7 @@
   .rdist-btn.on, .pill.on { background: #FF5722; color: #fff; border-color: #FF5722; }
   
   /* 🚀 FIX: Dark mode pagination overrides */
-  .pgn { background: rgba(17, 24, 39, 0.35); border-color: rgba(255,255,255,0.05); }
+  .pgn { background: rgba(17, 24, 39, 0.25); border-color: rgba(255,255,255,0.05); }
   .pgn-btn { background: #1F2937; color: #D1D5DB; box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
   .pgn-btn.on { background: #FF5722; color: #fff; box-shadow: 0 4px 12px rgba(255,87,34,0.3); }
 
