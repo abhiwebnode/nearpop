@@ -749,9 +749,21 @@ function redraw() {
   window._markerCluster.addLayers(newMarkers);
   
   if (loc) {
-    const ui = L.divIcon({ className: '', html: `<div style="width:18px;height:18px;border-radius:50%;background:#111827;border:3px solid white;box-shadow:0 0 0 6px rgba(17,24,39,.18)"></div>`, iconSize: [18, 18], iconAnchor: [9, 9] });
-    if (!window.userMarker) { window.userMarker = L.marker([loc.lat, loc.lng], { icon: ui, zIndexOffset: 1000 }).addTo(window._map); }
-    else { window.userMarker.setLatLng([loc.lat, loc.lng]); }
+    // 🚀 BRANDED USER LOCATION PIN WITH PULSING RADAR
+    const userHtml = `
+      <div style="position:relative; width:40px; height:40px; display:flex; align-items:center; justify-content:center;">
+        <div class="user-radar"></div>
+        <img src="https://nearpop.in/icons/logo.png" onerror="this.style.display='none'" style="width:28px; height:28px; border-radius:50%; border:3px solid #fff; background:#0F0F13; object-fit:contain; padding:2px; position:relative; z-index:2; box-shadow:0 4px 10px rgba(0,0,0,0.2);">
+      </div>
+    `;
+    const ui = L.divIcon({ className: '', html: userHtml, iconSize: [40, 40], iconAnchor: [20, 20] });
+    
+    if (!window.userMarker) { 
+      window.userMarker = L.marker([loc.lat, loc.lng], { icon: ui, zIndexOffset: 1000 }).addTo(window._map); 
+    } else { 
+      window.userMarker.setLatLng([loc.lat, loc.lng]); 
+      window.userMarker.setIcon(ui); // Updates icon smoothly if state changes
+    }
   }
 
   renderCards();
