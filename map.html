@@ -67,7 +67,6 @@
 .pgn-btn:disabled { opacity: 0.4; cursor: not-allowed; border-color: transparent; background: transparent; color: #9CA3AF; }
 .pgn-dots { color: #9CA3AF; font-weight: 800; padding: 0 2px; font-size: 14px; }
 
-/* 🚀 DESKTOP DRAG-TO-SCROLL CSS */
 .hscr { display: flex; gap: 12px; padding: 0 16px 12px; overflow-x: auto; scrollbar-width: none; flex-shrink: 0; cursor: grab; user-select: none; }
 .hscr::-webkit-scrollbar { display: none; }
 .hscr:active { cursor: grabbing; }
@@ -140,60 +139,32 @@
 
 #geo-error-banner { display: none; position: fixed; top: env(safe-area-inset-top, 0px); left: 0; right: 0; background: #EF4444; color: #fff; font-size: 13px; font-weight: 700; padding: 12px 16px; z-index: 9999; text-align: center; }
 
-.skeleton {
-  background: #E5E7EB;
-  background: linear-gradient(90deg, #E5E7EB 25%, #F3F4F6 50%, #E5E7EB 75%);
-  background-size: 200% 100%;
-  animation: shimmer 1.5s infinite linear;
-  border-radius: 8px;
-}
+.skeleton { background: #E5E7EB; background: linear-gradient(90deg, #E5E7EB 25%, #F3F4F6 50%, #E5E7EB 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite linear; border-radius: 8px; }
 @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
 
-.fomo-badge {
-  position: absolute; top: 10px; left: 10px;
-  background: #EF4444; color: #fff; font-size: 10px; font-weight: 900;
-  padding: 4px 8px; border-radius: 6px; z-index: 5; letter-spacing: 0.5px;
-  box-shadow: 0 4px 10px rgba(239,68,68,0.4);
-  animation: fomo-pulse 1.5s infinite;
-}
-@keyframes fomo-pulse {
-  0% { box-shadow: 0 0 0 0 rgba(239,68,68,0.7); }
-  70% { box-shadow: 0 0 0 6px rgba(239,68,68,0); }
-  100% { box-shadow: 0 0 0 0 rgba(239,68,68,0); }
-}
+.fomo-badge { position: absolute; top: 10px; left: 10px; background: #EF4444; color: #fff; font-size: 10px; font-weight: 900; padding: 4px 8px; border-radius: 6px; z-index: 5; letter-spacing: 0.5px; box-shadow: 0 4px 10px rgba(239,68,68,0.4); animation: fomo-pulse 1.5s infinite; }
+@keyframes fomo-pulse { 0% { box-shadow: 0 0 0 0 rgba(239,68,68,0.7); } 70% { box-shadow: 0 0 0 6px rgba(239,68,68,0); } 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0); } }
 
-/* 🚀 PREMIUM DARK MODE STYLES */
 @media (prefers-color-scheme: dark) {
   .bsht { background: #111827; }
   .bsht-h { background: #374151; }
   .radius-bar, .cat-pills, .hscr, .deals-grid { border-color: #374151; }
-  
   .rdist-btn, .pill, .pgn-btn { background: #1F2937; color: #D1D5DB; border-color: #374151; }
   .rdist-btn.on, .pill.on, .pgn-btn.on { background: #FF5722; color: #fff; border-color: #FF5722; }
-  
-  /* Dark Mode Deal Cards */
   .hcd { background: #1F2937; border-color: #374151; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
   .deal-card { box-shadow: 0 6px 16px rgba(0,0,0,0.3); }
-  
-  /* Alternating Jewel Tones for Grid in Dark Mode */
   .deal-card:nth-child(4n+1) { background: #2A1A15; border-color: #3D261D; } 
   .deal-card:nth-child(4n+2) { background: #15222E; border-color: #1E3142; } 
   .deal-card:nth-child(4n+3) { background: #1C1929; border-color: #2B263D; } 
   .deal-card:nth-child(4n+4) { background: #16271D; border-color: #213A2B; } 
-  
-  /* Text and Icon Overrides */
   .d-ti, .hcd-title, .pp-title, #notif-prompt div:first-child { color: #F9FAFB !important; }
   .d-arrow { background: #374151; color: #F9FAFB; }
   .custom-pin { border-color: #111827; }
-  
-  /* Modals and Sheets */
   .pin-preview { background: #111827; }
   .mnotif { background: #1F2937; border-color: #374151; }
   .mn-title { color: #F9FAFB; }
   .mn-btn.s { background: #374151; color: #D1D5DB; }
   .mn-dist { background: #374151; color: #D1D5DB; }
-  
-  /* Top Toggle Buttons */
   .view-toggle-btn { background: #1F2937 !important; color: #D1D5DB !important; border-color: #374151 !important; }
   .view-toggle-btn.on { background: #FF5722 !important; color: #fff !important; border-color: #FF5722 !important; }
 }
@@ -368,14 +339,14 @@
 </div>
 
 <script type="module">
+// 🚀 FIX: Ensure we import `limit` from Firebase
 import { app, db, LS, SS, TC, TE, distM, isExpired, toast, cacheGet, cacheSet, cacheClear, loadNavigation } from './js/app.js';
 import { ghEncode, ghNeighbors, ghFilter } from './js/geohash.js';
 import { setLoc, setListings, checkProximity, dist, getPrefs, notifsToday, notifsThisHour, logNotif, inMarketZone, vendorCapReached, budgetThrottled, markVendorCapUsed, markBudgetUsed, markGeofenceNotified, applyDensityControl, getNotifType, showSoftBanner, trackEng, updateSpeed } from './js/notifications.js';
-import { getDocs, query, collection, orderBy, where, doc, updateDoc, increment } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
+import { getDocs, query, collection, orderBy, where, doc, updateDoc, increment, limit } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js';
 import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-messaging.js";
 
-// 🚀 DESKTOP DRAG TO SCROLL INITIALIZER
 function initDragToScroll() {
   const slider = document.getElementById('hscr');
   let isDown = false;
@@ -439,7 +410,6 @@ window.askForNotifs = async () => {
             fcmToken: currentToken 
           });
         }
-        // 🚀 FIX: Removed the Toast to keep the process completely silent
       } else {
         console.log('No registration token available.');
       }
@@ -590,23 +560,34 @@ window.forceRefresh = async () => {
   toast('✅', 'Map updated!');
 };
 
+// 🚀 MASTER FIX: Dynamically apply Geohash constraints based on radius.
 async function loadListings() {
   try {
     let q = collection(db, 'listings');
     const filters = [];
-
    
-    // No more Firebase category filtering. This speeds up tab switching immensely.
+    const userLoc = LS('lastLoc');
     
-	const userLoc = LS('lastLoc');
-    if (userLoc) {
-      const userHash5 = ghEncode(userLoc.lat, userLoc.lng, 5);
+    // Sync radius state
+    const currentRadius = parseInt(SS('searchRadius') || LS('searchRadius')) || radiusKm || 1;
+
+    // Apply strict Geohash-5 filter ONLY for local searches (<= 5km)
+    // A Geohash-5 plus its 8 neighbors physically cannot fetch deals 10km+ away.
+    if (userLoc && currentRadius <= 5) {
+      const safeLat = +parseFloat(userLoc.lat).toFixed(6);
+      const safeLng = +parseFloat(userLoc.lng).toFixed(6);
+      const userHash5 = ghEncode(safeLat, safeLng, 5);
       const activeCells = ghNeighbors(userHash5); 
       filters.push(where('geohash5', 'in', activeCells));
     }
 
+    // Always fetch only active deals to save client-side sorting
+    filters.push(where('status', '==', 'active'));
+
     if (filters.length > 0) {
-      q = query(q, ...filters);
+      q = query(q, ...filters, limit(150)); // Protect Firebase quota!
+    } else {
+      q = query(q, limit(150));
     }
 
     const snap = await getDocs(q);
@@ -627,7 +608,6 @@ function redraw() {
   let list = listings.filter(l => {
     try {
       if (!l || typeof l !== 'object') return false;
-      // 🚀 MASTER FIX (From mapold): JavaScript instantly filters the category locally now.
       if (cat !== 'all' && l.type !== cat) return false;
       if (isExpired(l)) return false;
       
@@ -663,17 +643,13 @@ function redraw() {
     }
     
     const nextR = foundRadius || 999;
-    radiusKm = nextR;
-    SS('searchRadius', radiusKm);
     
-    document.querySelectorAll('.rdist-btn').forEach(b => {
-      const v = b.textContent === 'Anywhere' ? 999 : parseInt(b.textContent);
-      b.classList.toggle('on', v === radiusKm);
-    });
+    // Call the new async setR so it pulls new data if we expand past 5km
+    setR(nextR, Array.from(document.querySelectorAll('.rdist-btn')).find(b => parseInt(b.textContent) === nextR || (nextR === 999 && b.textContent === 'Anywhere')));
     
-    const rTxt = radiusKm === 999 ? 'Anywhere' : radiusKm + 'km';
+    const rTxt = nextR === 999 ? 'Anywhere' : nextR + 'km';
     toast('🔍', `No deals nearby. Auto-expanded to ${rTxt}!`);
-    return redraw(); 
+    return; 
   }
 
   list.sort((a, b) => {
@@ -848,7 +824,6 @@ function renderCards() {
     }).join('');
   }
 
-  // Pagination Logic
   const pgn = document.getElementById('pgn');
   if (totalPages <= 1) { pgn.innerHTML = ''; return; }
   
@@ -911,7 +886,6 @@ window.toggleListView = () => {
     vgrid.style.display = 'grid';
     discBtn.style.display = 'none';
     
-    // 🚀 USE CSS CLASSES NOW SO IT SUPPORTS DARK MODE
     listBtn.classList.add('on');
     listBtn.innerHTML = '🗺️ Map View';
   } else {
@@ -1025,7 +999,6 @@ window.recenter = getLoc;
 window.go = href => window.location.href = href;
 window.openListing = id => { SS('viewId', id); window.location.href = 'detail.html?id=' + encodeURIComponent(id); };
 
-// 🚀 MASTER FIX (From mapold): Instant tab switching, no Firebase fetch!
 window.setCat = async (c, btn) => { 
   cat = c; 
   page = 0; 
@@ -1034,16 +1007,29 @@ window.setCat = async (c, btn) => {
   redraw(); 
 };
 
-window.setR = (km, btn) => { 
-  radiusKm = km; page = 0; SS('searchRadius', km); 
+// 🚀 MASTER FIX: Check if we are expanding past 5km, and trigger a fresh Firebase fetch if needed
+window.setR = async (km, btn) => { 
+  const oldKm = radiusKm;
+  radiusKm = km; 
+  page = 0; 
+  SS('searchRadius', km); 
+  
   document.querySelectorAll('.rdist-btn').forEach(b => b.classList.remove('on')); 
-  btn.classList.add('on'); redraw(); 
+  if (btn) btn.classList.add('on'); 
+  
+  // If we just clicked '10km', '25km' or 'Anywhere', and we were previously
+  // restricted to the 5km Geohash lock, we MUST ask Firebase for the new wider data.
+  if (oldKm <= 5 && km > 5) {
+    await window.forceRefresh();
+  } else {
+    redraw(); 
+  }
 };
 
 async function initApp() {
   await loadNavigation();
 
-  initDragToScroll(); // 🚀 ACTIVATING DESKTOP SCROLLING
+  initDragToScroll();
 
   const _cached = cacheGet(); 
   if (_cached) {
