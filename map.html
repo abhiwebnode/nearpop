@@ -28,11 +28,10 @@
 .map-wrapper { position: absolute; top: 0; left: 0; right: 0; height: 50%; z-index: 1; }
 #map { width: 100%; height: 100%; }
 
-.tbar { position: absolute; top: 0; left: 0; right: 0; z-index: 900; padding: 13px 13px 0; display: flex; gap: 9px; }
-.lpill { flex: 1; background: rgba(255,255,255,0.9); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); border-radius: 100px; padding: 12px 16px; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border: 1px solid rgba(0,0,0,0.05); }
-.lpill span { font-size: 13px; font-weight: 800; color: var(--deep); flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* 🚀 FIX: Pushed buttons to right, removed label, enabled click-through on empty space */
+.tbar { position: absolute; top: 0; left: 0; right: 0; z-index: 900; padding: 13px 13px 0; display: flex; gap: 9px; justify-content: flex-end; pointer-events: none; }
 
-.lbtn { width: 46px; height: 46px; border-radius: 14px; background: rgba(255,255,255,0.9); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); display: flex; align-items: center; justify-content: center; font-size: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border: 1px solid rgba(0,0,0,0.05); color: var(--deep); cursor: pointer; transition: transform 0.2s; }
+.lbtn { pointer-events: auto; width: 46px; height: 46px; border-radius: 14px; background: rgba(255,255,255,0.9); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); display: flex; align-items: center; justify-content: center; font-size: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border: 1px solid rgba(0,0,0,0.05); color: var(--deep); cursor: pointer; transition: transform 0.2s; font-family: inherit; font-weight: 900;}
 .lbtn:active { transform: scale(0.9); }
 
 @keyframes spin-anim { 100% { transform: rotate(360deg); } }
@@ -139,32 +138,60 @@
 
 #geo-error-banner { display: none; position: fixed; top: env(safe-area-inset-top, 0px); left: 0; right: 0; background: #EF4444; color: #fff; font-size: 13px; font-weight: 700; padding: 12px 16px; z-index: 9999; text-align: center; }
 
-.skeleton { background: #E5E7EB; background: linear-gradient(90deg, #E5E7EB 25%, #F3F4F6 50%, #E5E7EB 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite linear; border-radius: 8px; }
+.skeleton {
+  background: #E5E7EB;
+  background: linear-gradient(90deg, #E5E7EB 25%, #F3F4F6 50%, #E5E7EB 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite linear;
+  border-radius: 8px;
+}
 @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
 
-.fomo-badge { position: absolute; top: 10px; left: 10px; background: #EF4444; color: #fff; font-size: 10px; font-weight: 900; padding: 4px 8px; border-radius: 6px; z-index: 5; letter-spacing: 0.5px; box-shadow: 0 4px 10px rgba(239,68,68,0.4); animation: fomo-pulse 1.5s infinite; }
-@keyframes fomo-pulse { 0% { box-shadow: 0 0 0 0 rgba(239,68,68,0.7); } 70% { box-shadow: 0 0 0 6px rgba(239,68,68,0); } 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0); } }
+.fomo-badge {
+  position: absolute; top: 10px; left: 10px;
+  background: #EF4444; color: #fff; font-size: 10px; font-weight: 900;
+  padding: 4px 8px; border-radius: 6px; z-index: 5; letter-spacing: 0.5px;
+  box-shadow: 0 4px 10px rgba(239,68,68,0.4);
+  animation: fomo-pulse 1.5s infinite;
+}
+@keyframes fomo-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(239,68,68,0.7); }
+  70% { box-shadow: 0 0 0 6px rgba(239,68,68,0); }
+  100% { box-shadow: 0 0 0 0 rgba(239,68,68,0); }
+}
 
+/* 🚀 PREMIUM DARK MODE STYLES */
 @media (prefers-color-scheme: dark) {
   .bsht { background: #111827; }
   .bsht-h { background: #374151; }
   .radius-bar, .cat-pills, .hscr, .deals-grid { border-color: #374151; }
+  
   .rdist-btn, .pill, .pgn-btn { background: #1F2937; color: #D1D5DB; border-color: #374151; }
   .rdist-btn.on, .pill.on, .pgn-btn.on { background: #FF5722; color: #fff; border-color: #FF5722; }
+  
+  /* Dark Mode Deal Cards */
   .hcd { background: #1F2937; border-color: #374151; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
   .deal-card { box-shadow: 0 6px 16px rgba(0,0,0,0.3); }
+  
+  /* Alternating Jewel Tones for Grid in Dark Mode */
   .deal-card:nth-child(4n+1) { background: #2A1A15; border-color: #3D261D; } 
   .deal-card:nth-child(4n+2) { background: #15222E; border-color: #1E3142; } 
   .deal-card:nth-child(4n+3) { background: #1C1929; border-color: #2B263D; } 
   .deal-card:nth-child(4n+4) { background: #16271D; border-color: #213A2B; } 
+  
+  /* Text and Icon Overrides */
   .d-ti, .hcd-title, .pp-title, #notif-prompt div:first-child { color: #F9FAFB !important; }
   .d-arrow { background: #374151; color: #F9FAFB; }
   .custom-pin { border-color: #111827; }
+  
+  /* Modals and Sheets */
   .pin-preview { background: #111827; }
   .mnotif { background: #1F2937; border-color: #374151; }
   .mn-title { color: #F9FAFB; }
   .mn-btn.s { background: #374151; color: #D1D5DB; }
   .mn-dist { background: #374151; color: #D1D5DB; }
+  
+  /* Top Toggle Buttons */
   .view-toggle-btn { background: #1F2937 !important; color: #D1D5DB !important; border-color: #374151 !important; }
   .view-toggle-btn.on { background: #FF5722 !important; color: #fff !important; border-color: #FF5722 !important; }
 }
@@ -173,18 +200,18 @@
 <body>
 <div id="hard-geo-block" style="display:none; position:fixed; inset:0; background:var(--bg-body); color:var(--deep); z-index:99999; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:30px;">
   <div style="font-size:64px; margin-bottom:20px; filter: drop-shadow(0 10px 20px rgba(255,87,34,0.3));">📍</div>
-  <h2 style="font-family:'Syne', sans-serif; font-size:26px; margin-bottom:12px; font-weight:800;">Location Required</h2>
-  <p style="color:var(--gray); font-size:15px; margin-bottom:24px; line-height:1.6;">NearPop is a proximity engine. We need your GPS to find live deals on the streets around you.</p>
+  <h2 style="font-family:'Syne', sans-serif; font-size:26px; margin-bottom:12px; font-weight:800;" data-en="Location Required" data-hi="स्थान आवश्यक है">Location Required</h2>
+  <p style="color:var(--gray); font-size:15px; margin-bottom:24px; line-height:1.6;" data-en="NearPop is a proximity engine. We need your GPS to find live deals on the streets around you." data-hi="NearPop एक निकटता इंजन है। आपके आस-पास की डील्स खोजने के लिए हमें आपके GPS की आवश्यकता है।">NearPop is a proximity engine. We need your GPS to find live deals on the streets around you.</p>
   
   <div style="background:var(--cream); border:1px solid var(--bdr); padding:18px; border-radius:14px; font-size:13px; color:var(--deep); text-align:left; line-height:1.7; margin-bottom:24px; width:100%; max-width:320px;">
-    <b style="font-size:14px;">How to unblock:</b><br>
-    1. Tap the <b>Lock icon 🔒</b> or <b>Settings icon ⚙️</b> in your browser's address bar.<br>
-    2. Tap <b>Permissions</b> → <b>Location</b>.<br>
-    3. Change the setting to <b>Allow</b>.<br>
-    4. Reload this page.
+    <b style="font-size:14px;" data-en="How to unblock:" data-hi="अनब्लॉक कैसे करें:">How to unblock:</b><br>
+    <span data-en="1. Tap the Lock icon 🔒 or Settings icon ⚙️ in your browser's address bar." data-hi="1. अपने ब्राउज़र के एड्रेस बार में लॉक 🔒 या सेटिंग ⚙️ आइकन पर टैप करें।">1. Tap the <b>Lock icon 🔒</b> or <b>Settings icon ⚙️</b> in your browser's address bar.</span><br>
+    <span data-en="2. Tap Permissions → Location." data-hi="2. अनुमतियां (Permissions) → स्थान (Location) पर टैप करें।">2. Tap <b>Permissions</b> → <b>Location</b>.</span><br>
+    <span data-en="3. Change the setting to Allow." data-hi="3. सेटिंग को 'अनुमति दें' (Allow) में बदलें।">3. Change the setting to <b>Allow</b>.</span><br>
+    <span data-en="4. Reload this page." data-hi="4. इस पेज को फिर से लोड करें।">4. Reload this page.</span>
   </div>
   
-  <button onclick="window.location.reload()" style="background:var(--or); color:#fff; padding:16px 32px; border-radius:14px; border:none; font-weight:800; font-size:15px; cursor:pointer; box-shadow:0 4px 14px rgba(255,87,34,.25);">🔄 Reload Page</button>
+  <button onclick="window.location.reload()" style="background:var(--or); color:#fff; padding:16px 32px; border-radius:14px; border:none; font-weight:800; font-size:15px; cursor:pointer; box-shadow:0 4px 14px rgba(255,87,34,.25);" data-en="🔄 Reload Page" data-hi="🔄 पेज रीलोड करें">🔄 Reload Page</button>
 </div>
 <div id="geo-error-banner" role="alert" aria-live="assertive"></div>
 
@@ -195,9 +222,9 @@
       <div id="map"></div>
       
       <div class="tbar">
-        <div class="lpill"><span>📍</span><span id="loclbl">Getting location…</span></div>
+        <button class="lbtn" id="lang-btn" onclick="window.toggleLang()" title="Toggle Language">अ/A</button>
         <button class="lbtn" id="refresh-btn" onclick="window.forceRefresh()" title="Refresh Live Deals">🔄</button>
-        <button class="lbtn" onclick="recenter()" title="Recenter Map">🎯</button>
+        <button class="lbtn" onclick="window.recenterMap()" title="Current Location">🎯</button>
       </div>
 
       <div class="zoom-btns">
@@ -209,36 +236,36 @@
     <div class="bsht">
       <div class="bsht-h"></div>
       <div class="radius-bar">
-        <span class="radius-label">📡 Radius:</span>
+        <span class="radius-label" data-en="📡 Radius:" data-hi="📡 दायरा:">📡 Radius:</span>
         <button class="rdist-btn on" onclick="setR(1,this)">1 km</button>
         <button class="rdist-btn" onclick="setR(2,this)">2 km</button>
         <button class="rdist-btn" onclick="setR(5,this)">5 km</button>
         <button class="rdist-btn" onclick="setR(10,this)">10 km</button>
         <button class="rdist-btn" onclick="setR(25,this)">25 km</button>
-        <button class="rdist-btn" onclick="setR(999,this)">Anywhere</button>
+        <button class="rdist-btn" onclick="setR(999,this)" data-en="Anywhere" data-hi="कहीं भी">Anywhere</button>
       </div>
       <div class="cat-pills" id="cat-pills">
-        <button class="pill" onclick="setCat('all',this)">All</button>
-        <button class="pill on" onclick="setCat('deal',this)">🏷️ Deals</button>
-        <button class="pill" onclick="setCat('rental',this)">🏠 Flats</button>
-        <button class="pill" onclick="setCat('pg',this)">🛋️ PG</button>
-        <button class="pill" onclick="setCat('job',this)">💼 Jobs</button>
+        <button class="pill" onclick="setCat('all',this)" data-en="All" data-hi="सभी">All</button>
+        <button class="pill on" onclick="setCat('deal',this)" data-en="🏷️ Deals" data-hi="🏷️ डील्स">🏷️ Deals</button>
+        <button class="pill" onclick="setCat('rental',this)" data-en="🏠 Flats" data-hi="🏠 फ्लैट">🏠 Flats</button>
+        <button class="pill" onclick="setCat('pg',this)" data-en="🛋️ PG" data-hi="🛋️ पीजी">🛋️ PG</button>
+        <button class="pill" onclick="setCat('job',this)" data-en="💼 Jobs" data-hi="💼 नौकरियां">💼 Jobs</button>
       </div>
       
       <div style="display:flex;align-items:center;justify-content:space-between;padding:0 16px 8px; flex-shrink:0;">
-        <div class="mcnt" id="mcnt" style="font-size:11px; font-weight:800; color:#6B7280;">Finding local deals...</div>
+        <div class="mcnt" id="mcnt" style="font-size:11px; font-weight:800; color:#6B7280;" data-en="Finding local deals..." data-hi="स्थानीय डील्स खोजी जा रही हैं...">Finding local deals...</div>
         <div style="display:flex; gap:6px;">
-          <button id="list-btn" class="view-toggle-btn" onclick="toggleListView()" style="display:flex;align-items:center;gap:4px;padding:4px 12px;border-radius:100px;border:2px solid #E5E7EB;background:#fff;font-size:11px;font-weight:800;color:#4B5563;font-family:inherit;transition:all 0.2s;cursor:pointer">📋 List</button>
-          <button id="disc-btn" class="view-toggle-btn" onclick="toggleDiscovery()" style="display:flex;align-items:center;gap:4px;padding:4px 12px;border-radius:100px;border:2px solid #E5E7EB;background:#fff;font-size:11px;font-weight:800;color:#4B5563;font-family:inherit;transition:all 0.2s;cursor:pointer">🔍 Discover</button>
+          <button id="list-btn" class="view-toggle-btn" onclick="toggleListView()" style="display:flex;align-items:center;gap:4px;padding:4px 12px;border-radius:100px;border:2px solid #E5E7EB;background:#fff;font-size:11px;font-weight:800;color:#4B5563;font-family:inherit;transition:all 0.2s;cursor:pointer" data-en="📋 List" data-hi="📋 सूची">📋 List</button>
+          <button id="disc-btn" class="view-toggle-btn" onclick="toggleDiscovery()" style="display:flex;align-items:center;gap:4px;padding:4px 12px;border-radius:100px;border:2px solid #E5E7EB;background:#fff;font-size:11px;font-weight:800;color:#4B5563;font-family:inherit;transition:all 0.2s;cursor:pointer" data-en="🔍 Discover" data-hi="🔍 खोजें">🔍 Discover</button>
         </div>
       </div>
 
       <div id="notif-prompt" style="display:none; background: #FFF5F2; border: 1px solid #FFE4D6; padding: 12px 16px; border-radius: 16px; margin: 0 16px 12px; align-items: center; justify-content: space-between; flex-shrink:0;">
         <div>
-          <div style="font-size: 13px; font-weight: 800; color: #111827;">🔔 Turn on Alerts</div>
-          <div style="font-size: 11px; color: #6B7280; font-weight: 600;">Get a lock-screen buzz when near a deal.</div>
+          <div style="font-size: 13px; font-weight: 800; color: #111827;" data-en="🔔 Turn on Alerts" data-hi="🔔 अलर्ट चालू करें">🔔 Turn on Alerts</div>
+          <div style="font-size: 11px; color: #6B7280; font-weight: 600;" data-en="Get a lock-screen buzz when near a deal." data-hi="डील के पास होने पर लॉक-स्क्रीन अलर्ट पाएं।">Get a lock-screen buzz when near a deal.</div>
         </div>
-        <button onclick="askForNotifs()" style="background: #FF5722; color: #fff; border: none; padding: 8px 16px; border-radius: 10px; font-size: 12px; font-weight: 800; cursor: pointer; flex-shrink:0; transition: transform 0.2s;">Allow</button>
+        <button onclick="askForNotifs()" style="background: #FF5722; color: #fff; border: none; padding: 8px 16px; border-radius: 10px; font-size: 12px; font-weight: 800; cursor: pointer; flex-shrink:0; transition: transform 0.2s;" data-en="Allow" data-hi="अनुमति दें">Allow</button>
       </div>
       
       <div class="hscr" id="hscr">
@@ -264,7 +291,7 @@
             <span id="pp-fomo"></span>
             <span id="pp-dist" class="pp-dist">📍 500m</span>
         </div>
-        <button id="pp-btn" class="pp-btn">View Offer →</button>
+        <button id="pp-btn" class="pp-btn" data-en="View Offer →" data-hi="ऑफर देखें →">View Offer →</button>
     </div>
 
   </div> 
@@ -283,8 +310,8 @@
     </div>
     <div class="mn-body" id="n-body"></div>
     <div class="mn-btns">
-      <button class="mn-btn p" id="n-view">View Details →</button>
-      <button class="mn-btn s" onclick="hideNotif()">✕ Dismiss</button>
+      <button class="mn-btn p" id="n-view" data-en="View Details →" data-hi="विवरण देखें →">View Details →</button>
+      <button class="mn-btn s" onclick="hideNotif()" data-en="✕ Dismiss" data-hi="✕ हटाएं">✕ Dismiss</button>
     </div>
   </div>
 
@@ -297,22 +324,22 @@
     <div style="display:flex; gap:16px; align-items:center; margin-bottom:20px;">
       <img src="icons/icon-192.png" onerror="this.src='https://via.placeholder.com/64?text=NP'" style="width:64px; height:64px; border-radius:14px; box-shadow:0 4px 14px rgba(0,0,0,0.1);">
       <div>
-        <div style="font-size:19px; font-weight:800; color:var(--deep); font-family:'Syne', sans-serif;">Install NearPop</div>
-        <div style="font-size:12px; color:var(--gray); font-weight:600; line-height:1.4; margin-top:2px;">Get faster access and real-time background alerts when you walk near deals.</div>
+        <div style="font-size:19px; font-weight:800; color:var(--deep); font-family:'Syne', sans-serif;" data-en="Install NearPop" data-hi="NearPop इंस्टॉल करें">Install NearPop</div>
+        <div style="font-size:12px; color:var(--gray); font-weight:600; line-height:1.4; margin-top:2px;" data-en="Get faster access and real-time background alerts when you walk near deals." data-hi="जब आप डील के पास हों तो तेज़ एक्सेस और रियल-टाइम बैकग्राउंड अलर्ट प्राप्त करें।">Get faster access and real-time background alerts when you walk near deals.</div>
       </div>
     </div>
     
     <div id="install-android-ui">
-      <button class="btn-or" style="width:100%" onclick="window.triggerNativeInstall()">📲 Install App</button>
+      <button class="btn-or" style="width:100%" onclick="window.triggerNativeInstall()" data-en="📲 Install App" data-hi="📲 ऐप इंस्टॉल करें">📲 Install App</button>
     </div>
     
     <div id="install-ios-ui" style="display:none; background:var(--cream); padding:14px; border-radius:12px; text-align:center;">
-      <div style="font-size:13px; color:var(--deep); font-weight:800; margin-bottom:6px;">How to install on iPhone:</div>
-      <div style="font-size:12px; color:var(--gray); font-weight:600; line-height:1.5;">
+      <div style="font-size:13px; color:var(--deep); font-weight:800; margin-bottom:6px;" data-en="How to install on iPhone:" data-hi="iPhone पर कैसे इंस्टॉल करें:">How to install on iPhone:</div>
+      <div style="font-size:12px; color:var(--gray); font-weight:600; line-height:1.5;" data-en="Tap the Share icon ⍗ at the bottom of Safari, then scroll down and select ➕ Add to Home Screen" data-hi="Safari के नीचे शेयर आइकन ⍗ पर टैप करें, फिर नीचे स्क्रॉल करें और ➕ Add to Home Screen चुनें">
         Tap the <b>Share</b> icon <span style="font-size:16px;">⍗</span> at the bottom of Safari, then scroll down and select<br><b>➕ Add to Home Screen</b>
       </div>
     </div>
-    <button class="btn-lt" style="width:100%; margin-top:10px;" onclick="window.closeInstallPopup()">Maybe Later</button>
+    <button class="btn-lt" style="width:100%; margin-top:10px;" onclick="window.closeInstallPopup()" data-en="Maybe Later" data-hi="शायद बाद में">Maybe Later</button>
   </div>
 </div>
 
@@ -320,32 +347,56 @@
   <div class="msht">
     <div class="mh"></div>
     <div class="wlc-em">👋</div>
-    <div class="wlc-t">What are you looking for?</div>
-    <div class="wlc-s">Pick your interest — we'll show the most relevant listings near you first.</div>
+    <div class="wlc-t" data-en="What are you looking for?" data-hi="आप क्या खोज रहे हैं?">What are you looking for?</div>
+    <div class="wlc-s" data-en="Pick your interest — we'll show the most relevant listings near you first." data-hi="अपनी रुचि चुनें — हम सबसे पहले आपके पास के प्रासंगिक लिस्टिंग दिखाएंगे।">Pick your interest — we'll show the most relevant listings near you first.</div>
     <div class="wtypes">
-	  <button class="wtype" onclick="window.pickType('all',this)"><div class="wi">🗺️</div><div class="wl">Show All</div><div class="ws">Everything nearby</div></button>
-      <button class="wtype on" onclick="window.pickType('deal',this)"><div class="wi">🏷️</div><div class="wl">Deals & Offers</div><div class="ws">Shop discounts</div></button>
-	  <button class="wtype" onclick="window.pickType('rental',this)"><div class="wi">🏠</div><div class="wl">Flat / Room</div><div class="ws">Rent near me</div></button>
-      <button class="wtype" onclick="window.pickType('pg',this)"><div class="wi">🛋️</div><div class="wl">PG / Hostel</div><div class="ws">Affordable stay</div></button>
-      <button class="wtype" onclick="window.pickType('job',this)"><div class="wi">💼</div><div class="wl">Jobs</div><div class="ws">Work near me</div></button>
+	  <button class="wtype" onclick="window.pickType('all',this)"><div class="wi">🗺️</div><div class="wl" data-en="Show All" data-hi="सभी दिखाएं">Show All</div><div class="ws" data-en="Everything nearby" data-hi="आसपास सब कुछ">Everything nearby</div></button>
+      <button class="wtype on" onclick="window.pickType('deal',this)"><div class="wi">🏷️</div><div class="wl" data-en="Deals & Offers" data-hi="डील्स और ऑफर्स">Deals & Offers</div><div class="ws" data-en="Shop discounts" data-hi="दुकान की छूट">Shop discounts</div></button>
+	  <button class="wtype" onclick="window.pickType('rental',this)"><div class="wi">🏠</div><div class="wl" data-en="Flat / Room" data-hi="फ्लैट / कमरा">Flat / Room</div><div class="ws" data-en="Rent near me" data-hi="मेरे पास किराया">Rent near me</div></button>
+      <button class="wtype" onclick="window.pickType('pg',this)"><div class="wi">🛋️</div><div class="wl" data-en="PG / Hostel" data-hi="पीजी / हॉस्टल">PG / Hostel</div><div class="ws" data-en="Affordable stay" data-hi="सस्ता ठहरना">Affordable stay</div></button>
+      <button class="wtype" onclick="window.pickType('job',this)"><div class="wi">💼</div><div class="wl" data-en="Jobs" data-hi="नौकरियां">Jobs</div><div class="ws" data-en="Work near me" data-hi="मेरे पास काम">Work near me</div></button>
     </div>
     <div class="gps-note">
       <span style="font-size:20px;flex-shrink:0">📍</span>
-      <p>NearPop uses your GPS to show listings near you. Please tap <strong>Allow</strong> when your browser asks for location access.</p>
+      <p data-en="NearPop uses your GPS to show listings near you. Please tap Allow when your browser asks for location access." data-hi="NearPop आपके पास की लिस्टिंग दिखाने के लिए आपके GPS का उपयोग करता है। कृपया 'अनुमति दें' पर टैप करें।">NearPop uses your GPS to show listings near you. Please tap <strong>Allow</strong> when your browser asks for location access.</p>
     </div>
-    <button class="btn-or" onclick="window.startApp()">🚀 Find Near Me Now!</button>
-    <button class="btn-skip" onclick="window.skipWelcome()">Skip — Browse All</button>
+    <button class="btn-or" onclick="window.startApp()" data-en="🚀 Find Near Me Now!" data-hi="🚀 अभी मेरे पास खोजें!">🚀 Find Near Me Now!</button>
+    <button class="btn-skip" onclick="window.skipWelcome()" data-en="Skip — Browse All" data-hi="छोड़ें — सभी ब्राउज़ करें">Skip — Browse All</button>
   </div>
 </div>
 
 <script type="module">
-// 🚀 FIX: Ensure we import `limit` from Firebase
 import { app, db, LS, SS, TC, TE, distM, isExpired, toast, cacheGet, cacheSet, cacheClear, loadNavigation } from './js/app.js';
 import { ghEncode, ghNeighbors, ghFilter } from './js/geohash.js';
 import { setLoc, setListings, checkProximity, dist, getPrefs, notifsToday, notifsThisHour, logNotif, inMarketZone, vendorCapReached, budgetThrottled, markVendorCapUsed, markBudgetUsed, markGeofenceNotified, applyDensityControl, getNotifType, showSoftBanner, trackEng, updateSpeed } from './js/notifications.js';
 import { getDocs, query, collection, orderBy, where, doc, updateDoc, increment, limit } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js';
 import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-messaging.js";
+
+// 🚀 TRANSLATION ENGINE
+window.lang = localStorage.getItem('app_lang') || 'en';
+
+window.toggleLang = () => {
+  window.lang = window.lang === 'en' ? 'hi' : 'en';
+  try { localStorage.setItem('app_lang', window.lang); } catch(e){}
+  window.applyLang();
+  renderCards(); 
+};
+
+window.applyLang = () => {
+  document.querySelectorAll('[data-en]').forEach(el => {
+    el.innerHTML = el.getAttribute(`data-${window.lang}`);
+  });
+  
+  if (isListView) {
+    document.getElementById('list-btn').innerHTML = window.lang === 'hi' ? '🗺️ नक्शा' : '🗺️ Map View';
+  }
+  if (discoveryMode) {
+    document.getElementById('disc-btn').textContent = window.lang === 'hi' ? '✕ खोज बंद करें' : '✕ Exit Discovery';
+  }
+};
+setTimeout(window.applyLang, 100);
+
 
 function initDragToScroll() {
   const slider = document.getElementById('hscr');
@@ -426,7 +477,7 @@ function handleGeoError(err) {
   if (err.code === 1) { 
     document.getElementById('hard-geo-block').style.display = 'flex';
   } else {
-    toast('📍', 'Location unavailable. Check GPS signal.');
+    toast('📍', window.lang === 'hi' ? 'स्थान उपलब्ध नहीं है। GPS जांचें।' : 'Location unavailable. Check GPS signal.');
     setFallback(); 
   }
 }
@@ -471,7 +522,7 @@ window._markerCluster = L.markerClusterGroup({
 window._map.addLayer(window._markerCluster);
 
 document.querySelectorAll('.rdist-btn').forEach(b => {
-  const v = b.textContent === 'Anywhere' ? 999 : parseInt(b.textContent);
+  const v = b.textContent === 'Anywhere' || b.textContent === 'कहीं भी' ? 999 : parseInt(b.textContent);
   b.classList.toggle('on', v === radiusKm);
 });
 
@@ -517,8 +568,6 @@ function onPosition(p, forceProcess = false) {
   setLoc(loc);
   SS('lastLoc', loc); 
 
-  const spd = speed > 1 ? (' · ' + (speed < 15 ? '🚶' : '🚗') + Math.round(speed) + 'km/h') : '';
-  document.getElementById('loclbl').textContent = '📍 Live GPS' + spd;
   if (window.userMarker) window.userMarker.setLatLng([loc.lat, loc.lng]);
   
   if (!hasLiveCentered) {
@@ -536,7 +585,6 @@ function getLoc() { startWatch(); }
 
 function setFallback() {
   loc = LS('lastLoc') || { lat: 28.4089, lng: 77.3178 };
-  document.getElementById('loclbl').textContent = 'Faridabad (demo 📍)';
   window._map.setView([loc.lat, loc.lng], 14);
   redraw();
 }
@@ -553,11 +601,21 @@ function fmtDist(l) {
 window.forceRefresh = async () => {
   const btn = document.getElementById('refresh-btn');
   if (btn) btn.classList.add('spinning');
-  toast('⏳', 'Refreshing live deals...');
+  toast('⏳', window.lang === 'hi' ? 'लाइव डील्स ताज़ा हो रही हैं...' : 'Refreshing live deals...');
   cacheClear();
   await loadListings();
   if (btn) btn.classList.remove('spinning');
-  toast('✅', 'Map updated!');
+  toast('✅', window.lang === 'hi' ? 'नक्शा अपडेट किया गया!' : 'Map updated!');
+};
+
+// 🚀 RECENTER FIX: Immediately animates camera to live loc instead of just restarting GPS watch
+window.recenterMap = () => {
+  if (loc && loc.lat) {
+    window._map.flyTo([loc.lat, loc.lng], 15, { duration: 0.5 });
+    toast('🎯', window.lang === 'hi' ? 'आपके स्थान पर वापस' : 'Centered on your location');
+  } else {
+    getLoc();
+  }
 };
 
 // 🚀 MASTER FIX: Dynamically apply Geohash constraints based on radius.
@@ -572,7 +630,6 @@ async function loadListings() {
     const currentRadius = parseInt(SS('searchRadius') || LS('searchRadius')) || radiusKm || 1;
 
     // Apply strict Geohash-5 filter ONLY for local searches (<= 5km)
-    // A Geohash-5 plus its 8 neighbors physically cannot fetch deals 10km+ away.
     if (userLoc && currentRadius <= 5) {
       const safeLat = +parseFloat(userLoc.lat).toFixed(6);
       const safeLng = +parseFloat(userLoc.lng).toFixed(6);
@@ -581,11 +638,10 @@ async function loadListings() {
       filters.push(where('geohash5', 'in', activeCells));
     }
 
-    // Always fetch only active deals to save client-side sorting
     filters.push(where('status', '==', 'active'));
 
     if (filters.length > 0) {
-      q = query(q, ...filters, limit(150)); // Protect Firebase quota!
+      q = query(q, ...filters, limit(150)); 
     } else {
       q = query(q, limit(150));
     }
@@ -644,11 +700,10 @@ function redraw() {
     
     const nextR = foundRadius || 999;
     
-    // Call the new async setR so it pulls new data if we expand past 5km
-    setR(nextR, Array.from(document.querySelectorAll('.rdist-btn')).find(b => parseInt(b.textContent) === nextR || (nextR === 999 && b.textContent === 'Anywhere')));
+    setR(nextR, Array.from(document.querySelectorAll('.rdist-btn')).find(b => parseInt(b.textContent) === nextR || (nextR === 999 && (b.textContent === 'Anywhere' || b.textContent === 'कहीं भी'))));
     
-    const rTxt = nextR === 999 ? 'Anywhere' : nextR + 'km';
-    toast('🔍', `No deals nearby. Auto-expanded to ${rTxt}!`);
+    const rTxt = nextR === 999 ? (window.lang === 'hi' ? 'कहीं भी' : 'Anywhere') : nextR + 'km';
+    toast('🔍', window.lang === 'hi' ? `आसपास कोई डील नहीं। दायरा बढ़ाकर ${rTxt} किया गया!` : `No deals nearby. Auto-expanded to ${rTxt}!`);
     return; 
   }
 
@@ -726,7 +781,7 @@ window.previewPin = (l) => {
   
   document.getElementById('pp-title').textContent = l.title || 'Special Offer';
   document.getElementById('pp-price').textContent = l.price || 'View Details';
-  document.getElementById('pp-dist').textContent = `📍 ${distTxt} from you`;
+  document.getElementById('pp-dist').textContent = window.lang === 'hi' ? `📍 आपसे ${distTxt} दूर` : `📍 ${distTxt} from you`;
   
   document.getElementById('pp-type').textContent = (l.type || 'Offer').toUpperCase();
   document.getElementById('pp-type').style.color = col;
@@ -759,7 +814,9 @@ function renderCards() {
   if (page >= totalPages) page = 0;
   const items = filteredList.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
-  document.getElementById('mcnt').textContent = total + ' listing' + (total === 1 ? '' : 's') + (radiusKm < 999 ? ' within ' + radiusKm + ' km' : '') + ' · nearest first';
+  document.getElementById('mcnt').textContent = window.lang === 'hi'
+      ? `${total} लिस्टिंग${radiusKm < 999 ? ` ${radiusKm}km के भीतर` : ''} · सबसे करीब पहले`
+      : `${total} listing${total === 1 ? '' : 's'}${radiusKm < 999 ? ` within ${radiusKm} km` : ''} · nearest first`;
 
   document.getElementById('hscr').innerHTML = items.map(l => {
     const imgUrl = l.imageUrl || l.image;
@@ -791,7 +848,7 @@ function renderCards() {
 
   const vgrid = document.getElementById('vgrid');
   if (total === 0) {
-    vgrid.innerHTML = `<div style="grid-column: 1 / -1; text-align:center; padding: 40px 20px; color:#6B7280; font-weight:700; font-size:14px;">No offers match your current filters.</div>`;
+    vgrid.innerHTML = `<div style="grid-column: 1 / -1; text-align:center; padding: 40px 20px; color:#6B7280; font-weight:700; font-size:14px;">${window.lang === 'hi' ? 'आपके वर्तमान फ़िल्टर से कोई ऑफ़र मेल नहीं खाता।' : 'No offers match your current filters.'}</div>`;
   } else {
     vgrid.innerHTML = filteredList.map(l => {
       const imgUrl = l.imageUrl || l.image;
@@ -803,7 +860,7 @@ function renderCards() {
       let fomoHtml = '';
       if (l.expiryDate) {
         const hrs = (new Date(l.expiryDate) - new Date()) / 3600000;
-        if (hrs > 0 && hrs <= 24) fomoHtml = `<div class="fomo-badge">🔥 Ends in ${Math.ceil(hrs)}h!</div>`;
+        if (hrs > 0 && hrs <= 24) fomoHtml = `<div class="fomo-badge">🔥 ${window.lang === 'hi' ? `${Math.ceil(hrs)} घंटे में समाप्त!` : `Ends in ${Math.ceil(hrs)}h!`}</div>`;
       }
       
       return `
@@ -827,7 +884,7 @@ function renderCards() {
   const pgn = document.getElementById('pgn');
   if (totalPages <= 1) { pgn.innerHTML = ''; return; }
   
-  let html = `<button class="pgn-btn txt" onclick="goPage(${page - 1})" ${page === 0 ? 'disabled' : ''}>Prev</button>`;
+  let html = `<button class="pgn-btn txt" onclick="goPage(${page - 1})" ${page === 0 ? 'disabled' : ''}>${window.lang === 'hi' ? 'पिछला' : 'Prev'}</button>`;
   
   if (totalPages <= 5) {
     for (let i = 0; i < totalPages; i++) {
@@ -857,7 +914,7 @@ function renderCards() {
     }
   }
   
-  html += `<button class=\"pgn-btn txt\" onclick=\"goPage(${page + 1})\" ${page === totalPages - 1 ? 'disabled' : ''}>Next</button>`;
+  html += `<button class=\"pgn-btn txt\" onclick=\"goPage(${page + 1})\" ${page === totalPages - 1 ? 'disabled' : ''}>${window.lang === 'hi' ? 'अगला' : 'Next'}</button>`;
   pgn.innerHTML = html;
 }
 
@@ -887,7 +944,7 @@ window.toggleListView = () => {
     discBtn.style.display = 'none';
     
     listBtn.classList.add('on');
-    listBtn.innerHTML = '🗺️ Map View';
+    listBtn.innerHTML = window.lang === 'hi' ? '🗺️ नक्शा' : '🗺️ Map View';
   } else {
     bsht.classList.remove('list-mode');
     hscr.style.display = 'flex';
@@ -896,7 +953,7 @@ window.toggleListView = () => {
     discBtn.style.display = 'flex';
     
     listBtn.classList.remove('on');
-    listBtn.innerHTML = '📋 List View';
+    listBtn.innerHTML = window.lang === 'hi' ? '📋 सूची' : '📋 List View';
   }
 };
 
@@ -952,7 +1009,8 @@ window.pickType = (t, btn) => {
 window.startApp = () => {
   cat = welcomeType;
   document.querySelectorAll('#cat-pills .pill').forEach(b => {
-    const match = b.textContent === 'All' ? 'all' : b.textContent.toLowerCase().includes('deal') ? 'deal' : b.textContent.includes('Flat') ? 'rental' : b.textContent.includes('PG') ? 'pg' : b.textContent.includes('Job') ? 'job' : '';
+    const txt = b.getAttribute('data-en');
+    const match = txt === 'All' ? 'all' : txt.includes('Deals') ? 'deal' : txt.includes('Flats') ? 'rental' : txt.includes('PG') ? 'pg' : txt.includes('Jobs') ? 'job' : '';
     b.classList.toggle('on', match === cat);
   });
   const interestMap = {'all':['deal','rental','pg','job'],'deal':['deal'],'rental':['rental'],'pg':['pg'],'job':['job']};
@@ -979,23 +1037,22 @@ window.toggleDiscovery = () => {
   const btn = document.getElementById('disc-btn');
   if (discoveryMode) {
     btn.classList.add('on');
-    btn.textContent = '✕ Exit Discovery';
+    btn.textContent = window.lang === 'hi' ? '✕ खोज बंद करें' : '✕ Exit Discovery';
     redraw();
     if (filteredList.length) {
       const bounds = L.latLngBounds(filteredList.filter(l => l.lat).map(l => [l.lat, l.lng]));
       if (bounds.isValid()) window._map.fitBounds(bounds, { padding: [40, 40] });
     }
-    toast('🔍', 'Discovery Mode: tap any marker to view offer');
+    toast('🔍', window.lang === 'hi' ? 'डिस्कवरी मोड: ऑफर देखने के लिए किसी भी मार्कर पर टैप करें' : 'Discovery Mode: tap any marker to view offer');
   } else {
     btn.classList.remove('on');
-    btn.textContent = '🔍 Discover';
+    btn.textContent = window.lang === 'hi' ? '🔍 खोजें' : '🔍 Discover';
     redraw();
-    toast('📍', 'Auto-alerts resumed');
+    toast('📍', window.lang === 'hi' ? 'ऑटो-अलर्ट फिर से शुरू' : 'Auto-alerts resumed');
   }
 };
 
 window.hideNotif = () => document.getElementById('notif').classList.remove('on');
-window.recenter = getLoc;
 window.go = href => window.location.href = href;
 window.openListing = id => { SS('viewId', id); window.location.href = 'detail.html?id=' + encodeURIComponent(id); };
 
@@ -1017,8 +1074,6 @@ window.setR = async (km, btn) => {
   document.querySelectorAll('.rdist-btn').forEach(b => b.classList.remove('on')); 
   if (btn) btn.classList.add('on'); 
   
-  // If we just clicked '10km', '25km' or 'Anywhere', and we were previously
-  // restricted to the 5km Geohash lock, we MUST ask Firebase for the new wider data.
   if (oldKm <= 5 && km > 5) {
     await window.forceRefresh();
   } else {
