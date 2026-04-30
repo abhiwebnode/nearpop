@@ -510,23 +510,29 @@
 }
 
 .pin-preview { 
-  position: absolute; 
-  bottom: -100%; 
-  left: 0; 
-  right: 0; 
-  z-index: 1000; 
+  position: fixed; 
+  top: 50%; 
+  left: 50%; 
+  transform: translate(-50%, -50%) scale(0.9);
+  width: calc(100% - 32px);
+  max-width: 360px;
+  z-index: 9999; /* Ensures it pops over the bottom nav bar */
   background: #fff; 
-  border-radius: 32px 32px 0 0; 
+  border-radius: 28px; /* Fully rounded corners for a floating card */
   padding: 24px; 
-  box-shadow: 0 -10px 40px rgba(0,0,0,0.2); 
-  transition: bottom 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); 
+  box-shadow: 0 20px 50px rgba(0,0,0,0.3); 
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); 
   display: flex; 
   flex-direction: column; 
   gap: 16px; 
 }
 
 .pin-preview.on { 
-  bottom: 0; 
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+  pointer-events: auto;
 }
 
 .pp-close { 
@@ -886,7 +892,6 @@
 
       <div class="map-watermark">
         <img src="https://nearpop.in/icons/logo.png" alt="NearPop">
-        <span>NearPop</span>
       </div>
       
       <div class="tbar">
@@ -1452,7 +1457,7 @@ function redraw() {
     const userHtml = `
       <div style="position:relative; width:40px; height:40px; display:flex; align-items:center; justify-content:center;">
         <div class="user-radar"></div>
-        <img src="https://nearpop.in/icons/logo.png" onerror="this.style.display='none'" style="width:28px; height:28px; border-radius:50%; border:3px solid #fff; background:#0F0F13; object-fit:contain; padding:2px; position:relative; z-index:2; box-shadow:0 4px 10px rgba(0,0,0,0.2);">
+        <img src="https://nearpop.in/icons/icon-512.png" onerror="this.style.display='none'" style="width:28px; height:28px; border-radius:50%; border:3px solid #fff; background:#0F0F13; object-fit:contain; padding:2px; position:relative; z-index:2; box-shadow:0 4px 10px rgba(0,0,0,0.2);">
       </div>`;
       
     const ui = L.divIcon({ 
