@@ -293,33 +293,36 @@ export function checkProximity(showNotifFn, showMarketNotifFn) {
   }
 
   if (ntype === 'hard') {
+    // 1. Fire the in-app UI update
     showNotifFn(winner);
     
-    if (document.visibilityState === 'hidden') {
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.ready.then(registration => {
-          registration.showNotification(
-            (winner.emoji || '📍') + ' ' + (winner.title || 'New Deal Nearby!'),
-            {
-              body: (winner.price ? winner.price + ' · ' : '') + (winner.desc || 'Tap to view details').slice(0, 40) + '...',
-              icon: '/icons/icon-192.png',
-              badge: '/icons/badge-96.png',
-              vibrate: [500, 250, 500, 250, 1000, 250, 1000], 
-              requireInteraction: true, 
-              data: { url: '/detail.html?id=' + winner.id } 
-            }
-          );
-        });
-      } else {
-        triggerLocalBuzz(
+    // 2. 🚀 FIX: Unconditionally trigger the native System Push Notification
+    // It will now show up in the device's system tray/banner exactly like a standard app notification.
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.ready.then(registration => {
+        registration.showNotification(
           (winner.emoji || '📍') + ' ' + (winner.title || 'New Deal Nearby!'),
-          (winner.price ? winner.price + ' · ' : '') + (winner.desc || 'Tap to view details').slice(0, 40) + '...',
-          '/detail.html?id=' + winner.id
+          {
+            body: (winner.price ? winner.price + ' · ' : '') + (winner.desc || 'Tap to view details').slice(0, 40) + '...',
+            icon: '/icons/icon-192.png',
+            badge: '/icons/badge-96.png',
+            vibrate: [500, 250, 500, 250, 1000, 250, 1000], 
+            requireInteraction: true, 
+            data: { url: '/detail.html?id=' + winner.id } 
+          }
         );
-      }
+      });
     } else {
-      if (navigator.vibrate) navigator.vibrate([500, 250, 1000]);
+      triggerLocalBuzz(
+        (winner.emoji || '📍') + ' ' + (winner.title || 'New Deal Nearby!'),
+        (winner.price ? winner.price + ' · ' : '') + (winner.desc || 'Tap to view details').slice(0, 40) + '...',
+        '/detail.html?id=' + winner.id
+      );
     }
+    
+    // Fallback hardware buzz in case system notifications are blocked but vibration is allowed
+    if (navigator.vibrate) navigator.vibrate([500, 250, 1000]);
+
   } else if (ntype === 'soft') {
     showSoftBanner(winner);
     if (navigator.vibrate) navigator.vibrate([250]);
