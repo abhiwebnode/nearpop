@@ -159,7 +159,7 @@
   text-transform: uppercase; 
 }
 
-/* 🚀 FIX: Added padding-bottom to allow scrolling past the floating pagination & nav bar */
+/* 🚀 FIX: Smooth Momentum Scrolling & Adjusted Bottom Padding for Nav Bar */
 .bsht { 
   position: absolute; 
   top: 50%; 
@@ -168,12 +168,14 @@
   bottom: 0; 
   background: #F9FAFB; 
   border-radius: 28px 28px 0 0; 
-  padding: 10px 0 calc(140px + env(safe-area-inset-bottom)); 
+  padding: 10px 0 calc(90px + env(safe-area-inset-bottom)); 
   box-shadow: 0 -8px 30px rgba(0,0,0,.15); 
   z-index: 800; 
   display: flex; 
   flex-direction: column; 
   overflow-y: auto; 
+  -webkit-overflow-scrolling: touch; 
+  overscroll-behavior-y: contain;
   transition: top 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); 
 }
 
@@ -200,6 +202,7 @@
   border-bottom: 1px solid #E5E7EB; 
   margin-bottom: 8px; 
   flex-shrink: 0; 
+  -webkit-overflow-scrolling: touch;
 }
 
 .radius-bar::-webkit-scrollbar { 
@@ -243,6 +246,7 @@
   overflow-x: auto; 
   scrollbar-width: none; 
   flex-shrink: 0; 
+  -webkit-overflow-scrolling: touch;
 }
 
 .cat-pills::-webkit-scrollbar { 
@@ -270,66 +274,6 @@
   box-shadow: 0 4px 12px rgba(0,0,0,0.1); 
 }
 
-/* 🚀 FIX: Premium Floating Glassmorphism Pagination */
-.pgn { 
-  position: fixed; 
-  bottom: calc(75px + env(safe-area-inset-bottom)); 
-  left: 50%; 
-  transform: translateX(-50%); 
-  display: none; /* Changed dynamically by JS */
-  align-items: center; 
-  justify-content: center; 
-  gap: 4px; 
-  padding: 4px 8px; 
-  background: rgba(255, 255, 255, 0.25); 
-  -webkit-backdrop-filter: blur(20px); 
-  backdrop-filter: blur(20px); 
-  border-radius: 100px; 
-  box-shadow: 0 8px 30px rgba(0,0,0,0.15); 
-  border: 1px solid rgba(255,255,255,0.2); 
-  z-index: 950; 
-  width: max-content; 
-}
-
-.pgn-btn { 
-  min-width: 34px; 
-  height: 34px; 
-  padding: 0 4px; 
-  border-radius: 50px; 
-  font-size: 13px; 
-  font-weight: 900; 
-  border: none; 
-  background: #fff; 
-  color: #4B5563; 
-  cursor: pointer; 
-  font-family: inherit; 
-  transition: all 0.2s; 
-  box-shadow: 0 2px 8px rgba(0,0,0,0.06); 
-}
-
-.pgn-btn.txt { 
-  padding: 0 14px; 
-} 
-
-.pgn-btn.on { 
-  background: #FF5722; 
-  color: #fff; 
-  box-shadow: 0 4px 12px rgba(255,87,34,0.3); 
-}
-
-.pgn-btn:disabled { 
-  opacity: 0.4; 
-  cursor: not-allowed; 
-  box-shadow: none; 
-}
-
-.pgn-dots { 
-  color: #9CA3AF; 
-  font-weight: 800; 
-  padding: 0 2px; 
-  font-size: 14px; 
-}
-
 .hscr { 
   display: flex; 
   gap: 12px; 
@@ -339,6 +283,8 @@
   flex-shrink: 0; 
   cursor: grab; 
   user-select: none; 
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
 }
 
 .hscr::-webkit-scrollbar { 
@@ -368,7 +314,6 @@
   border-color: #FF5722; 
 }
 
-/* 🚀 FIX: Removed massive bottom padding from grid since bottom sheet handles it natively */
 .deals-grid { 
   display: grid; 
   grid-template-columns: 1fr 1fr; 
@@ -888,11 +833,6 @@
   
   .rdist-btn, .pill { background: #1F2937; color: #D1D5DB; border-color: #374151; }
   .rdist-btn.on, .pill.on { background: #FF5722; color: #fff; border-color: #FF5722; }
-  
-  /* 🚀 FIX: Dark mode pagination overrides */
-  .pgn { background: rgba(17, 24, 39, 0.25); border-color: rgba(255,255,255,0.05); }
-  .pgn-btn { background: #1F2937; color: #D1D5DB; box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
-  .pgn-btn.on { background: #FF5722; color: #fff; box-shadow: 0 4px 12px rgba(255,87,34,0.3); }
 
   .hcd { background: #1F2937; border-color: #374151; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
   .deal-card { box-shadow: 0 6px 16px rgba(0,0,0,0.3); }
@@ -946,6 +886,7 @@
 
       <div class="map-watermark">
         <img src="https://nearpop.in/icons/logo.png" alt="NearPop">
+        <span>NearPop</span>
       </div>
       
       <div class="tbar">
@@ -1003,8 +944,6 @@
       <div class="deals-grid" id="vgrid" style="display:none;"></div>
     </div>
 
-    <div class="pgn" id="pgn"></div>
-
     <div id="pin-preview" class="pin-preview">
         <button class="pp-close" onclick="closePreview()">✕</button>
         <div class="pp-top">
@@ -1050,7 +989,7 @@
   <div class="msht">
     <div class="mh"></div>
     <div style="display:flex; gap:16px; align-items:center; margin-bottom:20px;">
-      <img src="https://nearpop.in/icons/icon-192.png" style="width:64px; height:64px; border-radius:4px; box-shadow:0 4px 4px rgba(0,0,0,0.1);">
+      <img src="icons/icon-192.png" style="width:64px; height:64px; border-radius:4px; box-shadow:0 4px 4px rgba(0,0,0,0.1);">
       <div>
         <div style="font-size:19px; font-weight:800; color:var(--deep); font-family:'Syne', sans-serif;" data-en="Install NearPop" data-hi="NearPop इंस्टॉल करें">Install NearPop</div>
         <div style="font-size:12px; color:var(--gray); font-weight:600; line-height:1.4; margin-top:2px;" data-en="Get faster access and real-time background alerts when you walk near deals." data-hi="जब आप डील के पास हों तो तेज़ एक्सेस और रियल-टाइम बैकग्राउंड अलर्ट प्राप्त करें।">Get faster access and real-time background alerts when you walk near deals.</div>
@@ -1236,14 +1175,12 @@ window.onerror = (msg, src, line) => {
   return false;
 };
 
-const PAGE_SIZE = 5;
 const savedLoc = LS('lastLoc'); 
 let markers = [];
 let listings = [];
 let loc = savedLoc;
 let cat = 'deal';
 let radiusKm = LS('searchRadius') || 1;
-let page = 0;
 let filteredList = [];
 let welcomeType = 'deal';
 let hasLiveCentered = false; 
@@ -1515,7 +1452,7 @@ function redraw() {
     const userHtml = `
       <div style="position:relative; width:40px; height:40px; display:flex; align-items:center; justify-content:center;">
         <div class="user-radar"></div>
-        <img src="https://nearpop.in/icons/icon-192.png" onerror="this.style.display='none'" style="width:28px; height:28px; border-radius:50%; border:3px solid #fff; background:#0F0F13; object-fit:contain; padding:2px; position:relative; z-index:2; box-shadow:0 4px 10px rgba(0,0,0,0.2);">
+        <img src="https://nearpop.in/icons/logo.png" onerror="this.style.display='none'" style="width:28px; height:28px; border-radius:50%; border:3px solid #fff; background:#0F0F13; object-fit:contain; padding:2px; position:relative; z-index:2; box-shadow:0 4px 10px rgba(0,0,0,0.2);">
       </div>`;
       
     const ui = L.divIcon({ 
@@ -1599,9 +1536,6 @@ window.closePreview = () => {
 
 function renderCards() {
   const total = filteredList.length;
-  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
-  if (page >= totalPages) page = 0;
-  const items = filteredList.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
   document.getElementById('mcnt').textContent = window.lang === 'hi' 
       ? `${total} लिस्टिंग${radiusKm < 999 ? ` ${radiusKm}km के भीतर` : ''} · सबसे करीब पहले` 
@@ -1632,7 +1566,7 @@ function renderCards() {
       </div>
     `;
   } else {
-    document.getElementById('hscr').innerHTML = items.map(l => {
+    document.getElementById('hscr').innerHTML = filteredList.map(l => {
       const imgUrl = l.imageUrl || l.image;
       
       let fomoHtml = '';
@@ -1698,57 +1632,7 @@ function renderCards() {
       `;
     }).join('');
   }
-
-  const pgn = document.getElementById('pgn');
-  if (totalPages <= 1) { 
-    pgn.innerHTML = ''; 
-    pgn.style.display = 'none'; 
-    return; 
-  }
-  
-  pgn.style.display = 'flex';
-  
-  let html = `<button class="pgn-btn txt" onclick="goPage(${page - 1})" ${page === 0 ? 'disabled' : ''}>${window.lang === 'hi' ? 'पिछला' : 'Prev'}</button>`;
-  
-  if (totalPages <= 5) {
-    for (let i = 0; i < totalPages; i++) { 
-      html += `<button class="pgn-btn ${i === page ? 'on' : ''}" onclick="goPage(${i})">${i + 1}</button>`; 
-    }
-  } else {
-    if (page < 3) {
-      for (let i = 0; i < 4; i++) { 
-        html += `<button class="pgn-btn ${i === page ? 'on' : ''}" onclick="goPage(${i})">${i + 1}</button>`; 
-      }
-      html += `<span class="pgn-dots">...</span><button class="pgn-btn" onclick="goPage(${totalPages - 1})">${totalPages}</button>`;
-    } else if (page >= totalPages - 3) {
-      html += `<button class="pgn-btn" onclick="goPage(0)">1</button><span class="pgn-dots">...</span>`;
-      for (let i = totalPages - 4; i < totalPages; i++) { 
-        html += `<button class="pgn-btn ${i === page ? 'on' : ''}" onclick="goPage(${i})">${i + 1}</button>`; 
-      }
-    } else {
-      html += `<button class="pgn-btn" onclick="goPage(0)">1</button><span class="pgn-dots">...</span>`;
-      html += `<button class="pgn-btn" onclick="goPage(${page - 1})">${page}</button>`;
-      html += `<button class="pgn-btn on" onclick="goPage(${page})">${page + 1}</button>`;
-      html += `<button class="pgn-btn" onclick="goPage(${page + 1})">${page + 2}</button>`;
-      html += `<span class="pgn-dots">...</span><button class="pgn-btn" onclick="goPage(${totalPages - 1})">${totalPages}</button>`;
-    }
-  }
-  
-  html += `<button class=\"pgn-btn txt\" onclick=\"goPage(${page + 1})\" ${page === totalPages - 1 ? 'disabled' : ''}>${window.lang === 'hi' ? 'अगला' : 'Next'}</button>`;
-  
-  pgn.innerHTML = html;
 }
-
-window.goPage = p => {
-  window.haptic(30);
-  const totalPages = Math.ceil(filteredList.length / PAGE_SIZE);
-  
-  if (p < 0 || p >= totalPages) return;
-  
-  page = p; 
-  renderCards(); 
-  document.getElementById('hscr').scrollLeft = 0;
-};
 
 let isListView = false;
 window.toggleListView = () => {
@@ -1757,7 +1641,6 @@ window.toggleListView = () => {
   
   const bsht = document.querySelector('.bsht');
   const hscr = document.getElementById('hscr');
-  const pgn = document.getElementById('pgn');
   const vgrid = document.getElementById('vgrid');
   const listBtn = document.getElementById('list-btn');
   const discBtn = document.getElementById('disc-btn');
@@ -1770,9 +1653,6 @@ window.toggleListView = () => {
     
     listBtn.classList.add('on'); 
     listBtn.innerHTML = window.lang === 'hi' ? '🗺️ नक्शा' : '🗺️ Map View';
-    
-    const tPages = Math.ceil(filteredList.length / PAGE_SIZE);
-    pgn.style.display = tPages > 1 ? 'flex' : 'none';
   } else {
     bsht.classList.remove('list-mode'); 
     hscr.style.display = 'flex'; 
@@ -1781,8 +1661,6 @@ window.toggleListView = () => {
     
     listBtn.classList.remove('on'); 
     listBtn.innerHTML = window.lang === 'hi' ? '📋 सूची' : '📋 List View';
-    
-    pgn.style.display = 'none';
   }
 };
 
@@ -1927,7 +1805,6 @@ window.openListing = id => {
 window.setCat = async (c, btn) => { 
   window.haptic(50); 
   cat = c; 
-  page = 0; 
   document.querySelectorAll('#cat-pills .pill').forEach(b => b.classList.remove('on')); 
   btn.classList.add('on'); 
   redraw(); 
@@ -1937,7 +1814,6 @@ window.setR = async (km, btn) => {
   window.haptic(50);
   const oldKm = radiusKm; 
   radiusKm = km; 
-  page = 0; 
   SS('searchRadius', km); 
   
   document.querySelectorAll('.rdist-btn').forEach(b => b.classList.remove('on')); 
