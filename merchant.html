@@ -372,6 +372,12 @@ import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/
 if (!LS('uid') || LS('role') !== 'merchant') { window.location.href = 'index.html'; }
 
 const uid   = LS('uid');
+
+// 🚀 NEW: Global Haptic Engine Setup
+window.haptic = (ms = 50) => {
+  try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) {}
+};
+
 const mname = LS('mname')||'My Business';
 let wallet  = LS('wallet')||500;
 let currentListings = [];
@@ -476,6 +482,7 @@ window.uploadImageToFreeServer = async (file, statusElId, targetW = 800, targetH
 
 // 🚀 HANDLE SHOP LOGO UPLOAD (400x400 Square)
 window.handleLogoUpload = async (input) => {
+  window.haptic(30);
   if (!input.files || input.files.length === 0) return;
   const file = input.files[0];
   
@@ -624,7 +631,21 @@ function renderFromData(all, userData) {
 function renderCards(mine) {
   const el = document.getElementById('mcards');
   if (!mine.length) { 
-    el.innerHTML = `<div class="empty" style="text-align:center; padding:40px 20px;"><div style="font-size:40px; margin-bottom:10px;">📋</div><h3 style="color:var(--deep); font-weight:800;">No listings yet</h3><p style="color:var(--gray); font-size:13px;">Create your first listing to start reaching nearby customers.</p></div>`; 
+    el.innerHTML = `
+      <div style="text-align:center; padding:50px 20px; background:var(--card); border-radius:24px; border:2px dashed var(--bdr); box-shadow:0 10px 30px rgba(0,0,0,0.05); margin: 0 16px 30px;">
+        <svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-bottom:16px;">
+          <circle cx="60" cy="60" r="50" fill="rgba(255,87,34,0.1)"/>
+          <rect x="25" y="50" width="70" height="50" rx="6" fill="var(--bg-app)" stroke="var(--bdr)" stroke-width="4"/>
+          <path d="M15 50C15 44.477 19.477 40 25 40H95C100.523 40 105 44.477 105 50V55H15V50Z" fill="#FF5722"/>
+          <path d="M15 55L25 45H95L105 55H15Z" fill="rgba(255,255,255,0.2)"/>
+          <rect x="40" y="65" width="40" height="25" rx="4" fill="rgba(255,87,34,0.15)" stroke="#FF5722" stroke-width="2"/>
+          <path d="M85 30V20M80 25H90" stroke="#F59E0B" stroke-width="3" stroke-linecap="round"/>
+          <path d="M30 25V15M25 20H35" stroke="#3B82F6" stroke-width="3" stroke-linecap="round"/>
+        </svg>
+        <h3 style="color:var(--deep); font-size:18px; font-weight:900; margin-bottom:8px; font-family:'Syne', sans-serif;">Your storefront is empty</h3>
+        <p style="color:var(--gray); font-size:13px; font-weight:600; line-height:1.5; margin-bottom:24px;">Don't let nearby customers walk past your business! Post your first deal to instantly show up on the local map.</p>
+        <button class="btn-or" onclick="window.checkPremium()" style="box-shadow:0 8px 20px rgba(255,87,34,0.3); padding:14px 28px; border-radius:14px;">🚀 Create First Listing</button>
+      </div>`; 
     return; 
   }
   
@@ -677,6 +698,7 @@ function renderCards(mine) {
 }
 
 window.openEdit = (id) => { 
+  window.haptic(30);
   const l = currentListings.find(x => x.id === id); 
   if (!l) return; 
   document.getElementById('edit-id').value = l.id; 
@@ -693,6 +715,7 @@ window.openEdit = (id) => {
 };
 
 window.saveEdit = async () => { 
+  window.haptic(50);
   const id = document.getElementById('edit-id').value; 
   const budget = parseInt(document.getElementById('edit-budget').value) || 25; 
   
@@ -732,15 +755,36 @@ window.saveEdit = async () => {
   btn.textContent = '💾 Save Changes'; 
 };
 
-window.togglePause = async (id, currentStatus) => { const newStatus = currentStatus === 'paused' ? 'active' : 'paused'; try { await updateDoc(doc(db, 'listings', id), { status: newStatus }); toast('✅', `Listing ${newStatus}!`); loadListings(true); } catch(e) { toast('❌', 'Error updating status'); } };
-window.deleteListing = async (id) => { if (!confirm("🚨 Are you sure you want to permanently delete this listing?")) return; try { await deleteDoc(doc(db, 'listings', id)); toast('🗑️', 'Listing deleted.'); loadListings(true); } catch(e) { toast('❌', 'Error deleting'); } };
+window.togglePause = async (id, currentStatus) => { 
+  window.haptic(50);
+  const newStatus = currentStatus === 'paused' ? 'active' : 'paused'; 
+  try { 
+    await updateDoc(doc(db, 'listings', id), { status: newStatus }); 
+    toast('✅', `Listing ${newStatus}!`); 
+    loadListings(true); 
+  } catch(e) { 
+    toast('❌', 'Error updating status'); 
+  } 
+};
+
+window.deleteListing = async (id) => { 
+  window.haptic(50);
+  if (!confirm("🚨 Are you sure you want to permanently delete this listing?")) return; 
+  try { 
+    await deleteDoc(doc(db, 'listings', id)); 
+    toast('🗑️', 'Listing deleted.'); 
+    loadListings(true); 
+  } catch(e) { 
+    toast('❌', 'Error deleting'); 
+  } 
+};
 
 let pendingAmount = 0;
-window.closeWalModal = () => { document.getElementById('modwal').classList.remove('on'); setTimeout(window.backToAmounts, 300); };
-window.selectTopUp = (n) => { pendingAmount = n; document.getElementById('pay-amt').textContent = '₹' + n; document.getElementById('wal-step-1').style.display = 'none'; document.getElementById('wal-step-2').style.display = 'block'; };
-window.backToAmounts = () => { document.getElementById('wal-step-2').style.display = 'none'; document.getElementById('wal-step-3').style.display = 'none'; document.getElementById('wal-step-1').style.display = 'block'; };
-window.processPayment = async (method) => { document.getElementById('wal-step-2').style.display = 'none'; document.getElementById('wal-step-3').style.display = 'block'; setTimeout(async () => { wallet += pendingAmount; SS('wallet', wallet); localStorage.setItem('np_wallet', wallet); if (LS('uid')) { try { await setDoc(doc(db, 'users', LS('uid')), { wallet: wallet }, { merge: true }); } catch(e) { } } document.getElementById('mwal').textContent = '₹'+parseFloat(wallet).toFixed(2); document.getElementById('walbal').textContent = '₹'+parseFloat(wallet).toFixed(2); window.closeWalModal(); toast('✅', `₹${pendingAmount} added via ${method}!`); }, 1500); };
-window.logout = async () => { try { await signOut(auth); } catch(e) { } ['uid','role','mname','wallet','phone', 'plan', 'logoUrl'].forEach(k=>localStorage.removeItem('np_'+k)); sessionStorage.clear(); window.location.href = 'index.html'; };
+window.closeWalModal = () => { window.haptic(30); document.getElementById('modwal').classList.remove('on'); setTimeout(window.backToAmounts, 300); };
+window.selectTopUp = (n) => { window.haptic(30); pendingAmount = n; document.getElementById('pay-amt').textContent = '₹' + n; document.getElementById('wal-step-1').style.display = 'none'; document.getElementById('wal-step-2').style.display = 'block'; };
+window.backToAmounts = () => { window.haptic(30); document.getElementById('wal-step-2').style.display = 'none'; document.getElementById('wal-step-3').style.display = 'none'; document.getElementById('wal-step-1').style.display = 'block'; };
+window.processPayment = async (method) => { window.haptic(50); document.getElementById('wal-step-2').style.display = 'none'; document.getElementById('wal-step-3').style.display = 'block'; setTimeout(async () => { wallet += pendingAmount; SS('wallet', wallet); localStorage.setItem('np_wallet', wallet); if (LS('uid')) { try { await setDoc(doc(db, 'users', LS('uid')), { wallet: wallet }, { merge: true }); } catch(e) { } } document.getElementById('mwal').textContent = '₹'+parseFloat(wallet).toFixed(2); document.getElementById('walbal').textContent = '₹'+parseFloat(wallet).toFixed(2); window.closeWalModal(); toast('✅', `₹${pendingAmount} added via ${method}!`); }, 1500); };
+window.logout = async () => { window.haptic(50); try { await signOut(auth); } catch(e) { } ['uid','role','mname','wallet','phone', 'plan', 'logoUrl'].forEach(k=>localStorage.removeItem('np_'+k)); sessionStorage.clear(); window.location.href = 'index.html'; };
 window.toast = toast;
 
 onAuthStateChanged(auth, (user) => { if (user) { loadListings(true); } });
@@ -748,6 +792,7 @@ setInterval(()=> { if (auth.currentUser) loadListings(true); }, CACHE_TTL);
 
 // 🚀 FIXED THE DOUBLE-SAVE BUG HERE
 window.upgradePremium = async () => { 
+  window.haptic(50);
   if (wallet < 499) { 
     toast('⚠️', 'Insufficient funds.'); 
     document.getElementById('mod-premium').classList.remove('on'); 
@@ -775,17 +820,18 @@ window.upgradePremium = async () => {
   } 
 };
 
-window.checkPremium = () => { if (userPlan === 'premium' || currentListings.length === 0) { window.location.href = 'create.html'; } else { document.getElementById('mod-premium').classList.add('on'); } };
+window.checkPremium = () => { window.haptic(30); if (userPlan === 'premium' || currentListings.length === 0) { window.location.href = 'create.html'; } else { document.getElementById('mod-premium').classList.add('on'); } };
 
-window.showStoreQR = () => { const uid = LS('uid'); if(!uid) return alert("Error: Merchant not logged in."); const box = document.getElementById('qrcode-box'); box.innerHTML = ''; new QRCode(box, { text: "NEARPOP_CLAIM:" + uid, width: 220, height: 220, colorDark : "#000000", colorLight : "#ffffff", correctLevel : QRCode.CorrectLevel.H }); document.getElementById('mod-qr').classList.add('on'); };
+window.showStoreQR = () => { window.haptic(30); const uid = LS('uid'); if(!uid) return alert("Error: Merchant not logged in."); const box = document.getElementById('qrcode-box'); box.innerHTML = ''; new QRCode(box, { text: "NEARPOP_CLAIM:" + uid, width: 220, height: 220, colorDark : "#000000", colorLight : "#ffffff", correctLevel : QRCode.CorrectLevel.H }); document.getElementById('mod-qr').classList.add('on'); };
 
 window.generatePermanentStandee = () => {
+  window.haptic(30);
   const merchantUid = LS('uid'); 
   const targetUrl = `https://nearpop.in/store.html?mid=${merchantUid}&utm_source=qr_standee&utm_medium=offline`;
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(targetUrl)}&margin=10`;
 
   const mLogo = document.getElementById('m-logo');
-const currLogoUrl = (mLogo && mLogo.style.display !== 'none' && mLogo.src) ? mLogo.src : null;
+  const currLogoUrl = (mLogo && mLogo.style.display !== 'none' && mLogo.src) ? mLogo.src : null;
   const shopLogoHtml = currLogoUrl 
     ? `<img src="${currLogoUrl}" style="width: 90px; height: 90px; border-radius: 20px; object-fit: contain; background: #fff; margin-bottom: 15px; box-shadow: 0 8px 24px rgba(0,0,0,0.1); border: 2px solid #e5e7eb; display: block; margin-left: auto; margin-right: auto;">` 
     : '';
