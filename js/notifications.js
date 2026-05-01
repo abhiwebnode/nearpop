@@ -134,6 +134,14 @@ function engagementScore(id) {
 // ════════════════════════════════════════════════════════
 // USER PREFERENCES
 // ════════════════════════════════════════════════════════
+
+// 🚀 NEW: Silent Mode Toggle
+export function toggleSilentMode() {
+  const current = LS('pref_paused') || false;
+  SS('pref_paused', !current);
+  return !current; // returns true if now silent, false if active
+}
+
 export function getPrefs() {
   return {
     maxPerDay:    LS('pref_maxDay')       != null ? LS('pref_maxDay')    : 100,
@@ -212,7 +220,7 @@ export function checkProximity(showNotifFn, showMarketNotifFn) {
   const prefs = getPrefs();
 
   // 1. HARD LIMITS
-  if (prefs.paused)                         return;
+  if (prefs.paused)                         return; // 🚀 Honors Silent Mode
   if (notifsToday()    >= prefs.maxPerDay)  return;
   if (notifsThisHour() >= prefs.maxPerHour) return;
 
@@ -231,7 +239,7 @@ export function checkProximity(showNotifFn, showMarketNotifFn) {
   }
   if (!zone) lastMarketZone = null;
 
-  // 🚀 BUG FIX: LAYER 1 — INTELLIGENT GEOFENCE COOLDOWN
+  // LAYER 1 — INTELLIGENT GEOFENCE COOLDOWN
   const states = getGeoStates();
   const layer1 = listings.filter(l => {
     if (!l.lat || !l.lng) return false;
@@ -274,17 +282,19 @@ export function checkProximity(showNotifFn, showMarketNotifFn) {
   const winner = final[0];
   const ntype  = getNotifType(winner._dist);
 
-  // 🚀 NEW: THE "SMART OVERRIDE" PACING ENGINE
+  // 🚀 THE "SMART OVERRIDE" PACING ENGINE
   const lastPing = LS('last_ping') || { time: 0, score: 0, type: '' };
   const timeSincePing = Date.now() - lastPing.time;
 
-  // Rule 1: 30 seconds if app is open, 2 minutes if in pocket
-  const lockDuration = document.visibilityState === 'visible' ? 30000 : 120000; 
+  // 🚀 FIX: Reduced to 10 seconds if app is open
+  const lockDuration = document.visibilityState === 'visible' ? 10000 : 120000; 
 
   if (timeSincePing < lockDuration) {
     // It is too soon. Let's see if this deal is worth breaking the lock for:
     const isDifferentCategory = winner.type !== lastPing.type;
-    const isMuchBetterDeal = winner._score >= (lastPing.score + 15); // Must be 15 points better!
+    
+    // 🚀 FIX: Relaxed requirement. Now only needs to be 5 points better instead of 15.
+    const isMuchBetterDeal = winner._score >= (lastPing.score + 5); 
 
     // If it's the same category AND not significantly better, enforce the lock and stay silent.
     if (!isDifferentCategory && !isMuchBetterDeal) {
@@ -296,7 +306,7 @@ export function checkProximity(showNotifFn, showMarketNotifFn) {
     // 1. Fire the in-app UI update
     showNotifFn(winner);
     
-    // 2. 🚀 FIX: Unconditionally trigger the native System Push Notification
+    // 2. Unconditionally trigger the native System Push Notification
     // It will now show up in the device's system tray/banner exactly like a standard app notification.
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.ready.then(registration => {
