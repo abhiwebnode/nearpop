@@ -141,7 +141,6 @@
   <div class="mhdr">
     <button class="mbtn" onclick="window.logout()">Logout</button>
     
-    <!-- 🚀 UPDATED: Logo trigger calls new Photo Choice Modal -->
     <div style="position:relative; display:inline-block; margin-bottom: 12px; cursor:pointer;" onclick="window.openPhotoChoice('logo')">
       <img id="m-logo" style="width: 56px; height: 56px; border-radius: 14px; background: #fff; object-fit: contain; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.15); border: 2px solid rgba(255,255,255,0.3);">
       <div id="m-logo-placeholder" style="width: 56px; height: 56px; border-radius: 14px; background: rgba(255,255,255,0.2); border: 2px dashed rgba(255,255,255,0.5); display: flex; align-items: center; justify-content: center; font-size:20px; color:#fff;" title="Upload Shop Logo">📷</div>
@@ -223,9 +222,10 @@
     
     <div class="sec-title" style="margin-bottom:12px; font-weight:800; color:var(--deep); font-size:16px;">📲 Smart Storefront</div>
     <div class="mcd" style="text-align: center; margin-bottom: 24px;">
-      <p style="font-size: 13px; color: var(--gray); margin-bottom: 16px; font-weight: 600; line-height:1.4;">Print this permanent QR code for your counter. It automatically routes customers to your live deals or gives them visit points.</p>
+      <p style="font-size: 13px; color: var(--gray); margin-bottom: 16px; font-weight: 600; line-height:1.4;">Print or download this permanent QR code. It automatically routes customers to your live deals.</p>
       <div style="display:flex; gap:10px;">
-         <button class="btn-or" onclick="window.generatePermanentStandee()" style="flex:1; padding: 12px; font-size: 13px; background:var(--deep);">🖨️ Print Standee</button>
+         <!-- 🚀 UPDATED: Opens Export Choice Bottom Sheet -->
+         <button class="btn-or" onclick="document.getElementById('mod-standee-choice').classList.add('on')" style="flex:1; padding: 12px; font-size: 13px; background:var(--deep);">🖨️ Get Standee</button>
          <button class="btn-lt" onclick="window.showStoreQR()" style="flex:1; padding: 12px; font-size: 13px;">📱 Show In-Store</button>
       </div>
     </div>
@@ -279,6 +279,26 @@
   </div>
 </div>
 
+<!-- 🚀 NEW: Standee Export Options Modal -->
+<div class="modal" id="mod-standee-choice" onclick="if(event.target===this)this.classList.remove('on')">
+  <div class="msht" style="padding-bottom: 30px;">
+    <div class="mh"></div>
+    <div style="text-align: center; margin-bottom: 20px; font-weight: 800; font-size: 16px; color: var(--deep);">Export Standee</div>
+    
+    <button class="btn-or" onclick="window.exportStandee('print')" style="width: 100%; margin-bottom: 12px; font-size: 15px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+      <span style="font-size: 20px;">🖨️</span> Print Directly
+    </button>
+    
+    <button class="btn-lt" onclick="window.exportStandee('pdf-a4')" style="width: 100%; margin-bottom: 12px; font-size: 15px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+      <span style="font-size: 20px;">📄</span> Download A4 PDF
+    </button>
+
+    <button class="btn-lt" onclick="window.exportStandee('pdf-a5')" style="width: 100%; font-size: 15px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+      <span style="font-size: 20px;">📄</span> Download A5 PDF
+    </button>
+  </div>
+</div>
+
 <div class="modal" id="modwal" onclick="if(event.target===this)window.closeWalModal()">
   <div class="msht">
     <div class="mh"></div>
@@ -329,7 +349,6 @@
     <div class="edit-grp"><label class="edit-lbl">Title</label><input type="text" id="edit-title" class="a-inp"></div>
     <div class="edit-grp"><label class="edit-lbl">Description</label><textarea id="edit-desc" class="a-inp" style="height: 80px; resize: none;"></textarea></div>
     
-    <!-- 🚀 UPDATED: Edit Modal Image Trigger -->
     <div class="edit-grp">
       <label class="edit-lbl">Update Shop/Deal Image</label>
       <div class="a-inp" style="text-align: center; cursor: pointer; color: var(--or); display: flex; align-items: center; justify-content: center; gap: 8px;" onclick="window.openPhotoChoice('edit')">
@@ -352,7 +371,6 @@
   </div>
 </div>
 
-<!-- 🚀 NEW: Universal Photo Choice Modal -->
 <div class="modal" id="mod-photo-choice" onclick="if(event.target===this)this.classList.remove('on')">
   <div class="msht" style="padding-bottom: 30px;">
     <div class="mh"></div>
@@ -423,17 +441,15 @@ if (userPlan === 'premium') {
 document.getElementById('mwal').textContent = '₹'+parseFloat(wallet).toFixed(2);
 document.getElementById('walbal').textContent = '₹'+parseFloat(wallet).toFixed(2);
 
-// 🚀 NEW: Unified Image State & Routing
 let currentPhotoTarget = ''; 
 let pendingEditImageB64 = null;
 
 window.openPhotoChoice = (target) => {
   window.haptic(30);
-  currentPhotoTarget = target; // Will be 'logo' or 'edit'
+  currentPhotoTarget = target; 
   document.getElementById('mod-photo-choice').classList.add('on');
 };
 
-// 🚀 NEW: The Smart Image Compressor
 const handleImageSelection = (e) => {
   const file = e.target.files[0];
   if (!file) return;
@@ -448,7 +464,6 @@ const handleImageSelection = (e) => {
       const ctx = canvas.getContext('2d');
 
       if (currentPhotoTarget === 'logo') {
-        // SQUARE CROP FOR SHOP LOGO
         const size = Math.min(img.width, img.height);
         const sx = (img.width - size) / 2;
         const sy = (img.height - size) / 2;
@@ -458,7 +473,6 @@ const handleImageSelection = (e) => {
         ctx.fillRect(0, 0, 400, 400);
         ctx.drawImage(img, sx, sy, size, size, 0, 0, 400, 400);
       } else {
-        // STANDARD RESIZE FOR LISTING EDIT
         const MAX_WIDTH = 800;
         let scaleSize = MAX_WIDTH / img.width;
         if (scaleSize > 1) scaleSize = 1; 
@@ -470,7 +484,7 @@ const handleImageSelection = (e) => {
       }
       
       const compressedB64 = canvas.toDataURL('image/webp', 0.8); 
-      e.target.value = ''; // Reset input to allow re-selection
+      e.target.value = ''; 
 
       if (currentPhotoTarget === 'logo') {
         await uploadLogoToImgBB(compressedB64);
@@ -488,7 +502,6 @@ const handleImageSelection = (e) => {
 document.getElementById('img-camera').addEventListener('change', handleImageSelection);
 document.getElementById('img-gallery').addEventListener('change', handleImageSelection);
 
-// 🚀 NEW: Pure ImgBB Direct Uploader
 async function uploadToImgBB(base64Str) {
   const apiKey = "4dd5a19986e0ffeabe66a2eb0114d358";
   const formData = new FormData();
@@ -750,7 +763,6 @@ window.saveEdit = async () => {
       radius: parseInt(document.getElementById('edit-radius').value) || 300 
     };
 
-    // 🚀 NEW: Upload the pending memory image if the user selected one
     if (pendingEditImageB64) {
        btn.textContent = 'Uploading photo...';
        try {
@@ -841,8 +853,93 @@ window.checkPremium = () => { window.haptic(30); if (userPlan === 'premium' || c
 
 window.showStoreQR = () => { window.haptic(30); const uid = LS('uid'); if(!uid) return alert("Error: Merchant not logged in."); const box = document.getElementById('qrcode-box'); box.innerHTML = ''; new QRCode(box, { text: "NEARPOP_CLAIM:" + uid, width: 220, height: 220, colorDark : "#000000", colorLight : "#ffffff", correctLevel : QRCode.CorrectLevel.H }); document.getElementById('mod-qr').classList.add('on'); };
 
-window.generatePermanentStandee = () => {
+// 🚀 NEW: Robust PDF Export Logic
+window.exportStandee = async (format) => {
   window.haptic(30);
+  document.getElementById('mod-standee-choice').classList.remove('on');
+
+  if (format === 'print') {
+    window.generatePermanentStandee();
+    return;
+  }
+
+  toast('⏳', 'Generating high-res PDF...');
+
+  // 1. Generate QR Code locally to avoid strict browser CORS blocks when making PDFs
+  const merchantUid = LS('uid'); 
+  const targetUrl = `https://nearpop.in/store.html?mid=${merchantUid}&utm_source=qr_standee&utm_medium=offline`;
+  
+  const tempDiv = document.createElement('div');
+  new QRCode(tempDiv, {
+      text: targetUrl,
+      width: 400,
+      height: 400,
+      colorDark : "#000000",
+      colorLight : "#ffffff",
+      correctLevel : QRCode.CorrectLevel.H
+  });
+
+  // Give the local QR code generator 100ms to render the canvas before we grab it
+  setTimeout(async () => {
+      const qrCanvas = tempDiv.querySelector('canvas');
+      const qrDataUrl = qrCanvas.toDataURL('image/png');
+
+      const mLogo = document.getElementById('m-logo');
+      const currLogoUrl = (mLogo && mLogo.style.display !== 'none' && mLogo.src) ? mLogo.src : null;
+      const shopLogoHtml = currLogoUrl 
+        ? `<img src="${currLogoUrl}" style="width: 120px; height: 120px; border-radius: 24px; object-fit: contain; background: #fff; margin-bottom: 20px; box-shadow: 0 8px 24px rgba(0,0,0,0.1); border: 2px solid #e5e7eb; display: block; margin-left: auto; margin-right: auto;">` 
+        : '';
+
+      // 2. Build the perfectly scaled PDF container
+      const container = document.createElement('div');
+      container.style.position = 'absolute';
+      container.style.left = '-9999px';
+      container.style.top = '0';
+      container.innerHTML = `
+        <div id="pdf-content" style="width: 210mm; height: 297mm; background: #e5e7eb; display: flex; align-items: center; justify-content: center; padding: 15mm; box-sizing: border-box; font-family: 'Nunito', sans-serif;">
+           <div style="width: 100%; height: 100%; background: #ffffff; border: 16px solid #FF5722; border-radius: 32px; padding: 40px; text-align: center; box-sizing: border-box; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+              <img src="https://nearpop.in/icons/logo.png" style="height: 60px; margin-bottom: 30px;">
+              ${shopLogoHtml}
+              <h1 style="font-family: 'Syne', sans-serif; color: #0F0F13; font-size: 38px; font-weight: 800; margin: 0 0 25px 0; line-height: 1.2;">Welcome to <br><span style="color:#FF5722">${LS('mname') || 'Our Store'}</span></h1>
+              <div style="background: #fff; padding: 25px; border-radius: 30px; border: 6px solid #e5e7eb; margin-bottom: 25px;">
+                 <img src="${qrDataUrl}" style="width: 250px; height: 250px;">
+              </div>
+              <h2 style="color: #FF5722; font-size: 28px; font-weight: 900; margin: 0 0 15px 0;">Scan to see today's deals!</h2>
+              <p style="color: #6b7280; font-size: 16px; font-weight: 800; margin: 0; text-transform: uppercase; letter-spacing: 1px;">No app download required<br>Powered by nearpop.in</p>
+           </div>
+        </div>
+      `;
+      document.body.appendChild(container);
+
+      // 3. Lazy-load the heavy PDF engine only when the user actually needs it
+      if (!window.html2pdf) {
+          await new Promise((resolve) => {
+              const script = document.createElement('script');
+              script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+              script.onload = resolve;
+              document.head.appendChild(script);
+          });
+      }
+
+      // 4. Fire the PDF export
+      const opt = {
+          margin:       0,
+          filename:     `NearPop_Standee_${format.split('-')[1].toUpperCase()}.pdf`,
+          image:        { type: 'jpeg', quality: 1 },
+          html2canvas:  { scale: 2, useCORS: true },
+          // The exact same DOM fits both A4 and A5 perfectly due to math ratios
+          jsPDF:        { unit: 'mm', format: format === 'pdf-a4' ? 'a4' : 'a5', orientation: 'portrait' }
+      };
+
+      html2pdf().set(opt).from(container.firstElementChild).save().then(() => {
+          document.body.removeChild(container);
+          toast('✅', 'PDF Downloaded successfully!');
+      });
+  }, 100);
+};
+
+// 🚀 Legacy Web Print Fallback (Kept for desktop users)
+window.generatePermanentStandee = () => {
   const merchantUid = LS('uid'); 
   const targetUrl = `https://nearpop.in/store.html?mid=${merchantUid}&utm_source=qr_standee&utm_medium=offline`;
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(targetUrl)}&margin=10`;
