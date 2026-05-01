@@ -16,7 +16,10 @@ import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/fireb
   const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || 
                    (window.innerWidth <= 800 && 'ontouchstart' in window);
 
-  if (!isMobile) {
+  // 2. Exception for Search Engine Bots (So they can still index your site)
+  const isBot = /Googlebot|bingbot|DuckDuckBot/i.test(navigator.userAgent);
+
+  if (!isMobile && !isBot) {
     // Stop the window from loading further resources
     window.stop(); 
 
@@ -39,43 +42,52 @@ import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/fireb
           }
           .card {
             background: rgba(255, 255, 255, 0.03);
-            padding: 40px 20px;
+            padding: 30px 20px;
             border-radius: 24px;
             border: 1px solid rgba(255, 255, 255, 0.1);
             max-width: 360px;
           }
+          .logo { width: 180px; margin-bottom: 20px; }
           .ic { 
-            font-size: 80px; margin-bottom: 24px; 
+            font-size: 60px; margin-bottom: 15px; 
             filter: drop-shadow(0 10px 30px rgba(255,87,34,0.4));
             animation: float 3s ease-in-out infinite;
           }
-          h1 { font-size: 28px; font-weight: 800; margin: 0 0 16px; letter-spacing: -0.5px; }
-          p { font-size: 16px; color: var(--text); line-height: 1.6; margin: 0 0 20px; }
+          h1 { font-size: 18px; font-weight: 700; margin: 10px 0; color: #fff; line-height: 1.4; }
+          p { font-size: 14px; color: var(--text); line-height: 1.5; margin: 5px 0 15px; }
           .qr-placeholder {
-            margin-top: 20px;
-            padding: 15px;
+            margin-top: 15px;
+            padding: 12px;
             background: #fff;
             display: inline-block;
             border-radius: 12px;
-            color: #000;
-            font-weight: bold;
-            font-size: 12px;
+            line-height: 0;
           }
           @keyframes float {
             0%, 100% { transform: translateY(0); }
             50% { transform: translateY(-10px); }
           }
+          hr { border: 0; border-top: 1px solid rgba(255,255,255,0.1); margin: 15px 0; }
         </style>
       </head>
       <body>
         <div class="card">
+          <img src="https://nearpop.in/icons/logo.png" alt="NearPop" class="logo">
           <div class="ic">📱</div>
-          <h1><img src="https://nearpop.in/icons/logo.png" alt="NearPop" style="width:250px;"></h1>
-          <p>This is a hyperlocal proximity engine built for the street. Desktop browsers can't track your movement the way we need to.</p>
-          <p style="color: #fff; font-weight: 600;">Scan to open on your phone:</p>
+          
+          <!-- English Section -->
+          <h1>NearPop works best on the move!</h1>
+          <p>To see live deals in your neighborhood, please switch to your smartphone.</p>
+
+          <hr>
+
+          <!-- Hindi Section -->
+          <h1>बेहतरीन ऑफर्स के लिए फोन का इस्तेमाल करें!</h1>
+          <p>अपने आस-पास की लाइव डील्स देखने के लिए, कृपया NearPop को अपने स्मार्टफोन पर खोलें।</p>
+
           <div class="qr-placeholder">
-   <img src="https://nearpop.in/icons/qr-code.png" alt="Scan to open NearPop" style="width:100px; height:100px;">
-</div>
+            <img src="https://nearpop.in/icons/qr-code.png" alt="Scan to open NearPop" style="width:120px; height:120px;">
+          </div>
         </div>
       </body>
       </html>
@@ -85,7 +97,7 @@ import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/fireb
     document.write(blockout);
     document.close();
     
-    throw new Error("Redirected to Mobile-Only View.");
+    throw new Error("NearPop: Mobile-only access enforced.");
   }
 })();
 
