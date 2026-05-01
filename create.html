@@ -71,11 +71,10 @@ function validateForm() {
 
 .foot{padding:13px;padding-bottom:calc(18px + env(safe-area-inset-bottom));background:var(--bg-app);border-top:1px solid var(--bdr);flex-shrink:0}
 
-/* 🚀 NEW: IMAGE UPLOADER UI STYLES */
 .img-up { width: 100%; height: 160px; border: 2px dashed var(--bdr); border-radius: 13px; background: var(--card); display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; position: relative; overflow: hidden; transition: border-color 0.2s; margin-bottom: 10px;}
 .img-up.has-img { border-style: solid; border-color: var(--or); }
 .img-ic { font-size: 32px; margin-bottom: 8px; opacity: 0.5; }
-.img-tx { font-size: 13px; font-weight: 700; color: var(--gray); }
+.img-tx { font-size: 13px; font-weight: 700; color: var(--deep); }
 #preview { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: none; }
 </style>
 </head>
@@ -97,14 +96,15 @@ function validateForm() {
       </div>
     </div>
 
+    <!-- 🚀 UPDATED: Image Upload Trigger -->
     <div class="fg">
       <label class="fl">Add Photo (Optional)</label>
-      <label class="img-up" id="img-box">
-        <input type="file" id="img-file" accept="image/*" style="display:none;">
+      <div class="img-up" id="img-box" onclick="document.getElementById('mod-photo-choice').classList.add('on')">
         <div class="img-ic">📷</div>
-        <div class="img-tx" id="img-lbl">Tap to upload picture</div>
+        <div class="img-tx" id="img-lbl">Tap to add picture</div>
+        <div style="font-size: 10px; color: var(--gray); margin-top: 4px;" id="img-sub">Auto-compresses large photos</div>
         <img id="preview">
-      </label>
+      </div>
     </div>
 
     <div class="fg">
@@ -174,24 +174,38 @@ function validateForm() {
   </div>
 </div>
 
+<div class="modal" id="mod-photo-choice" onclick="if(event.target===this)this.classList.remove('on')">
+  <div class="msht" style="padding-bottom: 30px;">
+    <div class="mh"></div>
+    <div style="text-align: center; margin-bottom: 20px; font-weight: 800; font-size: 16px; color: var(--deep);">Add Photo</div>
+    
+    <button class="btn-or" onclick="document.getElementById('img-camera').click(); document.getElementById('mod-photo-choice').classList.remove('on');" style="width: 100%; margin-bottom: 12px; font-size: 15px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+      <span style="font-size: 20px;">📸</span> Take Live Photo
+    </button>
+    
+    <button class="btn-lt" onclick="document.getElementById('img-gallery').click(); document.getElementById('mod-photo-choice').classList.remove('on');" style="width: 100%; font-size: 15px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+      <span style="font-size: 20px;">🖼️</span> Choose from Gallery
+    </button>
+
+    <input type="file" id="img-camera" accept="image/*" capture="environment" style="display:none;">
+    <input type="file" id="img-gallery" accept="image/*" style="display:none;">
+  </div>
+</div>
+
 <div class="loader" id="loader"><div class="spin"></div><p id="l-txt">Saving listing…</p></div>
 <div class="toast" id="toast"><span id="t-ic">✅</span><span id="t-tx"></span></div>
 
 </div><script type="module">
-// 🚀 FIX: Added `app` import so Firebase Storage can initialize
+// 🚀 FIX: Removed Firebase Storage imports, maintaining ImgBB pure setup
 import { db, LS, SS, TC, TE, toast, distM, app } from './js/app.js';
 import { ghEncode } from './js/geohash.js';
 import { getDocs, addDoc, collection, query, where, doc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js';
-// 🚀 NEW: Firebase Storage imports for images
-import { getStorage, ref, uploadString, getDownloadURL } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-storage.js';
 
 window.toast = toast;
 
 if (!LS('uid') || LS('role') !== 'merchant') { window.location.href = 'index.html'; }
 
-// 🚀 NEW: Initialize Storage & State
-const storage = getStorage(app);
 let compressedImageB64 = null;
 
 let selType='deal', pickLat=28.4089, pickLng=77.3178, pickMap=null, pickMarker=null;
@@ -268,37 +282,56 @@ const getSecureUser = () => new Promise((resolve) => {
   });
 });
 
-// 🚀 NEW: CLIENT-SIDE IMAGE COMPRESSOR
-document.getElementById('img-file').addEventListener('change', function(e) {
+// 🚀 UPDATED: Removed the 5MB block, auto-compresses to base64 WebP
+const handleImageSelection = (e) => {
   const file = e.target.files[0];
   if (!file) return;
+
+  toast('⏳', 'Processing photo...');
 
   const reader = new FileReader();
   reader.onload = (event) => {
     const img = new Image();
     img.onload = () => {
       const canvas = document.createElement('canvas');
-      const MAX_WIDTH = 800; // Compresses high-res camera photos
-      const scaleSize = MAX_WIDTH / img.width;
-      canvas.width = MAX_WIDTH;
+      const MAX_WIDTH = 800; // Perfect standard size for quick loading
+      
+      // Prevent Upscaling (Only compress if larger than 800px)
+      let scaleSize = MAX_WIDTH / img.width;
+      if (scaleSize > 1) scaleSize = 1; 
+
+      canvas.width = img.width * scaleSize;
       canvas.height = img.height * scaleSize;
 
       const ctx = canvas.getContext('2d');
+      // Fill with white background in case of transparency (PNG -> WebP conversion)
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
       ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
       
-      // Convert to tiny WebP format
-      compressedImageB64 = canvas.toDataURL('image/webp', 0.7); 
+      // Convert to tiny WebP format (Drastically speeds up upload to ImgBB)
+      compressedImageB64 = canvas.toDataURL('image/webp', 0.8); 
       
+      // Update UI
       const preview = document.getElementById('preview');
       preview.src = compressedImageB64;
       preview.style.display = 'block';
       document.getElementById('img-box').classList.add('has-img');
       document.getElementById('img-lbl').style.display = 'none';
+      
+      const subLbl = document.getElementById('img-sub');
+      if (subLbl) subLbl.style.display = 'none';
+      
+      toast('✅', 'Photo attached successfully!');
     };
     img.src = event.target.result;
   };
   reader.readAsDataURL(file);
-});
+};
+
+// Bind to both inputs
+document.getElementById('img-camera').addEventListener('change', handleImageSelection);
+document.getElementById('img-gallery').addEventListener('change', handleImageSelection);
 
 window.doCreate = async () => {
   const title    = document.getElementById('c-title').value.trim();
@@ -370,17 +403,34 @@ window.doCreate = async () => {
 
   showLdr('Saving listing…');
   try {
-    // 🚀 NEW: Upload Image to Firebase Storage first (if one was selected)
+    // 🚀 NEW: Upload compressed image directly to ImgBB
     let imageUrl = '';
     if (compressedImageB64) {
       showLdr('Uploading photo...');
-      const imgRef = ref(storage, `listings/${secureUser.uid}_${Date.now()}.webp`);
-      await uploadString(imgRef, compressedImageB64, 'data_url');
-      imageUrl = await getDownloadURL(imgRef);
-      showLdr('Finalizing listing...');
+      try {
+        const apiKey = "4dd5a19986e0ffeabe66a2eb0114d358";
+        const formData = new FormData();
+        // Remove the data URI prefix before sending to ImgBB
+        formData.append("image", compressedImageB64.split(',')[1]); 
+        
+        const res = await fetch(`https://api.imgbb.com/1/upload?key=${apiKey}`, { 
+          method: "POST", 
+          body: formData 
+        });
+        const data = await res.json();
+        
+        if (data.success) {
+          imageUrl = data.data.url;
+        } else {
+          throw new Error("ImgBB rejection");
+        }
+        showLdr('Finalizing listing...');
+      } catch(err) {
+         hideLdr();
+         return toast('❌', 'Image upload failed. Please check network.');
+      }
     }
 
-    // 🚀 FIXED: Standardize coordinates exactly to 6 decimal places to sync perfectly with bulk.html
     const finalLat = +pickLat.toFixed(6);
     const finalLng = +pickLng.toFixed(6);
 
@@ -406,7 +456,7 @@ window.doCreate = async () => {
       expiryDate,
       dailyPopupLimit: budget * 10,
       popupsSentToday: 0,
-      image: imageUrl // 🚀 Saves the secure URL to Firestore
+      image: imageUrl // 🚀 Saves the ImgBB URL to Firestore
     };
 
     await addDoc(collection(db,'listings'), {...listing, createdAt:serverTimestamp()});
