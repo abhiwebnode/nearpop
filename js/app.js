@@ -10,6 +10,85 @@ import { initializeFirestore, persistentLocalCache, doc, setDoc, updateDoc } fro
 import { getAuth, setPersistence, browserLocalPersistence, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js";
 import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-messaging.js";
 
+//Mobile Only
+(function() {
+  // 1. Enhanced Detection (includes touch capability check)
+  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || 
+                   (window.innerWidth <= 800 && 'ontouchstart' in window);
+
+  if (!isMobile) {
+    // Stop the window from loading further resources
+    window.stop(); 
+
+    // Replace the content gracefully
+    const blockout = `
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>NearPop — Mobile Only</title>
+        <style>
+          :root { --bg: #0F0F13; --accent: #FF5722; --text: #9CA3AF; }
+          body { 
+            margin: 0; padding: 20px; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center; 
+            height: 100vh; background: var(--bg); color: #fff; 
+            font-family: -apple-system, system-ui, sans-serif; text-align: center; 
+            overflow: hidden;
+          }
+          .card {
+            background: rgba(255, 255, 255, 0.03);
+            padding: 40px 20px;
+            border-radius: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            max-width: 360px;
+          }
+          .ic { 
+            font-size: 80px; margin-bottom: 24px; 
+            filter: drop-shadow(0 10px 30px rgba(255,87,34,0.4));
+            animation: float 3s ease-in-out infinite;
+          }
+          h1 { font-size: 28px; font-weight: 800; margin: 0 0 16px; letter-spacing: -0.5px; }
+          p { font-size: 16px; color: var(--text); line-height: 1.6; margin: 0 0 20px; }
+          .qr-placeholder {
+            margin-top: 20px;
+            padding: 15px;
+            background: #fff;
+            display: inline-block;
+            border-radius: 12px;
+            color: #000;
+            font-weight: bold;
+            font-size: 12px;
+          }
+          @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="card">
+          <div class="ic">📱</div>
+          <h1><img src="https://nearpop.in/icons/logo.png" alt="NearPop" style="width:250px;"></h1>
+          <p>This is a hyperlocal proximity engine built for the street. Desktop browsers can't track your movement the way we need to.</p>
+          <p style="color: #fff; font-weight: 600;">Scan to open on your phone:</p>
+          <div class="qr-placeholder">
+   <img src="https://nearpop.in/icons/qr-code.png" alt="Scan to open NearPop" style="width:100px; height:100px;">
+</div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    document.open();
+    document.write(blockout);
+    document.close();
+    
+    throw new Error("Redirected to Mobile-Only View.");
+  }
+})();
+
 // ── Firebase config ──────────────────────────────────────
 const FB_CONFIG = {
     apiKey: "AIzaSyDYUm3VV8iuLHQKJuU9fWgaRaYU0t5Dlzk",
