@@ -374,7 +374,13 @@
 <div class="modal" id="mod-photo-choice" onclick="if(event.target===this)this.classList.remove('on')">
   <div class="msht" style="padding-bottom: 30px;">
     <div class="mh"></div>
-    <div style="text-align: center; margin-bottom: 20px; font-weight: 800; font-size: 16px; color: var(--deep);">Upload Photo</div>
+    <div style="text-align: center; margin-bottom: 10px; font-weight: 800; font-size: 16px; color: var(--deep);">Upload Photo</div>
+    
+    <!-- 🚀 NEW: Bilingual Warning for Low-RAM / Auto-Translate Phones -->
+    <div style="background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 8px; padding: 10px; margin-bottom: 16px; text-align: center;">
+      <div style="font-size: 11px; font-weight: 700; color: var(--or); margin-bottom: 4px;">⚠️ Note / ध्यान दें:</div>
+      <div style="font-size: 10px; color: var(--deep); line-height: 1.4;">If the camera restarts your app, please take the photo first and choose "Gallery".<br><span style="color: var(--gray);">यदि कैमरा ऐप को रीस्टार्ट करता है, तो कृपया पहले फोटो लें और "Gallery" चुनें।</span></div>
+    </div>
     
     <button class="btn-or" onclick="document.getElementById('img-camera').click(); document.getElementById('mod-photo-choice').classList.remove('on');" style="width: 100%; margin-bottom: 12px; font-size: 15px; display: flex; align-items: center; justify-content: center; gap: 8px;">
       <span style="font-size: 20px;">📸</span> Take Live Photo
