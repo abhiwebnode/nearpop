@@ -136,21 +136,22 @@
 @keyframes spin { to { transform: rotate(360deg); } }
 
 
-/* 🚀 NEW: Floating Action Button for Creating Listings */
+/* 🚀 NEW: Extended Floating Action Button for Creating Listings */
 .fab-create {
   position: fixed;
   bottom: 24px;
   right: 24px;
-  width: 60px;
-  height: 60px;
+  height: 56px;
+  padding: 0 24px 0 16px;
   background: linear-gradient(135deg, #FF5722, #D97706);
   color: #fff;
-  border-radius: 50%;
+  border-radius: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 32px;
-  font-weight: 300;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 800;
   box-shadow: 0 8px 24px rgba(255, 87, 34, 0.4);
   cursor: pointer;
   z-index: 900;
@@ -160,8 +161,15 @@
 }
 
 .fab-create:active {
-  transform: scale(0.9);
+  transform: scale(0.95);
   box-shadow: 0 4px 12px rgba(255, 87, 34, 0.3);
+}
+
+.fab-icon {
+  font-size: 26px;
+  font-weight: 300;
+  line-height: 1;
+  margin-top: -2px; /* Vertically centers the plus sign perfectly */
 }
 
 </style>
@@ -310,7 +318,9 @@
 </div>
 
 <!-- 🚀 NEW: Floating Create Button -->
-<button class="fab-create" onclick="window.checkPremium()" title="Create New Listing">＋</button>
+<button class="fab-create" onclick="window.checkPremium()" title="Create New Listing">
+  <span class="fab-icon">＋</span> Create Listing
+</button>
 
 <!-- 🚀 NEW: Standee Export Options Modal -->
 <div class="modal" id="mod-standee-choice" onclick="if(event.target===this)this.classList.remove('on')">
