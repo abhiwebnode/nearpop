@@ -14,8 +14,8 @@
 function validateForm() {
   const title  = document.querySelector('[name=title]')?.value?.trim();
   const type   = document.querySelector('.tb.on')?.dataset?.type;
-  const lat    = parseFloat(document.getElementById('pick-lat')?.value || '');
-  const lng    = parseFloat(document.getElementById('pick-lng')?.value || '');
+  const lat    = parseFloat(document.getElementById('c-lat')?.value || '');
+  const lng    = parseFloat(document.getElementById('c-lng')?.value || '');
 
   if (!type) { window.toast('⚠️', 'Please select a listing type'); return false; }
   if (!title || title.length < 3) { window.toast('⚠️', 'Title must be at least 3 characters'); return false; }
@@ -53,7 +53,37 @@ function validateForm() {
 
 .tb .tl{font-size:12px;font-weight:800;color:var(--deep)}
 
-.rslide input{width:100%;accent-color:var(--or);cursor:pointer;height:4px}
+/* 🚀 FIX: Cross-browser CSS to ensure slider track is always visible */
+.rslide input {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 6px;
+  background: #E5E7EB; /* Light gray thick track */
+  border-radius: 5px;
+  outline: none;
+  cursor: pointer;
+}
+
+.rslide input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--or);
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(255,87,34,0.4);
+}
+
+.rslide input::-moz-range-thumb {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--or);
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 2px 6px rgba(255,87,34,0.4);
+}
 
 .rv{text-align:center;font-size:20px;font-weight:900;color:var(--or);margin-top:6px}
 
@@ -63,7 +93,7 @@ function validateForm() {
 
 .bb.on{border-color:var(--or);background:rgba(255,87,34,.08);color:var(--or)}
 
-.mapwrap{height:170px;border-radius:13px;overflow:hidden;border:2px solid var(--bdr)}
+.mapwrap{height:170px;border-radius:13px;overflow:hidden;border:2px solid var(--bdr); margin-bottom: 8px;}
 
 #pick-map{height:100%}
 
@@ -96,7 +126,6 @@ function validateForm() {
       </div>
     </div>
 
-    <!-- 🚀 UPDATED: Image Upload Trigger -->
     <div class="fg">
       <label class="fl">Add Photo (Optional)</label>
       <div class="img-up" id="img-box" onclick="document.getElementById('mod-photo-choice').classList.add('on')">
@@ -127,17 +156,19 @@ function validateForm() {
       <input class="fc" id="c-contact" type="tel" placeholder="+91 98765 43210">
     </div>
 
+    <!-- 🚀 FIX: Radius defaults to 250 -->
     <div class="fg">
       <label class="fl">Notification Radius — how far to send popups to users</label>
       <div class="rslide">
-        <input type="range" min="50" max="2000" value="500" id="c-radius" oninput="updR(this.value)">
+        <input type="range" min="50" max="2000" value="250" id="c-radius" oninput="updR(this.value)">
       </div>
-      <div class="rv" id="rval">500 metres</div>
+      <div class="rv" id="rval">250 metres</div>
     </div>
 
+    <!-- 🚀 FIX: Budget label and default value -->
     <div class="fg">
-      <label class="fl">Daily Budget (₹) *</label>
-      <input type="number" class="fc" id="c-budget" placeholder="e.g. 25, 50, 100..." min="25" step="25" required>
+      <label class="fl">Daily Budget (₹) — can be increased e.g. 25, 50, 100...</label>
+      <input type="number" class="fc" id="c-budget" value="25" placeholder="e.g. 25, 50, 100..." min="25" step="25" required>
       <div style="font-size:11px; color:var(--gray); margin-top:4px; font-weight:600;">Must be a multiple of ₹25. Each popup shown costs exactly 10 paisa.</div>
     </div>
 
@@ -162,10 +193,21 @@ function validateForm() {
       </div>
     </div>
 
+    <!-- 🚀 FIX: Added Lat/Lng two-way inputs -->
     <div class="fg">
       <label class="fl">Your Location — drag pin or tap map</label>
       <div class="mapwrap"><div id="pick-map"></div></div>
-      <div class="map-hint">📍 Drag the orange pin to your exact shop/building location</div>
+      <div style="display:flex; gap:10px; margin-bottom: 8px;">
+        <div style="flex:1">
+          <label class="fl" style="margin-bottom:4px; font-size:11px;">Latitude</label>
+          <input class="fc" id="c-lat" type="number" step="any" placeholder="e.g. 28.4089" oninput="window.updatePinFromInput()">
+        </div>
+        <div style="flex:1">
+          <label class="fl" style="margin-bottom:4px; font-size:11px;">Longitude</label>
+          <input class="fc" id="c-lng" type="number" step="any" placeholder="e.g. 77.3178" oninput="window.updatePinFromInput()">
+        </div>
+      </div>
+      <div class="map-hint">📍 Drag the orange pin or type coordinates above to set exact shop location</div>
     </div>
   </div>
 
@@ -179,7 +221,6 @@ function validateForm() {
     <div class="mh"></div>
     <div style="text-align: center; margin-bottom: 10px; font-weight: 800; font-size: 16px; color: var(--deep);">Upload Photo</div>
     
-    <!-- 🚀 NEW: Bilingual Warning for Low-RAM / Auto-Translate Phones -->
     <div style="background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 8px; padding: 10px; margin-bottom: 16px; text-align: center;">
       <div style="font-size: 11px; font-weight: 700; color: var(--or); margin-bottom: 4px;">⚠️ Note / ध्यान दें:</div>
       <div style="font-size: 10px; color: var(--deep); line-height: 1.4;">If the camera restarts your app, please take the photo first and choose "Gallery".<br><span style="color: var(--gray);">यदि कैमरा ऐप को रीस्टार्ट करता है, तो कृपया पहले फोटो लें और "Gallery" चुनें।</span></div>
@@ -202,7 +243,6 @@ function validateForm() {
 <div class="toast" id="toast"><span id="t-ic">✅</span><span id="t-tx"></span></div>
 
 </div><script type="module">
-// 🚀 FIX: Removed Firebase Storage imports, maintaining ImgBB pure setup
 import { db, LS, SS, TC, TE, toast, distM, app } from './js/app.js';
 import { ghEncode } from './js/geohash.js';
 import { getDocs, addDoc, collection, query, where, doc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
@@ -216,15 +256,50 @@ let compressedImageB64 = null;
 
 let selType='deal', pickLat=28.4089, pickLng=77.3178, pickMap=null, pickMarker=null;
 
+// 🚀 Helper to update the input boxes when pin moves
+function updateInputBoxes(lat, lng) {
+  document.getElementById('c-lat').value = lat.toFixed(6);
+  document.getElementById('c-lng').value = lng.toFixed(6);
+}
+
+// 🚀 FIX: Two-way binding. Move pin when inputs change.
+window.updatePinFromInput = () => {
+  const newLat = parseFloat(document.getElementById('c-lat').value);
+  const newLng = parseFloat(document.getElementById('c-lng').value);
+  
+  if (!isNaN(newLat) && !isNaN(newLng)) {
+    pickLat = newLat;
+    pickLng = newLng;
+    if (pickMap && pickMarker) {
+      pickMarker.setLatLng([pickLat, pickLng]);
+      pickMap.setView([pickLat, pickLng], 15);
+    }
+  }
+};
+
 function initMap() {
   const loc = LS('lastLoc') || {lat:28.4089, lng:77.3178};
   pickLat = loc.lat; pickLng = loc.lng;
+  updateInputBoxes(pickLat, pickLng); // Initialize inputs
+  
   pickMap = L.map('pick-map', {center:[pickLat,pickLng], zoom:15, zoomControl:false, attributionControl:false});
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(pickMap);
   const ico = L.divIcon({className:'',html:`<div style="width:36px;height:36px;border-radius:50%;background:#FF5722;border:3px solid white;display:flex;align-items:center;justify-content:center;font-size:16px;box-shadow:0 4px 12px rgba(255,87,34,.4)">📍</div>`,iconSize:[36,36],iconAnchor:[18,18]});
   pickMarker = L.marker([pickLat,pickLng],{icon:ico,draggable:true}).addTo(pickMap);
-  pickMarker.on('dragend', e => { const p=e.target.getLatLng(); pickLat=p.lat; pickLng=p.lng; });
-  pickMap.on('click', e => { pickLat=e.latlng.lat; pickLng=e.latlng.lng; pickMarker.setLatLng(e.latlng); });
+  
+  pickMarker.on('dragend', e => { 
+    const p=e.target.getLatLng(); 
+    pickLat=p.lat; 
+    pickLng=p.lng; 
+    updateInputBoxes(pickLat, pickLng); // Update inputs on drag
+  });
+  
+  pickMap.on('click', e => { 
+    pickLat=e.latlng.lat; 
+    pickLng=e.latlng.lng; 
+    pickMarker.setLatLng(e.latlng); 
+    updateInputBoxes(pickLat, pickLng); // Update inputs on click
+  });
 }
 setTimeout(initMap, 200);
 
@@ -232,7 +307,11 @@ if (navigator.geolocation) {
   navigator.geolocation.getCurrentPosition(p => {
     pickLat=p.coords.latitude; pickLng=p.coords.longitude;
     SS('lastLoc',{lat:pickLat,lng:pickLng});
-    if(pickMap){ pickMap.setView([pickLat,pickLng],15); pickMarker.setLatLng([pickLat,pickLng]); }
+    if(pickMap){ 
+      pickMap.setView([pickLat,pickLng],15); 
+      pickMarker.setLatLng([pickLat,pickLng]); 
+      updateInputBoxes(pickLat, pickLng); // Update inputs on GPS find
+    }
   });
 }
 
@@ -288,7 +367,6 @@ const getSecureUser = () => new Promise((resolve) => {
   });
 });
 
-// 🚀 UPDATED: Removed the 5MB block, auto-compresses to base64 WebP
 const handleImageSelection = (e) => {
   const file = e.target.files[0];
   if (!file) return;
@@ -300,9 +378,8 @@ const handleImageSelection = (e) => {
     const img = new Image();
     img.onload = () => {
       const canvas = document.createElement('canvas');
-      const MAX_WIDTH = 800; // Perfect standard size for quick loading
+      const MAX_WIDTH = 800; 
       
-      // Prevent Upscaling (Only compress if larger than 800px)
       let scaleSize = MAX_WIDTH / img.width;
       if (scaleSize > 1) scaleSize = 1; 
 
@@ -310,15 +387,12 @@ const handleImageSelection = (e) => {
       canvas.height = img.height * scaleSize;
 
       const ctx = canvas.getContext('2d');
-      // Fill with white background in case of transparency (PNG -> WebP conversion)
       ctx.fillStyle = '#FFFFFF';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
       
-      // Convert to tiny WebP format (Drastically speeds up upload to ImgBB)
       compressedImageB64 = canvas.toDataURL('image/webp', 0.8); 
       
-      // Update UI
       const preview = document.getElementById('preview');
       preview.src = compressedImageB64;
       preview.style.display = 'block';
@@ -335,7 +409,6 @@ const handleImageSelection = (e) => {
   reader.readAsDataURL(file);
 };
 
-// Bind to both inputs
 document.getElementById('img-camera').addEventListener('change', handleImageSelection);
 document.getElementById('img-gallery').addEventListener('change', handleImageSelection);
 
@@ -355,6 +428,14 @@ window.doCreate = async () => {
   
   if (!budget || budget < 25 || budget % 25 !== 0) {
     toast('⚠️', 'Daily budget must be a multiple of ₹25 (e.g., 25, 50)');
+    return;
+  }
+
+  // Double check pickLat/pickLng from inputs just in case
+  const finalLat = parseFloat(document.getElementById('c-lat').value);
+  const finalLng = parseFloat(document.getElementById('c-lng').value);
+  if (isNaN(finalLat) || isNaN(finalLng)) {
+    toast('📍', 'Invalid map coordinates');
     return;
   }
 
@@ -395,8 +476,8 @@ window.doCreate = async () => {
     for(const doc of snap.docs){
       const ex=doc.data();
       if(!ex.lat||!ex.lng) continue;
-      const R=6371000,dLa=(ex.lat-pickLat)*Math.PI/180,dLo=(ex.lng-pickLng)*Math.PI/180;
-      const a=Math.sin(dLa/2)**2+Math.cos(pickLat*Math.PI/180)*Math.cos(ex.lat*Math.PI/180)*Math.sin(dLo/2)**2;
+      const R=6371000,dLa=(ex.lat-finalLat)*Math.PI/180,dLo=(ex.lng-finalLng)*Math.PI/180;
+      const a=Math.sin(dLa/2)**2+Math.cos(finalLat*Math.PI/180)*Math.cos(ex.lat*Math.PI/180)*Math.sin(dLo/2)**2;
       const d=R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
       
       if(!isPremiumMerchant && d<300){
@@ -409,14 +490,12 @@ window.doCreate = async () => {
 
   showLdr('Saving listing…');
   try {
-    // 🚀 NEW: Upload compressed image directly to ImgBB
     let imageUrl = '';
     if (compressedImageB64) {
       showLdr('Uploading photo...');
       try {
         const apiKey = "4dd5a19986e0ffeabe66a2eb0114d358";
         const formData = new FormData();
-        // Remove the data URI prefix before sending to ImgBB
         formData.append("image", compressedImageB64.split(',')[1]); 
         
         const res = await fetch(`https://api.imgbb.com/1/upload?key=${apiKey}`, { 
@@ -437,13 +516,10 @@ window.doCreate = async () => {
       }
     }
 
-    const finalLat = +pickLat.toFixed(6);
-    const finalLng = +pickLng.toFixed(6);
-
-    const ext = TYPE_EXTRAS[selType];
     const geohash6 = ghEncode(finalLat, finalLng, 6); 
     const geohash5 = ghEncode(finalLat, finalLng, 5); 
 
+    const ext = TYPE_EXTRAS[selType];
     const listing = {
       type:selType, title, desc, price,
       priceLabel: selType==='deal'?'':selType==='job'?'/month':'/month',
@@ -462,7 +538,7 @@ window.doCreate = async () => {
       expiryDate,
       dailyPopupLimit: budget * 10,
       popupsSentToday: 0,
-      image: imageUrl // 🚀 Saves the ImgBB URL to Firestore
+      image: imageUrl
     };
 
     await addDoc(collection(db,'listings'), {...listing, createdAt:serverTimestamp()});
