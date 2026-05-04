@@ -50,14 +50,35 @@
   height: 100%; 
 }
 
-/* 🚀 NEW: Floating Search Bar Styles */
+/* 🚀 NEW UI UPGRADE 2: Focus Mode Overlay */
+#search-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  z-index: 895; /* Just under the search bar */
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+#search-overlay.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Floating Search Bar Styles */
 .map-search-wrap {
   position: absolute;
   top: 13px;
   left: 13px;
-  right: 175px; /* Leaves room for the tbar buttons on the right */
+  right: 175px; 
   z-index: 900;
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.95);
   -webkit-backdrop-filter: blur(20px);
   backdrop-filter: blur(20px);
   border-radius: 14px;
@@ -67,6 +88,12 @@
   box-shadow: 0 4px 15px rgba(0,0,0,0.1);
   border: 1px solid rgba(0,0,0,0.05);
   height: 46px;
+  transition: box-shadow 0.3s ease, transform 0.2s ease;
+}
+
+.map-search-wrap.focused {
+  box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+  border-color: rgba(255,87,34,0.3);
 }
 
 .ms-icon { font-size: 16px; opacity: 0.6; margin-right: 6px; }
@@ -916,8 +943,7 @@
   .map-watermark img { filter: invert(1) brightness(100%); }
   .map-watermark span { color: #fff; }
 
-  /* 🚀 NEW: Dark mode for Search Bar */
-  .map-search-wrap { background: rgba(31, 41, 55, 0.9); border-color: #374151; }
+  .map-search-wrap { background: rgba(31, 41, 55, 0.95); border-color: #374151; }
   #map-search { color: #F9FAFB; }
   #map-search::placeholder { color: #6B7280; }
   #ms-clear { color: #D1D5DB; background: rgba(255,255,255,0.1); }
@@ -947,11 +973,17 @@
     
     <div class="map-wrapper">
       <div id="map"></div>
+      
+      <!-- 🚀 UI UPGRADE 2: Focus Overlay -->
+      <div id="search-overlay" onclick="document.getElementById('map-search').blur()"></div>
 
-      <!-- 🚀 NEW: The Floating Search Bar -->
-      <div class="map-search-wrap">
+      <div class="map-search-wrap" id="ms-wrap">
         <span class="ms-icon">🔍</span>
-        <input type="text" id="map-search" placeholder="Search restaurant, grocery, tuition..." oninput="window.handleSearch(this.value)">
+        <!-- Added onfocus and onblur handlers -->
+        <input type="text" id="map-search" placeholder="Search restaurant, grocery, tuition..." 
+               oninput="window.handleSearch(this.value)"
+               onfocus="window.toggleFocusMode(true)"
+               onblur="window.toggleFocusMode(false)">
         <button id="ms-clear" onclick="window.clearSearch()">✕</button>
       </div>
 
@@ -1078,7 +1110,6 @@
   </div>
 </div>
 
-<!-- 🚀 NEW: Removed the 'on' class to prevent the ugly flash -->
 <div class="modal" id="modal-welcome">
   <div class="msht">
     <div class="mh"></div>
@@ -1117,8 +1148,24 @@ window.haptic = (ms = 50) => {
   } catch (e) {}
 };
 
-// 🚀 NEW: Search Logic State
 let liveSearchQuery = '';
+
+// 🚀 UI UPGRADE 2: Focus Overlay Logic
+window.toggleFocusMode = (isFocused) => {
+  const overlay = document.getElementById('search-overlay');
+  const wrap = document.getElementById('ms-wrap');
+  
+  if (isFocused) {
+    overlay.classList.add('active');
+    wrap.classList.add('focused');
+  } else {
+    // Slight delay so tapping clear button works
+    setTimeout(() => {
+      overlay.classList.remove('active');
+      wrap.classList.remove('focused');
+    }, 150);
+  }
+};
 
 window.handleSearch = (val) => {
   liveSearchQuery = val.trim().toLowerCase();
@@ -1127,9 +1174,11 @@ window.handleSearch = (val) => {
 };
 
 window.clearSearch = () => {
+  window.haptic(30);
   document.getElementById('map-search').value = '';
   liveSearchQuery = '';
   document.getElementById('ms-clear').style.display = 'none';
+  document.getElementById('map-search').blur(); // Close keyboard
   redraw();
 };
 
@@ -1141,7 +1190,7 @@ window.toggleLang = () => {
   } catch(e){}
   
   window.applyLang();
-  redraw(); // Replace renderCards() with redraw() so the map markers refresh too
+  redraw(); 
 };
 
 window.applyLang = () => {
@@ -1149,7 +1198,6 @@ window.applyLang = () => {
     el.innerHTML = el.getAttribute(`data-${window.lang}`);
   });
   
-  // Update Search Bar Placeholder
   const searchInput = document.getElementById('map-search');
   if (searchInput) {
     searchInput.placeholder = window.lang === 'hi' 
@@ -1462,7 +1510,6 @@ function redraw() {
       if (cat !== 'all' && l.type !== cat) return false;
       if (isExpired(l)) return false;
       
-      // 🚀 NEW: Check against Live Search Query
       if (liveSearchQuery) {
         const textToSearch = `${l.title || ''} ${l.desc || ''} ${l.type || ''}`.toLowerCase();
         if (!textToSearch.includes(liveSearchQuery)) return false;
@@ -1574,7 +1621,6 @@ function redraw() {
 
   renderCards();
   
-  // Prevent Welcome Popups if the user is actively searching
   if (!sessionStorage.getItem('welcome_popups_done') && loc && filteredList.length > 0 && !liveSearchQuery) {
     sessionStorage.setItem('welcome_popups_done', 'true'); 
     const popupsToShow = Math.min(3, filteredList.length); 
@@ -1657,6 +1703,11 @@ function renderCards() {
       ? (window.lang === 'hi' ? 'खोज से कुछ नहीं मिला' : 'No search results found') 
       : (window.lang === 'hi' ? 'कोई ऑफ़र नहीं मिला' : 'No deals found nearby');
       
+    // 🚀 UI UPGRADE 4: One-Tap Clear Search Button in empty state
+    const actionBtn = liveSearchQuery 
+      ? `<button onclick="window.clearSearch()" style="background:var(--or); border:none; color:#fff; padding:12px 24px; border-radius:100px; font-size:13px; font-weight:900; font-family:inherit; cursor:pointer; box-shadow:0 4px 15px rgba(255,87,34,0.3); transition:transform 0.2s;" onmousedown="this.style.transform='scale(0.95)'" onmouseup="this.style.transform='scale(1)'">${window.lang === 'hi' ? 'खोज साफ करें' : 'Clear Search'}</button>`
+      : `<button onclick="setR(999, Array.from(document.querySelectorAll('.rdist-btn')).find(b => b.textContent === 'Anywhere' || b.textContent === 'कहीं भी'))" style="background:var(--bg-body); border:2px solid var(--bdr); color:var(--deep); padding:12px 24px; border-radius:100px; font-size:13px; font-weight:800; font-family:inherit; cursor:pointer; box-shadow:0 4px 12px rgba(0,0,0,0.05); transition:transform 0.2s;" onmousedown="this.style.transform='scale(0.95)'" onmouseup="this.style.transform='scale(1)'">${window.lang === 'hi' ? 'कहीं भी खोजें' : 'Search Anywhere'}</button>`;
+      
     document.getElementById('hscr').innerHTML = `
       <div style="width:100%; text-align:center; padding:20px; background:var(--card); border-radius:18px; border:1px dashed var(--bdr); color:var(--gray); font-size:12px; font-weight:800;">
         ${emptyMsg}
@@ -1675,7 +1726,7 @@ function renderCards() {
         </svg>
         <h3 style="color:var(--deep); font-size:18px; font-weight:900; margin-bottom:6px; font-family:'Syne', sans-serif;">${emptyMsg}</h3>
         <p style="color:var(--gray); font-weight:600; font-size:13px; line-height:1.5; max-width:280px; margin-bottom:20px;">${window.lang === 'hi' ? 'इस क्षेत्र में आपके फ़िल्टर से मेल खाने वाला कुछ भी नहीं है। कोई अन्य श्रेणी या बड़ा दायरा आज़माएँ।' : 'Nothing matches your filters in this exact area. Try a different category or expand your search radius.'}</p>
-        <button onclick="setR(999, Array.from(document.querySelectorAll('.rdist-btn')).find(b => b.textContent === 'Anywhere' || b.textContent === 'कहीं भी'))" style="background:var(--bg-body); border:2px solid var(--bdr); color:var(--deep); padding:12px 24px; border-radius:100px; font-size:13px; font-weight:800; font-family:inherit; cursor:pointer; box-shadow:0 4px 12px rgba(0,0,0,0.05); transition:transform 0.2s;" onmousedown="this.style.transform='scale(0.95)'" onmouseup="this.style.transform='scale(1)'">${window.lang === 'hi' ? 'कहीं भी खोजें' : 'Search Anywhere'}</button>
+        ${actionBtn}
       </div>
     `;
   } else {
@@ -1834,7 +1885,6 @@ window.pickType = (t, btn) => {
   btn.classList.add('on'); 
 };
 
-// 🚀 NEW: Updated startApp with 1-hour localStorage reset
 window.startApp = () => {
   window.haptic(50);
   cat = welcomeType;
@@ -1855,7 +1905,6 @@ window.startApp = () => {
   
   SS('pref_interests', interestMap[welcomeType] || ['deal','rental','pg','job']);
   
-  // 🚀 Save the exact time they clicked this to localStorage
   localStorage.setItem('welcome_timestamp', Date.now().toString());
   document.getElementById('modal-welcome').classList.remove('on');
   
@@ -1866,11 +1915,9 @@ window.startApp = () => {
   getLoc();
 };
 
-// 🚀 NEW: Updated skipWelcome with 1-hour localStorage reset
 window.skipWelcome = () => { 
   window.haptic(30); 
   
-  // 🚀 Save the exact time they clicked this to localStorage
   localStorage.setItem('welcome_timestamp', Date.now().toString()); 
   welcomeType = 'deal'; 
   document.getElementById('modal-welcome').classList.remove('on'); 
@@ -1965,18 +2012,15 @@ async function initApp() {
     if (auth.currentUser) loadListings(); 
   }, 5 * 60 * 1000);
   
-  // 🚀 NEW: 1-Hour Expiration Logic for the Welcome Modal
   const lastSeen = localStorage.getItem('welcome_timestamp');
-  const oneHour = 60 * 60 * 1000; // 1 hour in milliseconds
+  const oneHour = 60 * 60 * 1000; 
   
   if (lastSeen && (Date.now() - parseInt(lastSeen) < oneHour)) {
-    // Less than an hour has passed. Keep it hidden and load map immediately.
     setTimeout(() => { 
       if (window._map) window._map.invalidateSize(); 
     }, 500);
     getLoc();
   } else {
-    // It's been more than an hour (or it's their very first login). Show the popup!
     document.getElementById('modal-welcome').classList.add('on');
   }
 }
