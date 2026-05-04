@@ -44,7 +44,6 @@
     margin: 0;
   }
   
-  /* 🚀 NEW: Dynamic Time-Based Background (Sharp / Original) */
   .premium-bg {
     position: fixed; 
     inset: 0; 
@@ -55,7 +54,6 @@
     transition: background-image 1s ease-in-out;
   }
   
-  /* Subtle overlay to ensure the card is always readable regardless of the background */
   .premium-bg::after {
     content: ''; 
     position: absolute; 
@@ -93,13 +91,52 @@
   .brand { display:flex; align-items:center; justify-content:center; gap:10px; margin-bottom:12px; }
   .tagline { font-size:14px; color:var(--gray); font-weight:600; margin-bottom:30px; line-height:1.4; }
   
-  .role-tog { display:flex; background:var(--cream); border-radius:14px; padding:4px; margin-bottom:24px; border:1px solid var(--bdr); }
-  .rtb { flex:1; padding:10px; font-size:13px; font-weight:800; color:var(--gray); border-radius:10px; cursor:pointer; transition:all 0.2s; }
-  .rtb.on { background:var(--bg-app); color:var(--deep); box-shadow:0 2px 8px rgba(0,0,0,0.08); }
+  /* 🚀 UI UPGRADE 1: iOS Sliding Pill Segments */
+  .role-tog { 
+    display:flex; 
+    position: relative; 
+    background:var(--cream); 
+    border-radius:14px; 
+    padding:4px; 
+    margin-bottom:24px; 
+    border:1px solid var(--bdr); 
+    z-index: 1;
+  }
   
+  .sliding-pill {
+    position: absolute;
+    top: 4px;
+    bottom: 4px;
+    left: 4px;
+    width: calc(50% - 4px);
+    background: var(--bg-app);
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    z-index: -1; /* Sits behind the text */
+  }
+
+  .rtb { 
+    flex:1; 
+    padding:10px; 
+    font-size:13px; 
+    font-weight:800; 
+    color:var(--gray); 
+    border-radius:10px; 
+    cursor:pointer; 
+    transition: color 0.2s; 
+    background: transparent; 
+  }
+  
+  .rtb.on { color:var(--deep); }
+  /* End UI UPGRADE 1 */
+
   .btn-google { display:flex; align-items:center; justify-content:center; gap:12px; width:100%; padding:14px; border-radius:12px; background:var(--bg-app); color:var(--deep); font-size:15px; font-weight:800; border:2px solid var(--bdr); cursor:pointer; transition:all 0.2s; font-family:inherit; box-shadow:0 4px 15px rgba(0,0,0,0.06); }
   .btn-google:active { transform:scale(0.97); background:var(--cream); }
-  .btn-google img { width:20px; height:20px; }
+  .btn-google img { width:20px; height:20px; transition: opacity 0.2s; }
+
+  /* 🚀 CSS for new Inline Spinner */
+  @keyframes inline-spin { 100% { transform: rotate(360deg); } }
 
   .checkbox-wrapper { display:flex; align-items:flex-start; gap:10px; margin-bottom:20px; text-align:left; padding:0 4px; }
   .custom-checkbox { width:20px; height:20px; accent-color:#FF5722; cursor:pointer; flex-shrink:0; margin-top:2px; background-color:#ffffff; box-shadow:0 0 0 2px #9CA3AF; border-radius:3px; outline:none; -webkit-appearance:auto; transition: transform 0.2s; }
@@ -108,7 +145,6 @@
 </head>
 <body>
 
-<!-- The Dynamic Background Container -->
 <div class="premium-bg" id="dynamic-bg"></div>
 
 <div class="card" id="login-card">
@@ -118,6 +154,8 @@
   <div class="tagline" id="tag-line">Sign in to discover nearby deals instantly.</div>
 
   <div class="role-tog" id="role-box">
+    <!-- The physical moving pill element -->
+    <div class="sliding-pill" id="role-pill"></div>
     <div class="rtb on" id="rt-con" onclick="setRole('consumer')">📱 Customer</div>
     <div class="rtb" id="rt-mer" onclick="setRole('merchant')">🏪 Merchant</div>
   </div>
@@ -131,15 +169,16 @@
     </label>
   </div>
   
+  <!-- 🚀 UI UPGRADE 3: Inline Loading Button -->
   <button class="btn-google" id="btn-login" onclick="window.loginWithGoogle()">
-    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
-    Continue with Google
+    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" id="btn-google-icon" alt="Google">
+    <!-- Inline SVG Spinner (Hidden by default) -->
+    <svg id="btn-spinner" style="display:none; width:20px; height:20px; animation: inline-spin 1s linear infinite;" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" stroke-dasharray="32" stroke-linecap="round" stroke-opacity="0.3"></circle>
+      <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" stroke-width="3" stroke-linecap="round"></path>
+    </svg>
+    <span id="btn-login-text">Continue with Google</span>
   </button>
-
-  <div id="ldr" style="display:none; margin-top:16px;">
-    <div class="spin" style="margin:0 auto 10px;"></div>
-    <div style="font-size:13px; font-weight:800; color:var(--deep);" id="ldr-tx">Securing session...</div>
-  </div>
 
   <div style="margin-top: 24px; font-size: 11px; color: var(--gray); text-align: center; font-weight:600;">
     © 2026 NearPop. All rights reserved.
@@ -149,7 +188,6 @@
 <div class="toast" id="toast"><span id="t-ic">✅</span><span id="t-tx"></span></div>
 
 <script>
-  // 🚀 NEW: Dynamic Time-Based Background Logic (Indian Local Theme - Final)
   function setTimeBasedBackground() {
     const hour = new Date().getHours();
     const bgElement = document.getElementById('dynamic-bg');
@@ -157,20 +195,16 @@
     let bgUrl = '';
     
     if (hour >= 6 && hour < 12) {
-      // Morning (6 AM - 11:59 AM) - Vibrant Indian Market
       bgUrl = 'url("https://images.unsplash.com/photo-1587474260584-136574528ed5?q=80&w=1080&auto=format&fit=crop")';
     } else if (hour >= 12 && hour < 18) {
-      // Afternoon (12 PM - 5:59 PM) - Bright Indian Street Daylight
       bgUrl = 'url("https://images.unsplash.com/photo-1677306966234-367c40e489bf?q=80&w=1080&auto=format&fit=crop")';
     } else {
-      // Night (6 PM - 5:59 AM) - Indian City Neon Night
       bgUrl = 'url("https://images.unsplash.com/photo-1710338836955-24e16f13c1a9?q=80&w=1080&auto=format&fit=crop")';
     }
     
     bgElement.style.backgroundImage = bgUrl;
   }
   
-  // Run immediately on load
   setTimeBasedBackground();
 </script>
 
@@ -195,10 +229,19 @@ const auth = getAuth(app);
 const provider = new GoogleAuthProvider();
 window.loginRole = 'consumer';
 
+// 🚀 JS for iOS Sliding Pill
 window.setRole = (r) => {
   window.loginRole = r;
   document.getElementById('rt-con').classList.toggle('on', r === 'consumer');
   document.getElementById('rt-mer').classList.toggle('on', r === 'merchant');
+  
+  // Physically slide the pill background
+  const pill = document.getElementById('role-pill');
+  if(r === 'merchant') {
+    pill.style.transform = 'translateX(100%)';
+  } else {
+    pill.style.transform = 'translateX(0)';
+  }
 };
 
 const urlP = new URLSearchParams(window.location.search);
@@ -208,14 +251,27 @@ if (urlP.get('qr') === '1') {
   document.getElementById('role-box').style.display = 'none'; 
 }
 
+// 🚀 JS for Inline Button Loading
 function showLdr(msg) {
-  document.getElementById('btn-login').style.display = 'none';
-  document.getElementById('ldr').style.display = 'block';
-  document.getElementById('ldr-tx').textContent = msg;
+  const btn = document.getElementById('btn-login');
+  document.getElementById('btn-google-icon').style.display = 'none';
+  document.getElementById('btn-spinner').style.display = 'block';
+  document.getElementById('btn-login-text').textContent = msg;
+  btn.style.pointerEvents = 'none';
+  btn.style.opacity = '0.9';
+}
+
+// 🚀 Safety Reset for Button if Login Fails/Cancels
+function resetLdr() {
+  const btn = document.getElementById('btn-login');
+  document.getElementById('btn-google-icon').style.display = 'block';
+  document.getElementById('btn-spinner').style.display = 'none';
+  document.getElementById('btn-login-text').textContent = 'Continue with Google';
+  btn.style.pointerEvents = 'auto';
+  btn.style.opacity = '1';
 }
 
 window.loginWithGoogle = async () => {
-  // Checkbox Validation!
   if (!document.getElementById('agree-check').checked) return toast('⚠️', 'Please agree to the Terms & Privacy Policy.');
 
   try {
@@ -234,15 +290,12 @@ window.loginWithGoogle = async () => {
     const userSnap = await getDoc(userRef);
     const isNewUser = !userSnap.exists(); 
     
-    // 🛑 CROSS-ROLE LOGIN PREVENTION
     if (!isNewUser) {
       const existingRole = userSnap.data().role || 'consumer';
       
       if (existingRole !== window.loginRole) {
         await auth.signOut(); 
-        
-        document.getElementById('ldr').style.display = 'none';
-        document.getElementById('btn-login').style.display = 'flex';
+        resetLdr(); // 🚀 Resets the inline button perfectly
         
         if (existingRole === 'consumer') {
           return toast('⚠️', 'This Google account is registered as a Customer. You cannot log in as a Merchant.');
@@ -271,7 +324,6 @@ window.loginWithGoogle = async () => {
     cacheClear();
     const savedIntent = sessionStorage.getItem('np_intent');
     
-    // QR Analytics
     const qrMid = urlP.get('mid');
     if (qrMid) {
       try {
@@ -305,8 +357,7 @@ window.loginWithGoogle = async () => {
   } catch(e) {
     console.error("Firebase Auth Error:", e);
     toast('❌', 'Login failed. Please try again.');
-    document.getElementById('btn-login').style.display = 'flex';
-    document.getElementById('ldr').style.display = 'none';
+    resetLdr(); // 🚀 Resets button if the user closes the Google pop-up
   }
 };
 </script>
