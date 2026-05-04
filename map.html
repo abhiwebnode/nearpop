@@ -1078,7 +1078,8 @@
   </div>
 </div>
 
-<div class="modal on" id="modal-welcome">
+<!-- 🚀 NEW: Removed the 'on' class to prevent the ugly flash -->
+<div class="modal" id="modal-welcome">
   <div class="msht">
     <div class="mh"></div>
     <div class="wlc-em">👋</div>
@@ -1833,6 +1834,7 @@ window.pickType = (t, btn) => {
   btn.classList.add('on'); 
 };
 
+// 🚀 NEW: Updated startApp with 1-hour localStorage reset
 window.startApp = () => {
   window.haptic(50);
   cat = welcomeType;
@@ -1852,7 +1854,9 @@ window.startApp = () => {
   };
   
   SS('pref_interests', interestMap[welcomeType] || ['deal','rental','pg','job']);
-  sessionStorage.setItem('welcome_seen', 'true');
+  
+  // 🚀 Save the exact time they clicked this to localStorage
+  localStorage.setItem('welcome_timestamp', Date.now().toString());
   document.getElementById('modal-welcome').classList.remove('on');
   
   setTimeout(() => { 
@@ -1862,9 +1866,12 @@ window.startApp = () => {
   getLoc();
 };
 
+// 🚀 NEW: Updated skipWelcome with 1-hour localStorage reset
 window.skipWelcome = () => { 
   window.haptic(30); 
-  sessionStorage.setItem('welcome_seen', 'true'); 
+  
+  // 🚀 Save the exact time they clicked this to localStorage
+  localStorage.setItem('welcome_timestamp', Date.now().toString()); 
   welcomeType = 'deal'; 
   document.getElementById('modal-welcome').classList.remove('on'); 
   
@@ -1958,12 +1965,19 @@ async function initApp() {
     if (auth.currentUser) loadListings(); 
   }, 5 * 60 * 1000);
   
-  if (sessionStorage.getItem('welcome_seen')) {
-    document.getElementById('modal-welcome').classList.remove('on');
+  // 🚀 NEW: 1-Hour Expiration Logic for the Welcome Modal
+  const lastSeen = localStorage.getItem('welcome_timestamp');
+  const oneHour = 60 * 60 * 1000; // 1 hour in milliseconds
+  
+  if (lastSeen && (Date.now() - parseInt(lastSeen) < oneHour)) {
+    // Less than an hour has passed. Keep it hidden and load map immediately.
     setTimeout(() => { 
       if (window._map) window._map.invalidateSize(); 
     }, 500);
     getLoc();
+  } else {
+    // It's been more than an hour (or it's their very first login). Show the popup!
+    document.getElementById('modal-welcome').classList.add('on');
   }
 }
 
