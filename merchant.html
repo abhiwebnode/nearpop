@@ -190,7 +190,6 @@
     <p>Merchant Dashboard</p>
   </div>
 
-  <!-- 🚀 UPDATED: Gamified Free Promo Balance -->
   <div class="mwbox">
     <div>
       <div class="mw-lbl">Free Promo Credits</div>
@@ -245,7 +244,6 @@
         <div class="roi-grid">
           <div class="roi-box"><div class="roi-v" id="rr-ctr">0%</div><div class="roi-l">Interest Rate</div></div>
           <div class="roi-box"><div class="roi-v" id="rr-conv">0%</div><div class="roi-l">Visit Rate</div></div>
-          <!-- 🚀 UPDATED: Display spend in Credits -->
           <div class="roi-box"><div class="roi-v" id="rr-spend">0 🪙</div><div class="roi-l">Est. Spend</div></div>
         </div>
         
@@ -340,7 +338,6 @@
   </div>
 </div>
 
-<!-- 🚀 UPDATED: The Gamified Credit Dashboard (Replaced Payment Gateway) -->
 <div class="modal" id="mod-credits" onclick="if(event.target===this)this.classList.remove('on')">
   <div class="msht" style="padding-bottom: 30px;">
     <div class="mh"></div>
@@ -395,7 +392,6 @@
 
     <div class="a-inp-row">
       <div class="edit-grp" style="flex:1"><label class="edit-lbl">Price/Text</label><input type="text" id="edit-price" class="a-inp"></div>
-      <!-- 🚀 UPDATED: Credits instead of ₹ -->
       <div class="edit-grp" style="flex:1"><label class="edit-lbl">Daily Budget (Credits)</label><input type="number" id="edit-budget" class="a-inp" min="25" step="25"></div>
     </div>
     <div class="edit-grp"><label class="edit-lbl">Reach Radius (meters)</label>
@@ -431,7 +427,6 @@
   </div>
 </div>
 
-
 <div class="modal" id="mod-premium" onclick="if(event.target===this)this.classList.remove('on')">
   <div class="msht">
     <div class="mh"></div>
@@ -449,7 +444,6 @@
 </div>
 
 <script type="module">
-// 🚀 UPDATED: Added 'increment' to the Firestore imports safely!
 import { db, auth, LS, SS, TC, TE, toast, cacheGet, cacheSet, cacheClear, CACHE_TTL } from './js/app.js';
 import { getDoc, getDocs, query, collection, where, updateDoc, deleteDoc, doc, setDoc, increment } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
 import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js';
@@ -464,7 +458,10 @@ window.haptic = (ms = 50) => {
 
 const mname = LS('mname')||'My Business';
 let wallet  = LS('wallet')||500;
-let currentListings = [];
+
+// 🚀 FIX: Pre-load the local cache so we know if they have listings immediately
+let currentListings = (cacheGet() || []).filter(l => l.uid === uid);
+let isDataLoaded = !!cacheGet(); 
 
 const logoUrl = LS('logoUrl');
 if (logoUrl) {
@@ -482,7 +479,6 @@ if (userPlan === 'premium') {
   document.getElementById('mbiz').textContent = mname;
 }
 
-// 🚀 UPDATED: Formatted UI labels to 🪙
 document.getElementById('mwal').textContent = Math.floor(wallet) + ' 🪙';
 
 let currentPhotoTarget = ''; 
@@ -617,6 +613,8 @@ async function loadListings(force=true) {
 }
 
 function renderFromData(all, userData) {
+  // 🚀 FIX: Signals that Firebase has finished syncing
+  isDataLoaded = true; 
   const mine = all.filter(l => l.uid === uid);
   currentListings = mine;
   renderCards(mine);
@@ -665,8 +663,6 @@ function renderFromData(all, userData) {
   
   document.getElementById('rr-ctr').textContent = intRate;
   document.getElementById('rr-conv').textContent = finalRate;
-  
-  // 🚀 UPDATED: Formatted Spend Label
   document.getElementById('rr-spend').textContent = Math.floor(estimatedSpend) + ' 🪙';
 
   const insightBox = document.getElementById('insight-box');
@@ -855,13 +851,11 @@ window.deleteListing = async (id) => {
   } 
 };
 
-// 🚀 NEW: Claim Daily Credits Logic (100% Client-side + Firebase Sync)
 window.claimDailyCredits = async () => {
     window.haptic(50);
     const lastClaim = LS('last_daily_claim');
     const now = Date.now();
     
-    // Check if it's been 24 hours (86,400,000 ms)
     if (lastClaim && (now - parseInt(lastClaim)) < 86400000) {
         return toast('⏳', 'Come back tomorrow for more free credits!');
     }
@@ -876,7 +870,6 @@ window.claimDailyCredits = async () => {
         localStorage.setItem('np_last_daily_claim', now);
         
         if (uid) { 
-          // Uses Firebase Increment safely
           await setDoc(doc(db, 'users', uid), { wallet: increment(100) }, { merge: true }); 
         }
         
@@ -891,7 +884,6 @@ window.claimDailyCredits = async () => {
     }
 };
 
-// 🚀 NEW: Gamified Share Logic
 window.shareAppBonus = async () => {
     window.haptic(50);
     if (LS('share_bonus_claimed')) {
@@ -922,7 +914,7 @@ window.shareAppBonus = async () => {
                 url: 'https://nearpop.in'
             });
             await shareProcess();
-        } catch(e) { /* User cancelled share prompt */ }
+        } catch(e) { }
     } else {
         toast('🔗', 'Share link copied to clipboard!');
         await shareProcess();
@@ -945,7 +937,7 @@ window.upgradePremium = async () => {
   } 
   const btn = document.querySelector('#mod-premium .btn-or'); 
   btn.textContent = 'Upgrading...'; 
-  try {     
+  try { 
     const newWallet = wallet - 499; 
     await setDoc(doc(db, 'users', uid), { wallet: newWallet, plan: 'premium' }, { merge: true }); 
     wallet = newWallet; 
@@ -963,7 +955,20 @@ window.upgradePremium = async () => {
   } 
 };
 
-window.checkPremium = () => { window.haptic(30); if (userPlan === 'premium' || currentListings.length === 0) { window.location.href = 'create.html'; } else { document.getElementById('mod-premium').classList.add('on'); } };
+// 🚀 FIX: Safegaurd added to prevent Race Condition on fast-clicks
+window.checkPremium = () => { 
+  window.haptic(30); 
+  
+  if (!isDataLoaded && userPlan !== 'premium') {
+    return toast('⏳', 'Syncing your dashboard, please wait a second...');
+  }
+
+  if (userPlan === 'premium' || currentListings.length === 0) { 
+    window.location.href = 'create.html'; 
+  } else { 
+    document.getElementById('mod-premium').classList.add('on'); 
+  } 
+};
 
 window.showStoreQR = () => { window.haptic(30); const uid = LS('uid'); if(!uid) return alert("Error: Merchant not logged in."); const box = document.getElementById('qrcode-box'); box.innerHTML = ''; new QRCode(box, { text: "NEARPOP_CLAIM:" + uid, width: 220, height: 220, colorDark : "#000000", colorLight : "#ffffff", correctLevel : QRCode.CorrectLevel.H }); document.getElementById('mod-qr').classList.add('on'); };
 
