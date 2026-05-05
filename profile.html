@@ -80,7 +80,8 @@
     <div class="stats-row">
       <div class="stat"><div class="stat-v" id="s-pts">0</div><div class="stat-l">Points</div></div>
       <div class="stat"><div class="stat-v" id="s-saved">0</div><div class="stat-l">Saved</div></div>
-      <div class="stat" id="s-wallet-col" style="display:none"><div class="stat-v" id="s-wallet">₹0</div><div class="stat-l">Wallet</div></div>
+      <!-- 🚀 UPDATED: Replaced "Wallet" with "Credits" to match gamified plan -->
+      <div class="stat" id="s-wallet-col" style="display:none"><div class="stat-v" id="s-wallet">0 🪙</div><div class="stat-l">Credits</div></div>
       <div class="stat"><div class="stat-v" id="s-notifs">0</div><div class="stat-l">Alerts Today</div></div>
     </div>
   </div>
@@ -207,7 +208,6 @@
 <div class="toast" id="toast"><span id="t-ic">✅</span><span id="t-tx"></span></div>
 
 <script type="module">
-// 🚀 FIX: Imported deleteDoc from Firestore and deleteUser from Auth
 import { db, LS, SS, TC, TE, toast, cacheClear, loadNavigation, requestPushPermissions } from './js/app.js';
 import { pushUserData, pullUserData, watchUserData, isRealAuthUser, syncField } from './js/userSync.js';
 import { doc, getDoc, getDocs, query, collection, where, updateDoc, increment, deleteDoc } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
@@ -273,7 +273,8 @@ function renderHeader(data) {
   
   if (role === 'merchant') {
     document.getElementById('s-wallet-col').style.display = '';
-    document.getElementById('s-wallet').textContent = '₹' + parseFloat(wallet || 0).toFixed(2);
+    // 🚀 UPDATED: Replaced "₹" format with the matching gamified Credits output
+    document.getElementById('s-wallet').textContent = Math.floor(wallet || 0) + ' 🪙';
   }
   
   const logs = (LS('notif_log') || []).filter(t => Date.now() - t < 86400000);
@@ -450,7 +451,6 @@ window.clearLogs = () => {
   toast('🔄', 'Notification history cleared');
 };
 
-// 🚀 NEW: Force Refresh App Logic
 window.forceRefreshApp = () => {
   toast('⏳', 'Refreshing app data...');
   if (typeof cacheClear === 'function') cacheClear();
@@ -459,7 +459,6 @@ window.forceRefreshApp = () => {
   }, 800);
 };
 
-// 🚀 UPGRADED: Full Cascade Delete Account Logic
 window.deleteAccount = async () => {
   const confirmMsg = "🚨 WARNING: Are you sure you want to permanently delete your account?\n\nThis action cannot be undone. All your saved listings, uploaded deals, images, and points will be erased forever.";
   if (!confirm(confirmMsg)) return;
@@ -472,14 +471,12 @@ window.deleteAccount = async () => {
     const storage = getStorage();
 
     if (isRealAuthUser(uid)) {
-      // 1. DELETE ALL ASSOCIATED LISTINGS AND THEIR IMAGES
       const listingsQuery = query(collection(db, 'listings'), where('uid', '==', uid));
       const listingsSnap = await getDocs(listingsQuery);
       
       for (const docSnap of listingsSnap.docs) {
         const listingData = docSnap.data();
         
-        // Delete the listing's image from Storage if it exists
         const imgPath = listingData.imageUrl || listingData.image;
         if (imgPath) {
           try {
@@ -487,11 +484,9 @@ window.deleteAccount = async () => {
           } catch(e) { console.warn("Could not delete listing image:", e); }
         }
         
-        // Delete the listing document itself
         await deleteDoc(doc(db, 'listings', docSnap.id));
       }
 
-      // 2. DELETE MERCHANT LOGO FROM STORAGE (if exists)
       const userSnap = await getDoc(doc(db, 'users', uid));
       if (userSnap.exists()) {
         const userData = userSnap.data();
@@ -502,16 +497,13 @@ window.deleteAccount = async () => {
         }
       }
 
-      // 3. DELETE THE USER DOCUMENT
       await deleteDoc(doc(db, 'users', uid));
     }
 
-    // 4. DELETE THE FIREBASE AUTH ACCOUNT
     if (user) {
       await deleteUser(user);
     }
 
-    // 5. CLEAR LOCAL STORAGE AND EXIT
     localStorage.clear();
     sessionStorage.clear();
     toast('✅', 'Account and all data deleted safely.');
@@ -522,7 +514,6 @@ window.deleteAccount = async () => {
 
   } catch (error) {
     console.error("Delete account error:", error);
-    // Firebase requires a recent login to securely delete an account
     if (error.code === 'auth/requires-recent-login') {
       toast('❌', 'For security, please sign out and sign back in before deleting your account.');
     } else {
@@ -541,7 +532,6 @@ window.logout = async () => {
   window.location.href = 'index.html';
 };
 
-// 🚀 FIX: Bulletproof PWA Install Logic
 let deferredPrompt;
 const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
 
@@ -565,7 +555,6 @@ window.installApp = async () => {
     }
     deferredPrompt = null;
   } else {
-    // Fallback if browser blocks popup or device is iOS
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
     if (isIOS) {
       toast('📲', 'Tap the Share icon below, then select "Add to Home Screen"');
@@ -734,7 +723,6 @@ document.getElementById('dev-reset').addEventListener('click', () => {
   if(confirm('Wipe all local app data?')) {
     localStorage.clear();
     sessionStorage.clear();
-    // Unregister the service worker
     navigator.serviceWorker.getRegistrations().then(function(registrations) {
       for(let registration of registrations) {
         registration.unregister();

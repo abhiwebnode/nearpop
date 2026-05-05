@@ -53,12 +53,11 @@ function validateForm() {
 
 .tb .tl{font-size:12px;font-weight:800;color:var(--deep)}
 
-/* 🚀 FIX: Cross-browser CSS to ensure slider track is always visible */
 .rslide input {
   -webkit-appearance: none;
   width: 100%;
   height: 6px;
-  background: #E5E7EB; /* Light gray thick track */
+  background: #E5E7EB; 
   border-radius: 5px;
   outline: none;
   cursor: pointer;
@@ -156,7 +155,6 @@ function validateForm() {
       <input class="fc" id="c-contact" type="tel" placeholder="+91 98765 43210">
     </div>
 
-    <!-- 🚀 FIX: Radius defaults to 250 -->
     <div class="fg">
       <label class="fl">Notification Radius — how far to send popups to users</label>
       <div class="rslide">
@@ -165,11 +163,14 @@ function validateForm() {
       <div class="rv" id="rval">250 metres</div>
     </div>
 
-    <!-- 🚀 FIX: Budget label and default value -->
+    <!-- 🚀 UPDATE: Changed to "Credits" -->
     <div class="fg">
-      <label class="fl">Daily Budget (₹) — can be increased e.g. 25, 50, 100...</label>
+      <label class="fl">Daily Budget (Credits) — e.g. 25, 50, 100...</label>
       <input type="number" class="fc" id="c-budget" value="25" placeholder="e.g. 25, 50, 100..." min="25" step="25" required>
-      <div style="font-size:11px; color:var(--gray); margin-top:4px; font-weight:600;">Must be a multiple of ₹25. Each popup shown costs exactly 10 paisa.</div>
+      <div style="font-size:11px; color:var(--gray); margin-top:6px; font-weight:600; line-height:1.4;">
+        Must be a multiple of 25. Each popup shown to a nearby customer costs exactly 0.1 Credits. <br>
+        <span style="color: var(--or); font-weight: 800;">🎁 100% Free. No real money or bank account required!</span>
+      </div>
     </div>
 
     <div class="fg">
@@ -193,7 +194,6 @@ function validateForm() {
       </div>
     </div>
 
-    <!-- 🚀 FIX: Added Lat/Lng two-way inputs -->
     <div class="fg">
       <label class="fl">Your Location — drag pin or tap map</label>
       <div class="mapwrap"><div id="pick-map"></div></div>
@@ -256,13 +256,11 @@ let compressedImageB64 = null;
 
 let selType='deal', pickLat=28.4089, pickLng=77.3178, pickMap=null, pickMarker=null;
 
-// 🚀 Helper to update the input boxes when pin moves
 function updateInputBoxes(lat, lng) {
   document.getElementById('c-lat').value = lat.toFixed(6);
   document.getElementById('c-lng').value = lng.toFixed(6);
 }
 
-// 🚀 FIX: Two-way binding. Move pin when inputs change.
 window.updatePinFromInput = () => {
   const newLat = parseFloat(document.getElementById('c-lat').value);
   const newLng = parseFloat(document.getElementById('c-lng').value);
@@ -280,7 +278,7 @@ window.updatePinFromInput = () => {
 function initMap() {
   const loc = LS('lastLoc') || {lat:28.4089, lng:77.3178};
   pickLat = loc.lat; pickLng = loc.lng;
-  updateInputBoxes(pickLat, pickLng); // Initialize inputs
+  updateInputBoxes(pickLat, pickLng); 
   
   pickMap = L.map('pick-map', {center:[pickLat,pickLng], zoom:15, zoomControl:false, attributionControl:false});
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(pickMap);
@@ -291,14 +289,14 @@ function initMap() {
     const p=e.target.getLatLng(); 
     pickLat=p.lat; 
     pickLng=p.lng; 
-    updateInputBoxes(pickLat, pickLng); // Update inputs on drag
+    updateInputBoxes(pickLat, pickLng); 
   });
   
   pickMap.on('click', e => { 
     pickLat=e.latlng.lat; 
     pickLng=e.latlng.lng; 
     pickMarker.setLatLng(e.latlng); 
-    updateInputBoxes(pickLat, pickLng); // Update inputs on click
+    updateInputBoxes(pickLat, pickLng); 
   });
 }
 setTimeout(initMap, 200);
@@ -310,7 +308,7 @@ if (navigator.geolocation) {
     if(pickMap){ 
       pickMap.setView([pickLat,pickLng],15); 
       pickMarker.setLatLng([pickLat,pickLng]); 
-      updateInputBoxes(pickLat, pickLng); // Update inputs on GPS find
+      updateInputBoxes(pickLat, pickLng); 
     }
   });
 }
@@ -427,11 +425,10 @@ window.doCreate = async () => {
   if (!price)      { toast('⚠️','Please enter the price or offer'); return; }
   
   if (!budget || budget < 25 || budget % 25 !== 0) {
-    toast('⚠️', 'Daily budget must be a multiple of ₹25 (e.g., 25, 50)');
+    toast('⚠️', 'Daily budget must be a multiple of 25 (e.g., 25, 50)');
     return;
   }
 
-  // Double check pickLat/pickLng from inputs just in case
   const finalLat = parseFloat(document.getElementById('c-lat').value);
   const finalLng = parseFloat(document.getElementById('c-lng').value);
   if (isNaN(finalLat) || isNaN(finalLng)) {

@@ -136,7 +136,6 @@
 @keyframes spin { to { transform: rotate(360deg); } }
 
 
-/* 🚀 NEW: Extended Floating Action Button for Creating Listings */
 .fab-create {
   position: fixed;
   bottom: 24px;
@@ -169,7 +168,7 @@
   font-size: 26px;
   font-weight: 300;
   line-height: 1;
-  margin-top: -2px; /* Vertically centers the plus sign perfectly */
+  margin-top: -2px; 
 }
 
 </style>
@@ -191,12 +190,13 @@
     <p>Merchant Dashboard</p>
   </div>
 
+  <!-- 🚀 UPDATED: Gamified Free Promo Balance -->
   <div class="mwbox">
     <div>
-      <div class="mw-lbl">Wallet Balance</div>
-      <div class="mw-val" id="mwal">₹---</div>
+      <div class="mw-lbl">Free Promo Credits</div>
+      <div class="mw-val" id="mwal">--- 🪙</div>
     </div>
-    <button class="mw-btn" onclick="document.getElementById('modwal').classList.add('on')">+ Add Funds</button>
+    <button class="mw-btn" onclick="document.getElementById('mod-credits').classList.add('on')">🎁 Earn Credits</button>
   </div>
 
   <div class="tabs">
@@ -245,7 +245,8 @@
         <div class="roi-grid">
           <div class="roi-box"><div class="roi-v" id="rr-ctr">0%</div><div class="roi-l">Interest Rate</div></div>
           <div class="roi-box"><div class="roi-v" id="rr-conv">0%</div><div class="roi-l">Visit Rate</div></div>
-          <div class="roi-box"><div class="roi-v" id="rr-spend">₹0</div><div class="roi-l">Est. Spend</div></div>
+          <!-- 🚀 UPDATED: Display spend in Credits -->
+          <div class="roi-box"><div class="roi-v" id="rr-spend">0 🪙</div><div class="roi-l">Est. Spend</div></div>
         </div>
         
         <div class="insight" id="insight-box">
@@ -262,7 +263,6 @@
     <div class="mcd" style="text-align: center; margin-bottom: 24px;">
       <p style="font-size: 13px; color: var(--gray); margin-bottom: 16px; font-weight: 600; line-height:1.4;">Print or download this permanent QR code. It automatically routes customers to your live deals.</p>
       <div style="display:flex; gap:10px;">
-         <!-- 🚀 UPDATED: Opens Export Choice Bottom Sheet -->
          <button class="btn-or" onclick="document.getElementById('mod-standee-choice').classList.add('on')" style="flex:1; padding: 12px; font-size: 13px; background:var(--deep);">🖨️ Get Standee</button>
          <button class="btn-lt" onclick="window.showStoreQR()" style="flex:1; padding: 12px; font-size: 13px;">📱 Show In-Store</button>
       </div>
@@ -317,12 +317,10 @@
   </div>
 </div>
 
-<!-- 🚀 NEW: Floating Create Button -->
 <button class="fab-create" onclick="window.checkPremium()" title="Create New Listing">
   <span class="fab-icon">＋</span> Create Listing
 </button>
 
-<!-- 🚀 NEW: Standee Export Options Modal -->
 <div class="modal" id="mod-standee-choice" onclick="if(event.target===this)this.classList.remove('on')">
   <div class="msht" style="padding-bottom: 30px;">
     <div class="mh"></div>
@@ -342,35 +340,30 @@
   </div>
 </div>
 
-<div class="modal" id="modwal" onclick="if(event.target===this)window.closeWalModal()">
-  <div class="msht">
+<!-- 🚀 UPDATED: The Gamified Credit Dashboard (Replaced Payment Gateway) -->
+<div class="modal" id="mod-credits" onclick="if(event.target===this)this.classList.remove('on')">
+  <div class="msht" style="padding-bottom: 30px;">
     <div class="mh"></div>
-    <div id="wal-step-1">
-      <div class="mt">Add Funds to Wallet</div>
-      <p style="font-size:13px;color:var(--gray);margin-bottom:16px;font-weight:500">Current Balance: <strong style="color:var(--deep)" id="walbal">₹---</strong></p>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:16px">
-        <button class="btn-lt" onclick="window.selectTopUp(500)">+ ₹500</button>
-        <button class="btn-lt" onclick="window.selectTopUp(1000)">+ ₹1,000</button>
-        <button class="btn-lt" onclick="window.selectTopUp(2000)">+ ₹2,000</button>
-        <button class="btn-lt" onclick="window.selectTopUp(5000)">+ ₹5,000</button>
-      </div>
-      <button class="btn-or" onclick="window.closeWalModal()">Cancel</button>
+    <div class="mt" style="font-size:22px;">🎁 Earn Free Credits</div>
+    <p style="font-size:13px;color:var(--gray);margin-bottom:20px;line-height:1.5;">NearPop is 100% free. Earn promo credits to keep your deals live and reach more local customers!</p>
+    
+    <div style="background:var(--card); border:2px solid var(--bdr); border-radius:14px; padding:16px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
+        <div>
+            <div style="font-size:14px; font-weight:800; color:var(--deep); margin-bottom:4px;">Daily Check-In</div>
+            <div style="font-size:12px; color:var(--gray); font-weight:600;">+100 Credits every 24 hours</div>
+        </div>
+        <button id="btn-claim-daily" onclick="window.claimDailyCredits()" style="background:var(--or); color:#fff; border:none; padding:8px 16px; border-radius:10px; font-weight:800; font-size:12px; cursor:pointer;">Claim</button>
     </div>
-    <div id="wal-step-2" style="display:none;">
-      <div class="mt">Checkout</div>
-      <p style="font-size:13px;color:var(--gray);margin-bottom:16px;font-weight:500">Amount to pay: <strong style="color:var(--deep); font-size:18px;" id="pay-amt">₹0</strong></p>
-      <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px">
-        <button class="pm-btn" onclick="window.processPayment('UPI')"><span class="pm-ic">📱</span> UPI (GPay, PhonePe, Paytm)</button>
-        <button class="pm-btn" onclick="window.processPayment('Card')"><span class="pm-ic">💳</span> Credit / Debit Card</button>
-        <button class="pm-btn" onclick="window.processPayment('NetBanking')"><span class="pm-ic">🏦</span> Net Banking</button>
-      </div>
-      <button class="btn-lt" style="width:100%" onclick="window.backToAmounts()">← Back</button>
+
+    <div style="background:var(--card); border:2px solid var(--bdr); border-radius:14px; padding:16px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
+        <div>
+            <div style="font-size:14px; font-weight:800; color:var(--deep); margin-bottom:4px;">Share With Neighbor</div>
+            <div style="font-size:12px; color:var(--gray); font-weight:600;">+200 Credits once</div>
+        </div>
+        <button id="btn-claim-share" onclick="window.shareAppBonus()" style="background:var(--blue); color:#fff; border:none; padding:8px 16px; border-radius:10px; font-weight:800; font-size:12px; cursor:pointer;">Share</button>
     </div>
-    <div id="wal-step-3" style="display:none; text-align:center; padding: 30px 0 20px;">
-      <div class="spin" style="margin:0 auto 20px;"></div>
-      <div class="mt" style="font-size:16px;">Processing Payment...</div>
-      <p style="font-size:12px;color:var(--gray);margin-top:8px;">Please do not close or refresh this window.</p>
-    </div>
+
+    <button class="btn-lt" style="width:100%; margin-top:8px;" onclick="document.getElementById('mod-credits').classList.remove('on')">Close</button>
   </div>
 </div>
 
@@ -402,7 +395,8 @@
 
     <div class="a-inp-row">
       <div class="edit-grp" style="flex:1"><label class="edit-lbl">Price/Text</label><input type="text" id="edit-price" class="a-inp"></div>
-      <div class="edit-grp" style="flex:1"><label class="edit-lbl">Daily Budget (₹)</label><input type="number" id="edit-budget" class="a-inp" min="25" step="25"></div>
+      <!-- 🚀 UPDATED: Credits instead of ₹ -->
+      <div class="edit-grp" style="flex:1"><label class="edit-lbl">Daily Budget (Credits)</label><input type="number" id="edit-budget" class="a-inp" min="25" step="25"></div>
     </div>
     <div class="edit-grp"><label class="edit-lbl">Reach Radius (meters)</label>
       <select id="edit-radius" class="a-inp"><option value="300">300m (Hyperlocal)</option><option value="500">500m (Standard)</option><option value="1500">1.5km (Neighborhood)</option><option value="5000">5km (City Area)</option></select>
@@ -419,7 +413,6 @@
     <div class="mh"></div>
     <div style="text-align: center; margin-bottom: 10px; font-weight: 800; font-size: 16px; color: var(--deep);">Upload Photo</div>
     
-    <!-- 🚀 NEW: Bilingual Warning for Low-RAM / Auto-Translate Phones -->
     <div style="background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 8px; padding: 10px; margin-bottom: 16px; text-align: center;">
       <div style="font-size: 11px; font-weight: 700; color: var(--or); margin-bottom: 4px;">⚠️ Note / ध्यान दें:</div>
       <div style="font-size: 10px; color: var(--deep); line-height: 1.4;">If the camera restarts your app, please take the photo first and choose "Gallery".<br><span style="color: var(--gray);">यदि कैमरा ऐप को रीस्टार्ट करता है, तो कृपया पहले फोटो लें और "Gallery" चुनें।</span></div>
@@ -438,6 +431,7 @@
   </div>
 </div>
 
+<!-- 🚀 UPDATED: Premium Modal to use Credits instead of ₹ -->
 <div class="modal" id="mod-premium" onclick="if(event.target===this)this.classList.remove('on')">
   <div class="msht">
     <div class="mh"></div>
@@ -447,7 +441,7 @@
       <div style="font-weight:900; color:var(--or); margin-bottom:8px;">Premium Perks:</div>
       <ul style="font-size:12px; color:var(--deep); margin-left:16px; line-height:1.6;"><li>Unlimited Active Listings</li><li>Priority Search Ranking</li><li>Advanced Insights & Analytics</li></ul>
     </div>
-    <button class="btn-or" onclick="window.upgradePremium()" style="background:linear-gradient(135deg, #F59E0B, #D97706); width:100%;">⚡ Upgrade for ₹499</button>
+    <button class="btn-or" onclick="window.upgradePremium()" style="background:linear-gradient(135deg, #F59E0B, #D97706); width:100%;">⚡ Upgrade for 1,000 Credits</button>
     <button class="btn-lt" style="width:100%; margin-top:8px;" onclick="document.getElementById('mod-premium').classList.remove('on')">Maybe Later</button>
   </div>
 </div>
@@ -455,8 +449,9 @@
 </div>
 
 <script type="module">
+// 🚀 UPDATED: Added 'increment' to the Firestore imports safely!
 import { db, auth, LS, SS, TC, TE, toast, cacheGet, cacheSet, cacheClear, CACHE_TTL } from './js/app.js';
-import { getDoc, getDocs, query, collection, where, updateDoc, deleteDoc, doc, setDoc } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
+import { getDoc, getDocs, query, collection, where, updateDoc, deleteDoc, doc, setDoc, increment } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
 import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js';
 
 if (!LS('uid') || LS('role') !== 'merchant') { window.location.href = 'index.html'; }
@@ -487,8 +482,8 @@ if (userPlan === 'premium') {
   document.getElementById('mbiz').textContent = mname;
 }
 
-document.getElementById('mwal').textContent = '₹'+parseFloat(wallet).toFixed(2);
-document.getElementById('walbal').textContent = '₹'+parseFloat(wallet).toFixed(2);
+// 🚀 UPDATED: Formatted UI labels to 🪙
+document.getElementById('mwal').textContent = Math.floor(wallet) + ' 🪙';
 
 let currentPhotoTarget = ''; 
 let pendingEditImageB64 = null;
@@ -670,7 +665,9 @@ function renderFromData(all, userData) {
   
   document.getElementById('rr-ctr').textContent = intRate;
   document.getElementById('rr-conv').textContent = finalRate;
-  document.getElementById('rr-spend').textContent = '₹' + estimatedSpend.toFixed(2);
+  
+  // 🚀 UPDATED: Formatted Spend Label
+  document.getElementById('rr-spend').textContent = Math.floor(estimatedSpend) + ' 🪙';
 
   const insightBox = document.getElementById('insight-box');
   const insightTxt = document.getElementById('insight-txt');
@@ -757,7 +754,7 @@ function renderCards(mine) {
 </div>
           <div style="flex:1;">
             <div class="mcd-t">${l.title||''}</div>
-            <div class="mcd-m">${l.radius||300}m radius · ₹${l.budget||25}/day <span class="badge ${l.status==='paused'?'pause':'live'}">${l.status==='paused'?'⏸ PAUSED':'● LIVE'}</span> ${expiryBadge}</div>
+            <div class="mcd-m">${l.radius||300}m radius · ${l.budget||25} Credits/day <span class="badge ${l.status==='paused'?'pause':'live'}">${l.status==='paused'?'⏸ PAUSED':'● LIVE'}</span> ${expiryBadge}</div>
             ${capPctFixed > 0 ? `<div style="margin-top:5px;background:var(--light);border-radius:3px;height:3px"><div style="background:var(--or);border-radius:3px;height:3px;width:${capPctFixed}%"></div></div>` : ''}
           </div>
           <div class="mcd-s">
@@ -797,7 +794,7 @@ window.saveEdit = async () => {
   const id = document.getElementById('edit-id').value; 
   const budget = parseInt(document.getElementById('edit-budget').value) || 25; 
   
-  if (budget < 25 || budget % 25 !== 0) return toast('⚠️', 'Budget must be a multiple of ₹25'); 
+  if (budget < 25 || budget % 25 !== 0) return toast('⚠️', 'Budget must be a multiple of 25 Credits'); 
   
   const btn = document.querySelector('#mod-edit .btn-or'); 
   btn.textContent = 'Saving...'; 
@@ -858,11 +855,80 @@ window.deleteListing = async (id) => {
   } 
 };
 
-let pendingAmount = 0;
-window.closeWalModal = () => { window.haptic(30); document.getElementById('modwal').classList.remove('on'); setTimeout(window.backToAmounts, 300); };
-window.selectTopUp = (n) => { window.haptic(30); pendingAmount = n; document.getElementById('pay-amt').textContent = '₹' + n; document.getElementById('wal-step-1').style.display = 'none'; document.getElementById('wal-step-2').style.display = 'block'; };
-window.backToAmounts = () => { window.haptic(30); document.getElementById('wal-step-2').style.display = 'none'; document.getElementById('wal-step-3').style.display = 'none'; document.getElementById('wal-step-1').style.display = 'block'; };
-window.processPayment = async (method) => { window.haptic(50); document.getElementById('wal-step-2').style.display = 'none'; document.getElementById('wal-step-3').style.display = 'block'; setTimeout(async () => { wallet += pendingAmount; SS('wallet', wallet); localStorage.setItem('np_wallet', wallet); if (LS('uid')) { try { await setDoc(doc(db, 'users', LS('uid')), { wallet: wallet }, { merge: true }); } catch(e) { } } document.getElementById('mwal').textContent = '₹'+parseFloat(wallet).toFixed(2); document.getElementById('walbal').textContent = '₹'+parseFloat(wallet).toFixed(2); window.closeWalModal(); toast('✅', `₹${pendingAmount} added via ${method}!`); }, 1500); };
+// 🚀 NEW: Claim Daily Credits Logic (100% Client-side + Firebase Sync)
+window.claimDailyCredits = async () => {
+    window.haptic(50);
+    const lastClaim = LS('last_daily_claim');
+    const now = Date.now();
+    
+    // Check if it's been 24 hours (86,400,000 ms)
+    if (lastClaim && (now - parseInt(lastClaim)) < 86400000) {
+        return toast('⏳', 'Come back tomorrow for more free credits!');
+    }
+    
+    const btn = document.getElementById('btn-claim-daily');
+    btn.textContent = '...';
+    
+    try {
+        wallet += 100;
+        SS('wallet', wallet);
+        localStorage.setItem('np_wallet', wallet);
+        localStorage.setItem('np_last_daily_claim', now);
+        
+        if (uid) { 
+          // Uses Firebase Increment safely
+          await setDoc(doc(db, 'users', uid), { wallet: increment(100) }, { merge: true }); 
+        }
+        
+        document.getElementById('mwal').textContent = Math.floor(wallet) + ' 🪙';
+        toast('🎉', '100 Daily Credits Claimed!');
+        
+        btn.textContent = 'Claimed!';
+        btn.style.background = 'var(--grn)';
+    } catch(e) {
+        toast('❌', 'Error claiming credits');
+        btn.textContent = 'Claim';
+    }
+};
+
+// 🚀 NEW: Gamified Share Logic
+window.shareAppBonus = async () => {
+    window.haptic(50);
+    if (LS('share_bonus_claimed')) {
+        return toast('✅', 'You already claimed this one-time bonus!');
+    }
+    
+    const shareProcess = async () => {
+        wallet += 200;
+        SS('wallet', wallet);
+        localStorage.setItem('np_wallet', wallet);
+        localStorage.setItem('np_share_bonus_claimed', 'true');
+        
+        if (uid) { await setDoc(doc(db, 'users', uid), { wallet: increment(200) }, { merge: true }); }
+        
+        document.getElementById('mwal').textContent = Math.floor(wallet) + ' 🪙';
+        toast('🎉', '200 Bonus Credits Earned!');
+        
+        const btn = document.getElementById('btn-claim-share');
+        btn.textContent = 'Claimed!';
+        btn.style.background = 'var(--grn)';
+    };
+
+    if (navigator.share) {
+        try {
+            await navigator.share({
+                title: 'NearPop Merchant',
+                text: 'I use NearPop to get local customers for free. Check it out!',
+                url: 'https://nearpop.in'
+            });
+            await shareProcess();
+        } catch(e) { /* User cancelled share prompt */ }
+    } else {
+        toast('🔗', 'Share link copied to clipboard!');
+        await shareProcess();
+    }
+};
+
 window.logout = async () => { window.haptic(50); try { await signOut(auth); } catch(e) { } ['uid','role','mname','wallet','phone', 'plan', 'logoUrl'].forEach(k=>localStorage.removeItem('np_'+k)); sessionStorage.clear(); window.location.href = 'index.html'; };
 window.toast = toast;
 
@@ -871,30 +937,29 @@ setInterval(()=> { if (auth.currentUser) loadListings(true); }, CACHE_TTL);
 
 window.upgradePremium = async () => { 
   window.haptic(50);
-  if (wallet < 499) { 
-    toast('⚠️', 'Insufficient funds.'); 
+  if (wallet < 1000) { 
+    toast('⚠️', 'Insufficient credits. Earn more first!'); 
     document.getElementById('mod-premium').classList.remove('on'); 
-    document.getElementById('modwal').classList.add('on'); 
+    document.getElementById('mod-credits').classList.add('on'); 
     return; 
   } 
   const btn = document.querySelector('#mod-premium .btn-or'); 
   btn.textContent = 'Upgrading...'; 
   try { 
-    const newWallet = wallet - 499; 
+    const newWallet = wallet - 1000; 
     await setDoc(doc(db, 'users', uid), { wallet: newWallet, plan: 'premium' }, { merge: true }); 
     wallet = newWallet; 
     SS('wallet', wallet); 
     SS('plan', 'premium'); 
     userPlan = 'premium'; 
-    document.getElementById('mwal').textContent = '₹'+parseFloat(wallet).toFixed(2); 
-    document.getElementById('walbal').textContent = '₹'+parseFloat(wallet).toFixed(2); 
+    document.getElementById('mwal').textContent = Math.floor(wallet) + ' 🪙'; 
     document.getElementById('mbiz').innerHTML = mname + ' <span style="font-size:14px">👑</span>'; 
     toast('👑', 'Welcome to Premium!'); 
     document.getElementById('mod-premium').classList.remove('on'); 
     setTimeout(() => { window.location.href = 'create.html'; }, 1200); 
   } catch(e) { 
     toast('❌', 'Upgrade failed.'); 
-    btn.textContent = '⚡ Upgrade for ₹499'; 
+    btn.textContent = '⚡ Upgrade for 1,000 Credits'; 
   } 
 };
 
@@ -902,7 +967,6 @@ window.checkPremium = () => { window.haptic(30); if (userPlan === 'premium' || c
 
 window.showStoreQR = () => { window.haptic(30); const uid = LS('uid'); if(!uid) return alert("Error: Merchant not logged in."); const box = document.getElementById('qrcode-box'); box.innerHTML = ''; new QRCode(box, { text: "NEARPOP_CLAIM:" + uid, width: 220, height: 220, colorDark : "#000000", colorLight : "#ffffff", correctLevel : QRCode.CorrectLevel.H }); document.getElementById('mod-qr').classList.add('on'); };
 
-// 🚀 NEW: Robust PDF Export Logic
 window.exportStandee = async (format) => {
   window.haptic(30);
   document.getElementById('mod-standee-choice').classList.remove('on');
@@ -914,7 +978,6 @@ window.exportStandee = async (format) => {
 
   toast('⏳', 'Generating high-res PDF...');
 
-  // 1. Generate QR Code locally to avoid strict browser CORS blocks when making PDFs
   const merchantUid = LS('uid'); 
   const targetUrl = `https://nearpop.in/store.html?mid=${merchantUid}&utm_source=qr_standee&utm_medium=offline`;
   
@@ -928,7 +991,6 @@ window.exportStandee = async (format) => {
       correctLevel : QRCode.CorrectLevel.H
   });
 
-  // Give the local QR code generator 100ms to render the canvas before we grab it
   setTimeout(async () => {
       const qrCanvas = tempDiv.querySelector('canvas');
       const qrDataUrl = qrCanvas.toDataURL('image/png');
@@ -939,7 +1001,6 @@ window.exportStandee = async (format) => {
         ? `<img src="${currLogoUrl}" style="width: 120px; height: 120px; border-radius: 24px; object-fit: contain; background: #fff; margin-bottom: 20px; box-shadow: 0 8px 24px rgba(0,0,0,0.1); border: 2px solid #e5e7eb; display: block; margin-left: auto; margin-right: auto;">` 
         : '';
 
-      // 2. Build the perfectly scaled PDF container
       const container = document.createElement('div');
       container.style.position = 'absolute';
       container.style.left = '-9999px';
@@ -960,7 +1021,6 @@ window.exportStandee = async (format) => {
       `;
       document.body.appendChild(container);
 
-      // 3. Lazy-load the heavy PDF engine only when the user actually needs it
       if (!window.html2pdf) {
           await new Promise((resolve) => {
               const script = document.createElement('script');
@@ -970,13 +1030,11 @@ window.exportStandee = async (format) => {
           });
       }
 
-      // 4. Fire the PDF export
       const opt = {
           margin:       0,
           filename:     `NearPop_Standee_${format.split('-')[1].toUpperCase()}.pdf`,
           image:        { type: 'jpeg', quality: 1 },
           html2canvas:  { scale: 2, useCORS: true },
-          // The exact same DOM fits both A4 and A5 perfectly due to math ratios
           jsPDF:        { unit: 'mm', format: format === 'pdf-a4' ? 'a4' : 'a5', orientation: 'portrait' }
       };
 
@@ -987,7 +1045,6 @@ window.exportStandee = async (format) => {
   }, 100);
 };
 
-// 🚀 Legacy Web Print Fallback (Kept for desktop users)
 window.generatePermanentStandee = () => {
   const merchantUid = LS('uid'); 
   const targetUrl = `https://nearpop.in/store.html?mid=${merchantUid}&utm_source=qr_standee&utm_medium=offline`;
