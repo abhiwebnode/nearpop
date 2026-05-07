@@ -39,7 +39,7 @@ function validateForm() {
 
 .hdr h2{font-size:17px;font-weight:800;color:var(--deep)}
 
-.bk{width:44px;height:44px;border-radius:10px;background:var(--light);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;border:none;cursor:pointer;color:var(--deep)}
+.bk{height:44px;border-radius:10px;background:var(--light);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;border:none;cursor:pointer;color:var(--deep)}
 
 .body{flex:1;overflow-y:auto;padding:13px}
 
@@ -105,19 +105,26 @@ function validateForm() {
 .img-ic { font-size: 32px; margin-bottom: 8px; opacity: 0.5; }
 .img-tx { font-size: 13px; font-weight: 700; color: var(--deep); }
 #preview { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: none; }
+
+/* 🚀 NEW: Onboarding Guided Tour Engine CSS */
+.tour-backdrop { position: fixed; inset: 0; z-index: 9997; pointer-events: auto; }
+.tour-overlay { position: fixed; z-index: 9998; border-radius: 14px; box-shadow: 0 0 0 9999px rgba(0,0,0,0.75); pointer-events: none; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+.tour-popover { position: fixed; z-index: 9999; left: 50%; width: calc(100% - 32px); max-width: 340px; background: #fff; padding: 20px; border-radius: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.4); opacity: 0; pointer-events: none; transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); transform: translate(-50%, 20px); border: 1px solid rgba(0,0,0,0.1); }
+.tour-popover.visible { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; }
 </style>
 </head>
 <body>
 <div id="app-shell"><div id="wrap">
   <div class="hdr">
-    <button class="bk" onclick="window.location.href='merchant.html'" aria-label="Go back">←</button>
+    <button class="bk" style="width:44px;" onclick="window.location.href='merchant.html'" aria-label="Go back">←</button>
     <h2>Create New Listing</h2>
+    <button class="bk" style="margin-left:auto; background:transparent; width:auto; padding:0 12px; font-size:13px; font-weight:800;" onclick="window.startCreateTour()">❓ Help</button>
   </div>
 
   <div class="body">
     <div class="fg">
       <label class="fl">Listing Type *</label>
-      <div class="tgrid">
+      <div class="tgrid" id="tour-type">
         <button class="tb on" id="tb-deal" onclick="setType('deal')"><div class="ti">🏷️</div><div class="tl">Shop Deal</div></button>
         <button class="tb" id="tb-rental" onclick="setType('rental')"><div class="ti">🏠</div><div class="tl">Flat / Room</div></button>
         <button class="tb" id="tb-pg" onclick="setType('pg')"><div class="ti">🛋️</div><div class="tl">PG / Hostel</div></button>
@@ -135,7 +142,7 @@ function validateForm() {
       </div>
     </div>
 
-    <div class="fg">
+    <div class="fg" id="tour-title">
       <label class="fl">Title *</label>
       <input class="fc" id="c-title" placeholder="e.g. 30% Off Today! or 2BHK Flat ₹12,000/mo">
     </div>
@@ -163,8 +170,7 @@ function validateForm() {
       <div class="rv" id="rval">250 metres</div>
     </div>
 
-    <!-- 🚀 UPDATE: Changed to "Credits" -->
-    <div class="fg">
+    <div class="fg" id="tour-budget">
       <label class="fl">Daily Budget (Credits) — e.g. 25, 50, 100...</label>
       <input type="number" class="fc" id="c-budget" value="25" placeholder="e.g. 25, 50, 100..." min="25" step="25" required>
       <div style="font-size:11px; color:var(--gray); margin-top:6px; font-weight:600; line-height:1.4;">
@@ -194,7 +200,7 @@ function validateForm() {
       </div>
     </div>
 
-    <div class="fg">
+    <div class="fg" id="tour-map">
       <label class="fl">Your Location — drag pin or tap map</label>
       <div class="mapwrap"><div id="pick-map"></div></div>
       <div style="display:flex; gap:10px; margin-bottom: 8px;">
@@ -212,7 +218,7 @@ function validateForm() {
   </div>
 
   <div class="foot">
-    <button class="btn-or" onclick="doCreate()" style="width:100%">🚀 Go Live Now!</button>
+    <button class="btn-or" id="tour-publish" onclick="doCreate()" style="width:100%">🚀 Go Live Now!</button>
   </div>
 </div>
 
@@ -242,10 +248,12 @@ function validateForm() {
 <div class="loader" id="loader"><div class="spin"></div><p id="l-txt">Saving listing…</p></div>
 <div class="toast" id="toast"><span id="t-ic">✅</span><span id="t-tx"></span></div>
 
-</div><script type="module">
+</div>
+
+<script type="module">
 import { db, LS, SS, TC, TE, toast, distM, app } from './js/app.js';
 import { ghEncode } from './js/geohash.js';
-import { getDocs, addDoc, collection, query, where, doc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
+import { getDocs, addDoc, collection, query, where, doc, serverTimestamp, updateDoc } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js';
 
 window.toast = toast;
@@ -253,7 +261,6 @@ window.toast = toast;
 if (!LS('uid') || LS('role') !== 'merchant') { window.location.href = 'index.html'; }
 
 let compressedImageB64 = null;
-
 let selType='deal', pickLat=28.4089, pickLng=77.3178, pickMap=null, pickMarker=null;
 
 function updateInputBoxes(lat, lng) {
@@ -549,6 +556,109 @@ window.doCreate = async () => {
 };
 function showLdr(t) { document.getElementById('l-txt').textContent=t; document.getElementById('loader').classList.add('on'); }
 function hideLdr() { document.getElementById('loader').classList.remove('on'); }
+
+
+// 🚀 NEW: Guided Onboarding Tour Engine
+class AppTour {
+  constructor(steps, onComplete) {
+    this.steps = steps;
+    this.idx = 0;
+    this.onComplete = onComplete;
+    
+    this.backdrop = document.createElement('div');
+    this.backdrop.className = 'tour-backdrop';
+    
+    this.overlay = document.createElement('div');
+    this.overlay.className = 'tour-overlay';
+    
+    this.popover = document.createElement('div');
+    this.popover.className = 'tour-popover';
+    
+    document.body.appendChild(this.backdrop);
+    document.body.appendChild(this.overlay);
+    document.body.appendChild(this.popover);
+  }
+
+  start() {
+    this.idx = 0;
+    this.showStep();
+  }
+
+  showStep() {
+    if (this.idx >= this.steps.length) return this.end();
+    const step = this.steps[this.idx];
+    const el = document.querySelector(step.target);
+    
+    if (!el) { this.idx++; return this.showStep(); }
+
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+    setTimeout(() => {
+      const rect = el.getBoundingClientRect();
+      
+      this.overlay.style.top = (rect.top - 8) + 'px';
+      this.overlay.style.left = (rect.left - 8) + 'px';
+      this.overlay.style.width = (rect.width + 16) + 'px';
+      this.overlay.style.height = (rect.height + 16) + 'px';
+
+      this.popover.innerHTML = `
+        <div style="font-weight:900; font-size:17px; margin-bottom:8px; color:#111827; display:flex; align-items:center; gap:8px;">${step.icon || '💡'} ${step.title}</div>
+        <div style="font-size:13px; color:#4B5563; margin-bottom:20px; line-height:1.6; font-weight:600;">${step.desc}</div>
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <button style="background:transparent; color:#9CA3AF; border:none; font-weight:800; font-size:12px; cursor:pointer; padding:8px 0;" id="t-prev">${this.idx > 0 ? '← Back' : ''}</button>
+          <div style="font-size:11px; color:#D1D5DB; font-weight:800; position:absolute; left:50%; transform:translateX(-50%);">${this.idx + 1} / ${this.steps.length}</div>
+          <button style="background:#FF5722; color:#fff; border:none; padding:10px 20px; border-radius:10px; font-weight:900; font-size:13px; cursor:pointer; box-shadow:0 4px 12px rgba(255,87,34,0.3);" id="t-next">${this.idx === this.steps.length - 1 ? 'Finish' : 'Next →'}</button>
+        </div>
+        <button style="position:absolute; top:12px; right:12px; background:transparent; border:none; font-size:18px; color:#9CA3AF; cursor:pointer;" id="t-close">×</button>
+      `;
+
+      let popTop = rect.bottom + 20;
+      if (popTop + 180 > window.innerHeight) {
+        popTop = rect.top - 180; 
+      }
+      this.popover.style.top = popTop + 'px';
+      this.popover.classList.add('visible');
+
+      const prevBtn = document.getElementById('t-prev');
+      if (this.idx === 0) prevBtn.style.visibility = 'hidden';
+      else prevBtn.onclick = () => { this.idx--; this.showStep(); };
+
+      document.getElementById('t-close').onclick = () => this.end();
+      document.getElementById('t-next').onclick = () => { this.idx++; this.showStep(); };
+    }, 400); 
+  }
+
+  end() {
+    this.backdrop.remove();
+    this.overlay.remove();
+    this.popover.remove();
+    if(this.onComplete) this.onComplete();
+  }
+}
+
+window.startCreateTour = () => {
+  const steps = [
+    { target: '#tour-type', icon: '📋', title: 'Pick a Category', desc: 'Select what you are offering. You can post shop deals, real estate rentals, or job openings.' },
+    { target: '#img-box', icon: '📷', title: 'Add a Catchy Photo', desc: 'Listings with photos get 3x more views! Tap here to upload your shop logo or a product picture.' },
+    { target: '#tour-title', icon: '✍️', title: 'Write a Title', desc: 'Make it exciting! For example: "30% Off Entire Menu Today!"' },
+    { target: '#tour-budget', icon: '🪙', title: 'Set Daily Limit', desc: 'Control how many people see your deal. This costs Promo Credits, NOT real money!' },
+    { target: '#tour-map', icon: '📍', title: 'Pinpoint Location', desc: 'Drag the pin to your exact shop location so customers can find your door easily.' },
+    { target: '#tour-publish', icon: '🚀', title: 'Go Live', desc: 'Hit this button and your deal will instantly appear on the map for everyone nearby!' }
+  ];
+  
+  new AppTour(steps, async () => {
+    localStorage.setItem('np_tour_create', 'true');
+    // Optional: Sync completion to firestore here if needed
+  }).start();
+};
+
+// Automatically start tour if it's their first time
+setTimeout(() => {
+  if (!localStorage.getItem('np_tour_create')) {
+    window.startCreateTour();
+  }
+}, 800);
+
 </script>
 </body>
 </html>
