@@ -926,7 +926,7 @@ window.exportStatus = async (id) => {
   `;
   document.body.appendChild(container);
 
-  setTimeout(async () => {
+setTimeout(async () => {
      try {
         const canvas = await html2canvas(document.getElementById('status-export-wrap'), {
            scale: 1, 
@@ -934,15 +934,34 @@ window.exportStatus = async (id) => {
            backgroundColor: null
         });
         
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
-        
-        const link = document.createElement('a');
-        link.download = `NearPop_Status_${Date.now()}.jpg`;
-        link.href = dataUrl;
-        link.click();
-        
-        toast('✅', 'Status Image Saved! Open WhatsApp to share it.');
-        document.body.removeChild(container);
+        canvas.toBlob(async (blob) => {
+            const fileName = `NearPop_Status_${Date.now()}.jpg`;
+            const file = new File([blob], fileName, { type: 'image/jpeg' });
+            
+            // Check if the phone supports direct file sharing (Most modern Androids/iPhones do)
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                try {
+                    await navigator.share({
+                        files: [file],
+                        title: 'My Store Status',
+                        text: 'Check out our latest deal on NearPop!'
+                    });
+                    toast('✅', 'Opening WhatsApp...');
+                } catch (shareError) {
+                    console.log('Share canceled or failed', shareError);
+                }
+            } else {
+                // Fallback for older browsers: Download the image
+                const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+                const link = document.createElement('a');
+                link.download = fileName;
+                link.href = dataUrl;
+                link.click();
+                toast('✅', 'Image saved! Open WhatsApp to share it.');
+            }
+            document.body.removeChild(container);
+        }, 'image/jpeg', 0.85);
+
      } catch(err) {
         console.error(err);
         toast('❌', 'Failed to generate image.');
