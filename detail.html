@@ -331,7 +331,17 @@ window.openContact = () => {
   
   document.getElementById('contact-body').innerHTML = `<strong style="color:var(--deep)">${listing.owner || ''}</strong><br><span style="color:var(--gray)">${listing.ownerTag || ''}</span><br><br>📞 <strong style="color:var(--deep)">${listing.contact || 'Contact via NearPop'}</strong>`;
   document.getElementById('btn-call').onclick = () => { if (listing.contact) window.open('tel:' + listing.contact); trackEng(id, 5); };
-  document.getElementById('btn-wa').onclick = () => { if (listing.contact) window.open('https://wa.me/' + listing.contact.replace(/\D/g, '')); trackEng(id, 15); addPts(5); };
+  
+  // 🚀 NEW: Dynamic WhatsApp Pre-filled Message
+  document.getElementById('btn-wa').onclick = () => { 
+    if (listing.contact) {
+      const message = encodeURIComponent(`Hi! I saw your offer for '${listing.title || 'your shop'}' on NearPop. Is this still available?`);
+      window.open('https://wa.me/' + listing.contact.replace(/\D/g, '') + '?text=' + message); 
+    }
+    trackEng(id, 15); 
+    addPts(5); 
+  };
+
   document.getElementById('mod-contact').classList.add('on');
   addPts(5);
 };
