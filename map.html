@@ -1970,7 +1970,8 @@ window.showPlayStorePopup = () => {
 window.closePlayStorePopup = () => { 
   const mod = document.getElementById('mod-playstore');
   if (mod) mod.classList.remove('on'); 
-  sessionStorage.setItem('hide_playstore', 'true'); 
+  // 🚀 CHANGED TO LOCALSTORAGE: Will permanently remember their choice
+  localStorage.setItem('hide_playstore', 'true'); 
 };
 
 window.openPlayStore = () => {
@@ -1988,9 +1989,9 @@ setTimeout(() => {
       window.askForNotifs(); 
     }
   }
-  // Show Play Store Prompt after 3 seconds if on web
+  // 🚀 CHANGED TO LOCALSTORAGE: Checks permanent memory
   const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
-  if (!isStandalone && !sessionStorage.getItem('hide_playstore')) { 
+  if (!isStandalone && !localStorage.getItem('hide_playstore')) { 
     window.showPlayStorePopup(); 
   }
 }, 3000);

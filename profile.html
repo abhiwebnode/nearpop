@@ -80,7 +80,6 @@
     <div class="stats-row">
       <div class="stat"><div class="stat-v" id="s-pts">0</div><div class="stat-l">Points</div></div>
       <div class="stat"><div class="stat-v" id="s-saved">0</div><div class="stat-l">Saved</div></div>
-      <!-- 🚀 UPDATED: Replaced "Wallet" with "Credits" to match gamified plan -->
       <div class="stat" id="s-wallet-col" style="display:none"><div class="stat-v" id="s-wallet">0 🪙</div><div class="stat-l">Credits</div></div>
       <div class="stat"><div class="stat-v" id="s-notifs">0</div><div class="stat-l">Alerts Today</div></div>
     </div>
@@ -182,10 +181,10 @@
         <span class="pr-arrow">↻</span>
       </div>
 
-      <div class="pr tap" id="install-btn-row" style="display:none;" onclick="window.installApp()">
+      <div class="pr tap" id="install-btn-row" style="display:none;" onclick="window.open('https://play.google.com/store/apps/details?id=in.nearpop.app', '_blank')">
         <span class="pr-ic" style="color:var(--or)">📲</span>
-        <div style="flex:1"><div class="pr-lbl">Install PWA</div><div class="pr-sub">Add to your home screen</div></div>
-        <span class="pr-arrow">↓</span>
+        <div style="flex:1"><div class="pr-lbl">Download NearPop App</div><div class="pr-sub">Get it on Google Play</div></div>
+        <span class="pr-arrow">↗</span>
       </div>
       
       <div class="pr tap" onclick="window.deleteAccount()">
@@ -273,7 +272,6 @@ function renderHeader(data) {
   
   if (role === 'merchant') {
     document.getElementById('s-wallet-col').style.display = '';
-    // 🚀 UPDATED: Replaced "₹" format with the matching gamified Credits output
     document.getElementById('s-wallet').textContent = Math.floor(wallet || 0) + ' 🪙';
   }
   
@@ -532,44 +530,13 @@ window.logout = async () => {
   window.location.href = 'index.html';
 };
 
-let deferredPrompt;
+// 🚀 NEW: Play Store Redirect visibility logic
 const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
 
 if (!isStandalone) {
   const btnRow = document.getElementById('install-btn-row');
   if(btnRow) btnRow.style.display = 'flex';
 }
-
-window.addEventListener('beforeinstallprompt', (e) => {
-  e.preventDefault();
-  deferredPrompt = e;
-});
-
-window.installApp = async () => {
-  if (deferredPrompt) {
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    if (outcome === 'accepted') {
-      const btnRow = document.getElementById('install-btn-row');
-      if(btnRow) btnRow.style.display = 'none';
-    }
-    deferredPrompt = null;
-  } else {
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-    if (isIOS) {
-      toast('📲', 'Tap the Share icon below, then select "Add to Home Screen"');
-    } else {
-      toast('📲', 'Tap the 3 dots menu in Chrome, then select "Install app"');
-    }
-  }
-};
-
-window.addEventListener('appinstalled', () => {
-  const btnRow = document.getElementById('install-btn-row');
-  if(btnRow) btnRow.style.display = 'none';
-  toast('📲', 'NearPop installed successfully!');
-  setTimeout(() => { if (LS('uid')) requestPushPermissions(LS('uid')); }, 1500);
-});
 
 // ── Boot ──────────────────────────────────────────────────
 async function initApp() {
