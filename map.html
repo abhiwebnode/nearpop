@@ -937,7 +937,10 @@
   </div>
   
   <button onclick="window.location.reload()" style="background:var(--or); color:#fff; padding:16px 32px; border-radius:14px; border:none; font-weight:800; font-size:15px; cursor:pointer; box-shadow:0 4px 14px rgba(255,87,34,.25);" data-en="🔄 Reload Page" data-hi="🔄 पेज रीलोड करें">🔄 Reload Page</button>
+  
+  <button onclick="window.dismissGeoBlock()" style="background:transparent; color:var(--gray); padding:16px 32px; border:none; font-weight:800; font-size:14px; cursor:pointer; margin-top:8px;" data-en="Continue without GPS" data-hi="GPS के बिना जारी रखें">Continue without GPS</button>
 </div>
+
 <div id="geo-error-banner" role="alert" aria-live="assertive"></div>
 
 <div id="app-shell">
@@ -1995,6 +1998,14 @@ setTimeout(() => {
     window.showPlayStorePopup(); 
   }
 }, 3000);
+
+// 🚀 NEW: Let users bypass the hard block and browse manually
+window.dismissGeoBlock = () => {
+  window.haptic(30);
+  document.getElementById('hard-geo-block').style.display = 'none';
+  setFallback(); // Loads default location so the map doesn't break
+  toast('🗺️', window.lang === 'hi' ? 'मैन्युअल रूप से ब्राउज़ कर रहे हैं' : 'Browsing map manually');
+};
 
 initApp();
 
