@@ -50,35 +50,13 @@
   height: 100%; 
 }
 
-/* 🚀 NEW UI UPGRADE 2: Focus Mode Overlay */
-#search-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(2px);
-  -webkit-backdrop-filter: blur(2px);
-  z-index: 895; /* Just under the search bar */
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.3s ease;
-}
-
-#search-overlay.active {
-  opacity: 1;
-  pointer-events: auto;
-}
-
-/* Floating Search Bar Styles */
 .map-search-wrap {
   position: absolute;
   top: 13px;
   left: 13px;
-  right: 175px; 
+  right: 175px;
   z-index: 900;
-  background: rgba(255, 255, 255, 0.95);
+  background: rgba(255, 255, 255, 0.9);
   -webkit-backdrop-filter: blur(20px);
   backdrop-filter: blur(20px);
   border-radius: 14px;
@@ -88,12 +66,6 @@
   box-shadow: 0 4px 15px rgba(0,0,0,0.1);
   border: 1px solid rgba(0,0,0,0.05);
   height: 46px;
-  transition: box-shadow 0.3s ease, transform 0.2s ease;
-}
-
-.map-search-wrap.focused {
-  box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-  border-color: rgba(255,87,34,0.3);
 }
 
 .ms-icon { font-size: 16px; opacity: 0.6; margin-right: 6px; }
@@ -943,7 +915,7 @@
   .map-watermark img { filter: invert(1) brightness(100%); }
   .map-watermark span { color: #fff; }
 
-  .map-search-wrap { background: rgba(31, 41, 55, 0.95); border-color: #374151; }
+  .map-search-wrap { background: rgba(31, 41, 55, 0.9); border-color: #374151; }
   #map-search { color: #F9FAFB; }
   #map-search::placeholder { color: #6B7280; }
   #ms-clear { color: #D1D5DB; background: rgba(255,255,255,0.1); }
@@ -973,17 +945,10 @@
     
     <div class="map-wrapper">
       <div id="map"></div>
-      
-      <!-- 🚀 UI UPGRADE 2: Focus Overlay -->
-      <div id="search-overlay" onclick="document.getElementById('map-search').blur()"></div>
 
-      <div class="map-search-wrap" id="ms-wrap">
+      <div class="map-search-wrap">
         <span class="ms-icon">🔍</span>
-        <!-- Added onfocus and onblur handlers -->
-        <input type="text" id="map-search" placeholder="Search restaurant, grocery, tuition..." 
-               oninput="window.handleSearch(this.value)"
-               onfocus="window.toggleFocusMode(true)"
-               onblur="window.toggleFocusMode(false)">
+        <input type="text" id="map-search" placeholder="Search restaurant, grocery, tuition..." oninput="window.handleSearch(this.value)">
         <button id="ms-clear" onclick="window.clearSearch()">✕</button>
       </div>
 
@@ -1087,26 +1052,21 @@
   <div class="toast" id="toast"><span id="t-ic">✅</span><span id="t-tx"></span></div>
 </div> 
 
-<div class="modal" id="mod-install" onclick="if(event.target===this)window.closeInstallPopup()">
+<div class="modal" id="mod-playstore" onclick="if(event.target===this)window.closePlayStorePopup()">
   <div class="msht">
     <div class="mh"></div>
     <div style="display:flex; gap:16px; align-items:center; margin-bottom:20px;">
-      <img src="icons/icon-192.png" style="width:64px; height:64px; border-radius:4px; box-shadow:0 4px 4px rgba(0,0,0,0.1);">
+      <img src="icons/icon-192.png" style="width:64px; height:64px; border-radius:14px; box-shadow:0 4px 10px rgba(0,0,0,0.15);">
       <div>
-        <div style="font-size:19px; font-weight:800; color:var(--deep); font-family:'Syne', sans-serif;" data-en="Install NearPop" data-hi="NearPop इंस्टॉल करें">Install NearPop</div>
-        <div style="font-size:12px; color:var(--gray); font-weight:600; line-height:1.4; margin-top:2px;" data-en="Get faster access and real-time background alerts when you walk near deals." data-hi="जब आप डील के पास हों तो तेज़ एक्सेस और रियल-टाइम बैकग्राउंड अलर्ट प्राप्त करें।">Get faster access and real-time background alerts when you walk near deals.</div>
+        <div style="font-size:18px; font-weight:800; color:var(--deep); font-family:'Syne', sans-serif;">Get the NearPop App</div>
+        <div style="font-size:12px; color:var(--gray); font-weight:600; line-height:1.4; margin-top:2px;">Experience faster speeds, background deal alerts, and smoother navigation.</div>
       </div>
     </div>
-    <div id="install-android-ui">
-      <button class="btn-or" style="width:100%" onclick="window.triggerNativeInstall()" data-en="📲 Install App" data-hi="📲 ऐप इंस्टॉल करें">📲 Install App</button>
-    </div>
-    <div id="install-ios-ui" style="display:none; background:var(--cream); padding:14px; border-radius:12px; text-align:center;">
-      <div style="font-size:13px; color:var(--deep); font-weight:800; margin-bottom:6px;" data-en="How to install on iPhone:" data-hi="iPhone पर कैसे इंस्टॉल करें:">How to install on iPhone:</div>
-      <div style="font-size:12px; color:var(--gray); font-weight:600; line-height:1.5;" data-en="Tap the Share icon ⍗ at the bottom of Safari, then scroll down and select ➕ Add to Home Screen" data-hi="Safari के नीचे शेयर आइकन ⍗ पर टैप करें, फिर नीचे स्क्रॉल करें और ➕ Add to Home Screen चुनें">
-        Tap the <b>Share</b> icon <span style="font-size:16px;">⍗</span> at the bottom of Safari, then scroll down and select<br><b>➕ Add to Home Screen</b>
-      </div>
-    </div>
-    <button class="btn-lt" style="width:100%; margin-top:10px;" onclick="window.closeInstallPopup()" data-en="Maybe Later" data-hi="शायद बाद में">Maybe Later</button>
+    <button class="btn-or" style="width:100%; display:flex; align-items:center; justify-content:center; gap:10px; font-size: 15px; margin-bottom: 10px;" onclick="window.openPlayStore()">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M3.609 1.814L13.792 12 3.61 22.186a1.981 1.981 0 0 1-.36-.088A1.91 1.91 0 0 1 2 20.316V3.684a1.91 1.91 0 0 1 1.25-1.782c.115-.043.235-.073.359-.088zM14.85 13.06l3.418 3.417-6.07 3.504-4.59-4.591 7.242-2.33zM21.576 9.176l-3.308-1.91-3.418 3.418 3.418 3.418 3.308-1.91a1.915 1.915 0 0 0 0-3.016zM18.268 7.266L14.85 10.684 7.608 8.354l6.07-3.504 4.59 4.591H18.268z"/></svg>
+      Get it on Google Play
+    </button>
+    <button class="btn-lt" style="width:100%;" onclick="window.closePlayStorePopup()">Continue on Web</button>
   </div>
 </div>
 
@@ -1150,23 +1110,6 @@ window.haptic = (ms = 50) => {
 
 let liveSearchQuery = '';
 
-// 🚀 UI UPGRADE 2: Focus Overlay Logic
-window.toggleFocusMode = (isFocused) => {
-  const overlay = document.getElementById('search-overlay');
-  const wrap = document.getElementById('ms-wrap');
-  
-  if (isFocused) {
-    overlay.classList.add('active');
-    wrap.classList.add('focused');
-  } else {
-    // Slight delay so tapping clear button works
-    setTimeout(() => {
-      overlay.classList.remove('active');
-      wrap.classList.remove('focused');
-    }, 150);
-  }
-};
-
 window.handleSearch = (val) => {
   liveSearchQuery = val.trim().toLowerCase();
   document.getElementById('ms-clear').style.display = liveSearchQuery.length > 0 ? 'flex' : 'none';
@@ -1174,11 +1117,9 @@ window.handleSearch = (val) => {
 };
 
 window.clearSearch = () => {
-  window.haptic(30);
   document.getElementById('map-search').value = '';
   liveSearchQuery = '';
   document.getElementById('ms-clear').style.display = 'none';
-  document.getElementById('map-search').blur(); // Close keyboard
   redraw();
 };
 
@@ -1703,11 +1644,6 @@ function renderCards() {
       ? (window.lang === 'hi' ? 'खोज से कुछ नहीं मिला' : 'No search results found') 
       : (window.lang === 'hi' ? 'कोई ऑफ़र नहीं मिला' : 'No deals found nearby');
       
-    // 🚀 UI UPGRADE 4: One-Tap Clear Search Button in empty state
-    const actionBtn = liveSearchQuery 
-      ? `<button onclick="window.clearSearch()" style="background:var(--or); border:none; color:#fff; padding:12px 24px; border-radius:100px; font-size:13px; font-weight:900; font-family:inherit; cursor:pointer; box-shadow:0 4px 15px rgba(255,87,34,0.3); transition:transform 0.2s;" onmousedown="this.style.transform='scale(0.95)'" onmouseup="this.style.transform='scale(1)'">${window.lang === 'hi' ? 'खोज साफ करें' : 'Clear Search'}</button>`
-      : `<button onclick="setR(999, Array.from(document.querySelectorAll('.rdist-btn')).find(b => b.textContent === 'Anywhere' || b.textContent === 'कहीं भी'))" style="background:var(--bg-body); border:2px solid var(--bdr); color:var(--deep); padding:12px 24px; border-radius:100px; font-size:13px; font-weight:800; font-family:inherit; cursor:pointer; box-shadow:0 4px 12px rgba(0,0,0,0.05); transition:transform 0.2s;" onmousedown="this.style.transform='scale(0.95)'" onmouseup="this.style.transform='scale(1)'">${window.lang === 'hi' ? 'कहीं भी खोजें' : 'Search Anywhere'}</button>`;
-      
     document.getElementById('hscr').innerHTML = `
       <div style="width:100%; text-align:center; padding:20px; background:var(--card); border-radius:18px; border:1px dashed var(--bdr); color:var(--gray); font-size:12px; font-weight:800;">
         ${emptyMsg}
@@ -1726,7 +1662,7 @@ function renderCards() {
         </svg>
         <h3 style="color:var(--deep); font-size:18px; font-weight:900; margin-bottom:6px; font-family:'Syne', sans-serif;">${emptyMsg}</h3>
         <p style="color:var(--gray); font-weight:600; font-size:13px; line-height:1.5; max-width:280px; margin-bottom:20px;">${window.lang === 'hi' ? 'इस क्षेत्र में आपके फ़िल्टर से मेल खाने वाला कुछ भी नहीं है। कोई अन्य श्रेणी या बड़ा दायरा आज़माएँ।' : 'Nothing matches your filters in this exact area. Try a different category or expand your search radius.'}</p>
-        ${actionBtn}
+        <button onclick="setR(999, Array.from(document.querySelectorAll('.rdist-btn')).find(b => b.textContent === 'Anywhere' || b.textContent === 'कहीं भी'))" style="background:var(--bg-body); border:2px solid var(--bdr); color:var(--deep); padding:12px 24px; border-radius:100px; font-size:13px; font-weight:800; font-family:inherit; cursor:pointer; box-shadow:0 4px 12px rgba(0,0,0,0.05); transition:transform 0.2s;" onmousedown="this.style.transform='scale(0.95)'" onmouseup="this.style.transform='scale(1)'">${window.lang === 'hi' ? 'कहीं भी खोजें' : 'Search Anywhere'}</button>
       </div>
     `;
   } else {
@@ -2025,8 +1961,23 @@ async function initApp() {
   }
 }
 
-const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+// 🚀 NEW: Play Store Prompt Logic
+window.showPlayStorePopup = () => {
+  const mod = document.getElementById('mod-playstore');
+  if (mod) mod.classList.add('on');
+};
+
+window.closePlayStorePopup = () => { 
+  const mod = document.getElementById('mod-playstore');
+  if (mod) mod.classList.remove('on'); 
+  sessionStorage.setItem('hide_playstore', 'true'); 
+};
+
+window.openPlayStore = () => {
+  window.haptic(50);
+  window.open('https://play.google.com/store/apps/details?id=in.nearpop.app', '_blank');
+  window.closePlayStorePopup();
+};
 
 setTimeout(() => {
   if ('Notification' in window) {
@@ -2037,40 +1988,12 @@ setTimeout(() => {
       window.askForNotifs(); 
     }
   }
-  if (!isStandalone && (window.deferredPWA || isIOS)) { 
-    if (!sessionStorage.getItem('hide_install')) window.showInstallPopup(); 
+  // Show Play Store Prompt after 3 seconds if on web
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+  if (!isStandalone && !sessionStorage.getItem('hide_playstore')) { 
+    window.showPlayStorePopup(); 
   }
 }, 3000);
-
-window.showInstallPopup = () => {
-  const mod = document.getElementById('mod-install');
-  if (mod) {
-    mod.classList.add('on');
-    if (isIOS) { 
-      document.getElementById('install-android-ui').style.display = 'none'; 
-      document.getElementById('install-ios-ui').style.display = 'block'; 
-    }
-  }
-};
-
-window.closeInstallPopup = () => { 
-  document.getElementById('mod-install').classList.remove('on'); 
-  sessionStorage.setItem('hide_install', 'true'); 
-};
-
-window.triggerNativeInstall = async () => { 
-  if (window.deferredPWA) { 
-    window.deferredPWA.prompt(); 
-    const { outcome } = await window.deferredPWA.userChoice; 
-    window.deferredPWA = null; 
-  } 
-  window.closeInstallPopup(); 
-};
-
-window.addEventListener('appinstalled', () => { 
-  window.closeInstallPopup(); 
-  toast('📲', 'NearPop installed successfully!'); 
-});
 
 initApp();
 
