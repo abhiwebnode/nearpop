@@ -66,6 +66,10 @@
 .act-pause { background: var(--bg-body); color: var(--deep); border: 1px solid var(--bdr); }
 .act-del { background: rgba(239, 68, 68, 0.1); color: #EF4444; border: 1px solid rgba(239, 68, 68, 0.2); }
 
+/* 🚀 NEW: Full-width Action Button for WhatsApp Share */
+.act-btn-full { grid-column: 1 / -1; background: linear-gradient(135deg, #25D366, #128C7E); color: #fff; border: none; padding: 12px; border-radius: 10px; font-size: 13px; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 12px rgba(37, 211, 102, 0.25); font-family: inherit; transition: transform 0.2s; }
+.act-btn-full:active { transform: scale(0.97); }
+
 .edit-lbl { font-size: 11px; font-weight: 800; color: var(--gray); margin-bottom: 4px; display: block; text-transform: uppercase; letter-spacing: 0.5px; }
 .edit-grp { margin-bottom: 12px; }
 .a-inp { width: 100%; padding: 12px; border-radius: 10px; border: 2px solid var(--bdr); background: var(--bg-body); font-size: 13px; font-weight: 700; color: var(--deep); font-family: inherit; }
@@ -170,7 +174,6 @@
   margin-top: -2px; 
 }
 
-/* 🚀 NEW: Onboarding Guided Tour Engine CSS */
 .tour-backdrop { position: fixed; inset: 0; z-index: 9997; pointer-events: auto; }
 .tour-overlay { position: fixed; z-index: 9998; border-radius: 14px; box-shadow: 0 0 0 9999px rgba(0,0,0,0.75); pointer-events: none; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
 .tour-popover { position: fixed; z-index: 9999; left: 50%; width: calc(100% - 32px); max-width: 340px; background: #fff; padding: 20px; border-radius: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.4); opacity: 0; pointer-events: none; transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); transform: translate(-50%, 20px); border: 1px solid rgba(0,0,0,0.1); }
@@ -785,6 +788,7 @@ function renderCards(mine) {
           <button class="act-btn act-edit" onclick="window.openEdit('${l.id}')">✏️ Edit</button>
           <button class="act-btn act-pause" onclick="window.togglePause('${l.id}', '${l.status||'active'}')">${l.status==='paused' ? '▶️ Unpause' : '⏸️ Pause'}</button>
           <button class="act-btn act-del" onclick="window.deleteListing('${l.id}')">🗑️ Delete</button>
+          <button class="act-btn-full" onclick="window.exportStatus('${l.id}')"><span style="font-size:16px;">📱</span> Share to WhatsApp Status</button>
         </div>
       </div>
     `;
@@ -872,6 +876,86 @@ window.deleteListing = async (id) => {
   } catch(e) { 
     toast('❌', 'Error deleting'); 
   } 
+};
+
+// 🚀 NEW: Dynamic WhatsApp Status Generator
+window.exportStatus = async (id) => {
+  window.haptic(30);
+  const l = currentListings.find(x => x.id === id);
+  if (!l) return;
+  
+  toast('⏳', 'Generating Status Image...');
+
+  if (!window.html2canvas) {
+      await new Promise((resolve) => {
+          const script = document.createElement('script');
+          script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+          script.onload = resolve;
+          document.head.appendChild(script);
+      });
+  }
+
+  const container = document.createElement('div');
+  container.style.position = 'absolute';
+  container.style.left = '-9999px';
+  container.style.top = '0';
+  
+  const col = l.color || '#FF5722';
+  const imgUrl = l.imageUrl || l.image;
+  const imgHtml = imgUrl 
+    ? `<img src="${imgUrl}" crossorigin="anonymous" style="width:100%; height:1080px; object-fit:cover; border-radius:40px; margin-bottom:40px; box-shadow: 0 20px 50px rgba(0,0,0,0.2);">` 
+    : `<div style="width:100%; height:1080px; background:${col}20; border-radius:40px; display:flex; align-items:center; justify-content:center; font-size:400px; margin-bottom:40px; box-shadow: 0 20px 50px rgba(0,0,0,0.1); border: 4px solid ${col}40;">${l.emoji || '🏷️'}</div>`;
+
+  container.innerHTML = `
+    <div id="status-export-wrap" style="width: 1080px; height: 1920px; background-color: #111827; background-image: radial-gradient(circle at 10% 10%, #FF572240 0%, transparent 40%), radial-gradient(circle at 90% 90%, ${col}40 0%, #111827 50%); padding: 80px; box-sizing: border-box; display: flex; flex-direction: column; font-family: 'Nunito', sans-serif; position:relative; overflow:hidden;">
+       
+       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 60px; z-index:2;">
+         <div style="background:rgba(255,255,255,0.1); padding:20px 40px; border-radius:100px; font-size:32px; font-weight:900; color:#fff; text-transform:uppercase; letter-spacing:2px; border:2px solid rgba(255,255,255,0.2);">${(l.type || 'Offer')}</div>
+         <img src="https://nearpop.in/icons/logo.png" style="height: 70px; filter: brightness(0) invert(1);">
+       </div>
+
+       <div style="z-index:2;">${imgHtml}</div>
+       
+       <div style="z-index:2; flex:1; display:flex; flex-direction:column; justify-content:center; text-align:center;">
+         <h1 style="font-family: 'Syne', sans-serif; color: #fff; font-size: 85px; font-weight: 800; line-height: 1.1; margin: 0 0 30px 0; text-shadow: 0 4px 20px rgba(0,0,0,0.5);">${l.title}</h1>
+         <div style="font-size: 110px; font-weight: 900; color: #FF5722; text-shadow: 0 4px 20px rgba(0,0,0,0.5); margin-bottom: 40px;">${l.price}</div>
+         <div style="font-size: 36px; color: #9CA3AF; font-weight: 700; background: rgba(0,0,0,0.3); padding: 30px 50px; border-radius: 30px; display:inline-block; margin: 0 auto;">📍 Available at <strong style="color:#fff;">${l.owner || 'Our Store'}</strong></div>
+       </div>
+
+       <div style="z-index:2; margin-top: auto; background: rgba(255,255,255,0.1); padding: 40px; border-radius: 40px; display: flex; align-items: center; justify-content: space-between; border: 2px solid rgba(255,255,255,0.2);">
+         <div>
+           <div style="color:#fff; font-size:42px; font-weight:900; margin-bottom:10px;">Find us on NearPop</div>
+           <div style="color:#9CA3AF; font-size:28px; font-weight:600;">Download the app & search around you!</div>
+         </div>
+         <div style="background:#FF5722; width:120px; height:120px; border-radius:30px; display:flex; align-items:center; justify-content:center; font-size:60px; box-shadow:0 10px 30px rgba(255,87,34,0.4);">📍</div>
+       </div>
+    </div>
+  `;
+  document.body.appendChild(container);
+
+  setTimeout(async () => {
+     try {
+        const canvas = await html2canvas(document.getElementById('status-export-wrap'), {
+           scale: 1, 
+           useCORS: true,
+           backgroundColor: null
+        });
+        
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+        
+        const link = document.createElement('a');
+        link.download = `NearPop_Status_${Date.now()}.jpg`;
+        link.href = dataUrl;
+        link.click();
+        
+        toast('✅', 'Status Image Saved! Open WhatsApp to share it.');
+        document.body.removeChild(container);
+     } catch(err) {
+        console.error(err);
+        toast('❌', 'Failed to generate image.');
+        document.body.removeChild(container);
+     }
+  }, 1000);
 };
 
 window.claimDailyCredits = async () => {
