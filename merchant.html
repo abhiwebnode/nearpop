@@ -176,162 +176,9 @@
 </head>
 <body>
 <div id="app-shell"><div id="wrap">
-<div class="mhdr">
-
-    <!-- Help Button -->
-    <button 
-        class="mbtn help-btn"
-        onclick="window.startMerchantTour()">
-        ❓ Help
-    </button>
-
-    <!-- Logout Button -->
-    <button 
-        class="mbtn logout-btn"
-        onclick="window.logout()">
-        Logout
-    </button>
-
-</div>
-
-<!-- Home Button -->
-<button 
-    class="home-btn"
-    onclick="window.go('home.html')">
-
-    <span class="home-icon">←</span>
-    <span>Home</span>
-
-</button>
-
-<style>
-    /* =========================================
-       HEADER
-       ========================================= */
-    .mhdr {
-        position: relative;
-
-        display: flex;
-        justify-content: flex-end;
-        align-items: center;
-
-        gap: 10px;
-
-        width: 100%;
-
-        margin-bottom: 16px;
-
-        flex-wrap: wrap;
-    }
-
-    /* =========================================
-       COMMON BUTTON STYLE
-       ========================================= */
-    .mbtn,
-    .home-btn {
-
-        border: 1.5px solid var(--bdr);
-
-        border-radius: 14px;
-
-        background: var(--card, #fff);
-
-        color: var(--deep);
-
-        font-family: inherit;
-
-        font-weight: 800;
-
-        cursor: pointer;
-
-        transition:
-            transform 0.15s ease,
-            background 0.2s ease,
-            box-shadow 0.2s ease;
-
-        box-shadow: 0 2px 10px rgba(0,0,0,.04);
-
-        -webkit-tap-highlight-color: transparent;
-    }
-
-    /* =========================================
-       TOP BUTTONS
-       ========================================= */
-    .mbtn {
-
-        padding: 10px 16px;
-
-        font-size: 14px;
-
-        min-height: 42px;
-
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    /* Help button special style */
-    .help-btn {
-        background: rgba(0,0,0,0.06);
-    }
-
-    /* Hover effects */
-    .mbtn:hover,
-    .home-btn:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 4px 14px rgba(0,0,0,.08);
-    }
-
-    /* Click effects */
-    .mbtn:active,
-    .home-btn:active {
-        transform: scale(0.97);
-    }
-
-    /* =========================================
-       HOME BUTTON
-       ========================================= */
-    .home-btn {
-
-        width: 100%;
-
-        padding: 14px 18px;
-
-        font-size: 15px;
-
-        display: flex;
-        align-items: center;
-        justify-content: center;
-
-        gap: 8px;
-
-        margin-bottom: 16px;
-    }
-
-    .home-icon {
-        font-size: 18px;
-        line-height: 1;
-    }
-
-    /* =========================================
-       MOBILE OPTIMIZATION
-       ========================================= */
-    @media (max-width: 480px) {
-
-        .mhdr {
-            gap: 8px;
-        }
-
-        .mbtn {
-            flex: 1;
-            min-width: 110px;
-        }
-
-        .home-btn {
-            padding: 13px 16px;
-        }
-    }
-</style>
+  <div class="mhdr">
+    <button class="mbtn" style="right: 85px; background: rgba(0,0,0,0.15);" onclick="window.startMerchantTour()">❓ Help</button>
+    <button class="mbtn" onclick="window.logout()">Logout</button>
     
     <div style="position:relative; display:inline-block; margin-bottom: 12px; cursor:pointer;" onclick="window.openPhotoChoice('logo')">
       <img id="m-logo" style="width: 56px; height: 56px; border-radius: 14px; background: #fff; object-fit: contain; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.15); border: 2px solid rgba(255,255,255,0.3);">
@@ -359,6 +206,11 @@
   </div>
 
   <div class="mbody">
+    
+    <button onclick="window.go('home.html')" style="width: 100%; padding: 14px; margin-bottom: 20px; border-radius: 14px; border: 1.5px solid var(--bdr); background: var(--card, #fff); color: var(--deep); font-weight: 800; font-size: 15px; font-family: inherit; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; box-shadow: 0 2px 10px rgba(0,0,0,.04); transition: transform 0.15s;" onmousedown="this.style.transform='scale(0.97)'" onmouseup="this.style.transform='scale(1)'" ontouchstart="this.style.transform='scale(0.97)'" ontouchend="this.style.transform='scale(1)'">
+      <span style="font-size: 18px;">←</span> Back to Home
+    </button>
+
     <div class="stats">
       <div class="stat"><div class="stat-v" id="st-a">0</div><div class="stat-l">Active Listings</div></div>
       <div class="stat"><div class="stat-v" id="st-p">0</div><div class="stat-l">Map Views</div></div>
