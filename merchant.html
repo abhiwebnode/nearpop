@@ -1198,7 +1198,7 @@ window.generatePermanentStandee = () => {
   const mLogo = document.getElementById('m-logo');
   const currLogoUrl = (mLogo && mLogo.style.display !== 'none' && mLogo.src) ? mLogo.src : null;
   const shopLogoHtml = currLogoUrl 
-    ? `<img src="${currLogoUrl}" style="max-width: 100px; max-height: 100px; border-radius: 20px; object-fit: contain; background: #fff; margin-bottom: 15px; box-shadow: 0 8px 24px rgba(0,0,0,0.1); border: 2px solid #e5e7eb; display: block; margin-left: auto; margin-right: auto;">` 
+    ? `<img src="${currLogoUrl}" class="shop-img">` 
     : '';
 
   const printWindow = window.open('', '_blank');
@@ -1211,114 +1211,114 @@ window.generatePermanentStandee = () => {
       <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
       <link rel="preconnect" href="https://fonts.googleapis.com">
       <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;900&family=Syne:wght@800&display=swap" rel="stylesheet">
-<style>
-        /* Force CSS to handle margins, not the printer */
-        @page { size: auto; margin: 0; }
+      <style>
+        @page { size: A4 portrait; margin: 0; }
         
         body { 
           font-family: 'Nunito', sans-serif; 
-          display: flex; 
-          justify-content: center; 
-          align-items: center; 
-          min-height: 100vh; 
           margin: 0; 
           background: #e5e7eb; 
           -webkit-print-color-adjust: exact; 
           box-sizing: border-box; 
-          overflow: hidden; 
+          display: flex; 
+          justify-content: center; 
+          align-items: center; 
+          min-height: 100vh; 
         }
 
         .standee-container { 
-          width: 100vw; 
+          width: 100%; 
           height: 100vh; 
-          padding: 5vh 5vw; /* Perfectly balanced padding for any screen or paper size */
-          display: flex; 
+          padding: 20px; 
           box-sizing: border-box; 
+          display: flex; 
           justify-content: center; 
           align-items: center; 
         }
 
         .standee { 
           width: 100%; 
+          max-width: 600px; 
           height: 100%; 
-          max-width: 800px; 
           background: #ffffff; 
-          border: 1.5vh solid #FF5722; /* Border scales with paper size */
-          border-radius: 4vh; 
-          padding: 4vh 4vw; 
+          border: 12px solid #FF5722; 
+          border-radius: 32px; 
+          padding: 30px 20px; 
           text-align: center; 
           box-sizing: border-box; 
-          box-shadow: 0 2vh 5vh rgba(0,0,0,0.15); 
+          box-shadow: 0 20px 50px rgba(0,0,0,0.15); 
           display: flex; 
           flex-direction: column; 
-          justify-content: space-evenly; /* MAGIC TRICK: Auto-distributes all empty space */
+          justify-content: space-evenly; /* Auto-balances all empty space */
           align-items: center; 
+          overflow: hidden; 
         }
 
-        .logo { 
-          max-height: 7vh; 
-          max-width: 80%; 
-          object-fit: contain; 
-        } 
-
-        .standee > img:not(.logo) { 
-          max-height: 12vh !important; 
-          max-width: 80%; 
-          object-fit: contain; 
-          border-radius: 2vh; 
-        }
+        .logo { max-height: 40px; max-width: 80%; object-fit: contain; } 
+        .shop-img { max-height: 90px; max-width: 80%; object-fit: contain; border-radius: 16px; }
 
         h1 { 
           font-family: 'Syne', sans-serif; 
           color: #0F0F13; 
-          font-size: 4vh; /* Dynamic Font Sizing */
+          font-size: clamp(22px, 4vmin, 34px); 
           font-weight: 800; 
           margin: 0; 
           line-height: 1.2; 
+          width: 100%;
           word-wrap: break-word; 
+          overflow-wrap: break-word; 
         }
 
         .qr-box { 
           background: #fff; 
-          padding: 2vh; 
-          border-radius: 3vh; 
-          border: 0.5vh solid #e5e7eb; 
-          box-shadow: 0 1vh 3vh rgba(0,0,0,0.06); 
-          display: flex; 
+          padding: 15px; 
+          border-radius: 20px; 
+          display: inline-flex; 
           justify-content: center; 
           align-items: center; 
+          border: 4px solid #e5e7eb; 
+          box-shadow: 0 8px 24px rgba(0,0,0,0.06); 
         }
 
-        /* Maximizes QR visibility safely */
         .qr-code { 
-          height: 35vh; 
-          width: 35vh; 
-          max-width: 70vw; 
-          max-height: 70vw; 
+          width: clamp(150px, 35vmin, 220px); 
+          height: clamp(150px, 35vmin, 220px); 
           object-fit: contain; 
         } 
 
-        h2 { 
-          color: #FF5722; 
-          font-size: 2.5vh; 
-          font-weight: 900; 
-          margin: 0; 
-          line-height: 1.3; 
-        }
+        h2 { color: #FF5722; font-size: clamp(18px, 3vmin, 24px); font-weight: 900; margin: 0; line-height: 1.3; }
+        p { color: #6b7280; font-size: clamp(11px, 2vmin, 14px); font-weight: 800; margin: 0; text-transform: uppercase; letter-spacing: 1px; }
 
-        p { 
-          color: #6b7280; 
-          font-size: 1.5vh; 
-          font-weight: 800; 
-          margin: 0; 
-          text-transform: uppercase; 
-          letter-spacing: 1px; 
-        }
-
+        /* 🖨️ THE FIX: Hard-coded physical measurements for the printer */
         @media print { 
-          body { background: #fff; } 
+          body { background: #fff; display: block; } 
           .no-print { display: none !important; }
-          .standee { box-shadow: none; max-width: 100%; border-width: 1.5vh; }
+          
+          .standee-container { 
+              padding: 10mm; /* 1cm padding from edge of paper */
+              height: 100vh; 
+              display: flex; 
+              align-items: center; 
+              justify-content: center; 
+          }
+          
+          .standee { 
+              max-width: 100%; 
+              height: 100%; 
+              border-width: 8mm; 
+              border-radius: 12mm; 
+              padding: 5mm; 
+              box-shadow: none; 
+          } 
+          
+          /* Lock sizes to physical units so they CANNOT overflow an A4 page */
+          .logo { max-height: 15mm; } 
+          .shop-img { max-height: 25mm !important; }
+          h1 { font-size: 24pt; margin: 0; } /* pt is best for print text */
+          .qr-box { padding: 5mm; border-width: 2mm; }
+          .qr-code { width: 65mm; height: 65mm; } /* Locked to exactly 6.5cm */
+          h2 { font-size: 16pt; }
+          p { font-size: 10pt; }
         }
       </style>
     </head>
@@ -1329,7 +1329,7 @@ window.generatePermanentStandee = () => {
           ${shopLogoHtml}
           <h1>Welcome to <br><span style="color:#FF5722">${LS('mname') || 'Our Store'}</span></h1>
           <div class="qr-box"><img src="${qrUrl}" alt="Scan Me" class="qr-code"></div>
-          <h2>Scan to see today's deals & claim points!</h2>
+          <h2>Scan to see today's deals!</h2>
           <p>No app download required<br>Powered by nearpop.in</p>
         </div>
       </div>
