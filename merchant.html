@@ -176,12 +176,162 @@
 </head>
 <body>
 <div id="app-shell"><div id="wrap">
-  <div class="mhdr">
-    <button class="mbtn" style="right: 85px; background: rgba(0,0,0,0.15);" onclick="window.startMerchantTour()">❓ Help</button>
-    <button class="mbtn" onclick="window.logout()">Logout</button>
-	<button onclick="window.go('home.html')" style="width: 100%; padding: 14px; margin-bottom: 16px; border-radius: 14px; border: 1.5px solid var(--bdr); background: var(--card, #fff); color: var(--deep); font-weight: 800; font-size: 15px; font-family: inherit; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; box-shadow: 0 2px 10px rgba(0,0,0,.04); transition: transform 0.15s;" onmousedown="this.style.transform='scale(0.97)'" onmouseup="this.style.transform='scale(1)'" ontouchstart="this.style.transform='scale(0.97)'" ontouchend="this.style.transform='scale(1)'">
-  <span style="font-size: 18px;">←</span> Home
+<div class="mhdr">
+
+    <!-- Help Button -->
+    <button 
+        class="mbtn help-btn"
+        onclick="window.startMerchantTour()">
+        ❓ Help
+    </button>
+
+    <!-- Logout Button -->
+    <button 
+        class="mbtn logout-btn"
+        onclick="window.logout()">
+        Logout
+    </button>
+
+</div>
+
+<!-- Home Button -->
+<button 
+    class="home-btn"
+    onclick="window.go('home.html')">
+
+    <span class="home-icon">←</span>
+    <span>Home</span>
+
 </button>
+
+<style>
+    /* =========================================
+       HEADER
+       ========================================= */
+    .mhdr {
+        position: relative;
+
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+
+        gap: 10px;
+
+        width: 100%;
+
+        margin-bottom: 16px;
+
+        flex-wrap: wrap;
+    }
+
+    /* =========================================
+       COMMON BUTTON STYLE
+       ========================================= */
+    .mbtn,
+    .home-btn {
+
+        border: 1.5px solid var(--bdr);
+
+        border-radius: 14px;
+
+        background: var(--card, #fff);
+
+        color: var(--deep);
+
+        font-family: inherit;
+
+        font-weight: 800;
+
+        cursor: pointer;
+
+        transition:
+            transform 0.15s ease,
+            background 0.2s ease,
+            box-shadow 0.2s ease;
+
+        box-shadow: 0 2px 10px rgba(0,0,0,.04);
+
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    /* =========================================
+       TOP BUTTONS
+       ========================================= */
+    .mbtn {
+
+        padding: 10px 16px;
+
+        font-size: 14px;
+
+        min-height: 42px;
+
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* Help button special style */
+    .help-btn {
+        background: rgba(0,0,0,0.06);
+    }
+
+    /* Hover effects */
+    .mbtn:hover,
+    .home-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 14px rgba(0,0,0,.08);
+    }
+
+    /* Click effects */
+    .mbtn:active,
+    .home-btn:active {
+        transform: scale(0.97);
+    }
+
+    /* =========================================
+       HOME BUTTON
+       ========================================= */
+    .home-btn {
+
+        width: 100%;
+
+        padding: 14px 18px;
+
+        font-size: 15px;
+
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        gap: 8px;
+
+        margin-bottom: 16px;
+    }
+
+    .home-icon {
+        font-size: 18px;
+        line-height: 1;
+    }
+
+    /* =========================================
+       MOBILE OPTIMIZATION
+       ========================================= */
+    @media (max-width: 480px) {
+
+        .mhdr {
+            gap: 8px;
+        }
+
+        .mbtn {
+            flex: 1;
+            min-width: 110px;
+        }
+
+        .home-btn {
+            padding: 13px 16px;
+        }
+    }
+</style>
     
     <div style="position:relative; display:inline-block; margin-bottom: 12px; cursor:pointer;" onclick="window.openPhotoChoice('logo')">
       <img id="m-logo" style="width: 56px; height: 56px; border-radius: 14px; background: #fff; object-fit: contain; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.15); border: 2px solid rgba(255,255,255,0.3);">
@@ -1215,139 +1365,294 @@ window.generatePermanentStandee = () => {
       <link rel="preconnect" href="https://fonts.googleapis.com">
       <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;900&family=Syne:wght@800&display=swap" rel="stylesheet">
       <style>
-        :root {
-            --brand-color: #FF5722;
-            --bg-color: #e5e7eb;
-            --text-dark: #0F0F13;
-            --text-light: #6b7280;
+    :root {
+        --brand-color: #FF5722;
+        --bg-color: #e5e7eb;
+        --text-dark: #0F0F13;
+        --text-light: #6b7280;
+    }
+
+    /* =========================================
+       DEFAULT PAGE SETTINGS
+       ========================================= */
+    @page {
+        margin: 0;
+        size: auto;
+    }
+
+    * {
+        box-sizing: border-box;
+    }
+
+    body {
+        font-family: 'Nunito', sans-serif;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        margin: 0;
+        background: var(--bg-color);
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+        overflow: hidden;
+    }
+
+    /* =========================================
+       MAIN CONTAINER
+       ========================================= */
+    .standee-container {
+        width: 100vw;
+        height: 100vh;
+
+        /* Smart responsive padding */
+        padding: clamp(8px, 2vmin, 24px);
+
+        display: flex;
+        justify-content: center;
+        align-items: center;
+
+        container-type: size;
+    }
+
+    /* =========================================
+       STANDEE CARD
+       ========================================= */
+    .standee {
+        width: 100%;
+        height: 100%;
+
+        /* Better desktop constraint */
+        max-width: 650px;
+        max-height: 100%;
+
+        background: #ffffff;
+
+        border: clamp(6px, 1.8cqmin, 14px) solid var(--brand-color);
+
+        border-radius: clamp(16px, 4cqmin, 36px);
+
+        /* Reduced internal padding */
+        padding: clamp(10px, 3cqmin, 24px);
+
+        display: flex;
+        flex-direction: column;
+
+        /* Better spacing */
+        justify-content: space-between;
+        align-items: center;
+
+        gap: clamp(8px, 2cqmin, 18px);
+
+        text-align: center;
+
+        box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+
+        overflow: hidden;
+    }
+
+    /* =========================================
+       LOGO / IMAGE
+       ========================================= */
+    .logo {
+        max-height: 7cqh;
+        max-width: 80cqw;
+        object-fit: contain;
+        flex-shrink: 0;
+    }
+
+    .standee > img:not(.logo):not(.qr-code) {
+        max-height: 10cqh;
+        max-width: 80cqw;
+        object-fit: contain;
+        flex-shrink: 0;
+    }
+
+    /* =========================================
+       MAIN TITLE
+       ========================================= */
+    h1 {
+        font-family: 'Syne', sans-serif;
+        color: var(--text-dark);
+
+        font-size: clamp(16px, 5.5cqmin, 42px);
+
+        font-weight: 800;
+
+        margin: 0;
+
+        line-height: 1.1;
+
+        word-wrap: break-word;
+
+        flex-shrink: 0;
+    }
+
+    /* =========================================
+       QR SECTION
+       ========================================= */
+    .qr-box {
+        background: #fff;
+
+        /* Reduced QR padding */
+        padding: clamp(4px, 1.5cqmin, 12px);
+
+        border-radius: clamp(12px, 3cqmin, 22px);
+
+        border: clamp(2px, 0.5cqmin, 5px) solid var(--bg-color);
+
+        box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+
+        display: flex;
+        justify-content: center;
+        align-items: center;
+
+        /* QR gets priority space */
+        flex: 1;
+
+        min-height: 0;
+    }
+
+    /* =========================================
+       QR CODE
+       ========================================= */
+    .qr-code {
+
+        /* MUCH BIGGER QR */
+        width: clamp(180px, 55cqmin, 420px);
+        height: clamp(180px, 55cqmin, 420px);
+
+        object-fit: contain;
+
+        display: block;
+    }
+
+    /* =========================================
+       SUBTITLE
+       ========================================= */
+    h2 {
+        color: var(--brand-color);
+
+        font-size: clamp(12px, 4cqmin, 26px);
+
+        font-weight: 900;
+
+        margin: 0;
+
+        line-height: 1.15;
+
+        flex-shrink: 0;
+    }
+
+    /* =========================================
+       FOOTER TEXT
+       ========================================= */
+    p {
+        color: var(--text-light);
+
+        font-size: clamp(8px, 2cqmin, 14px);
+
+        font-weight: 800;
+
+        margin: 0;
+
+        text-transform: uppercase;
+
+        letter-spacing: 1px;
+
+        line-height: 1.2;
+
+        flex-shrink: 0;
+    }
+
+    /* =========================================
+       PRINT RULES
+       ========================================= */
+    @media print {
+
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+            background: #fff;
+            overflow: hidden;
         }
 
-        /* Set to print borderless by default, we control margins via CSS padding */
-        @page { size: auto; margin: 0; } 
-
-        body { 
-            font-family: 'Nunito', sans-serif; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            min-height: 100vh; 
-            margin: 0; 
-            background: var(--bg-color); 
-            -webkit-print-color-adjust: exact; 
-            box-sizing: border-box; 
+        body {
+            display: block;
         }
 
-        .standee-container { 
-            width: 100vw; 
-            height: 100vh; 
-            /* Dynamic padding: stays close to edges on small screens, expands slightly on large screens */
-            padding: clamp(10px, 3vmin, 30px); 
-            box-sizing: border-box; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            /* This enables the container queries for dynamic font scaling inside */
-            container-type: size; 
+        .no-print {
+            display: none !important;
         }
 
-        .standee { 
-            width: 100%; 
-            height: 100%; 
-            max-width: 650px; /* Keeps it looking like a standee on ultra-wide desktop monitors */
-            background: #ffffff; 
-            border: clamp(6px, 2cqmin, 16px) solid var(--brand-color); 
-            border-radius: clamp(16px, 5cqmin, 40px); 
-            padding: clamp(15px, 5cqmin, 40px); 
-            
-            /* Smart Spacing: Distributes empty space equally between elements */
-            display: flex; 
-            flex-direction: column; 
-            justify-content: space-evenly; 
-            align-items: center; 
-            text-align: center; 
-            box-sizing: border-box; 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.15); 
-            overflow: hidden; 
+        .standee-container {
+
+            width: 100%;
+            height: 100%;
+
+            /* Minimal print padding */
+            padding: 3vmin;
         }
 
-        /* Images scale dynamically based on container height/width */
-        .logo { max-height: 8cqh; max-width: 80cqw; object-fit: contain; } 
-        .standee > img:not(.logo) { max-height: 12cqh; max-width: 80cqw; object-fit: contain; }
+        .standee {
 
-        /* Fonts scale fluidly based on the container size */
-        h1 { 
-            font-family: 'Syne', sans-serif; 
-            color: var(--text-dark); 
-            font-size: clamp(18px, 6cqmin, 46px); 
-            font-weight: 800; 
-            margin: 0; 
-            line-height: 1.15; 
-            word-wrap: break-word; 
+            width: 100%;
+            height: 100%;
+
+            max-width: none;
+            max-height: none;
+
+            box-shadow: none;
+
+            border-width: 2vmin;
+
+            border-radius: 4vmin;
+
+            padding: 4vmin;
+
+            gap: 2.5vmin;
+
+            /* Better print fitting */
+            aspect-ratio: auto;
         }
 
-        .qr-box { 
-            background: #fff; 
-            padding: clamp(8px, 3cqmin, 20px); 
-            border-radius: clamp(12px, 4cqmin, 24px); 
-            border: clamp(2px, 0.5cqmin, 5px) solid var(--bg-color); 
-            box-shadow: 0 8px 24px rgba(0,0,0,0.06); 
-            display: flex;
-            justify-content: center;
-            align-items: center;
+        .qr-code {
+
+            /* Bigger QR in print */
+            width: min(62vw, 62vh);
+            height: min(62vw, 62vh);
         }
 
-        /* QR Code sizes perfectly to the available space */
-        .qr-code { 
-            width: clamp(120px, 40cqmin, 300px); 
-            height: clamp(120px, 40cqmin, 300px); 
-            object-fit: contain; 
-        } 
-
-        h2 { 
-            color: var(--brand-color); 
-            font-size: clamp(14px, 4.5cqmin, 28px); 
-            font-weight: 900; 
-            margin: 0; 
-            line-height: 1.2; 
+        h1 {
+            line-height: 1.05;
         }
 
-        p { 
-            color: var(--text-light); 
-            font-size: clamp(9px, 2.5cqmin, 16px); 
-            font-weight: 800; 
-            margin: 0; 
-            text-transform: uppercase; 
-            letter-spacing: 1px; 
+        h2 {
+            line-height: 1.05;
         }
 
-        /* =========================================
-           PRINT RULES (Applies to Screen Print, A4 & A5)
-           ========================================= */
-        @media print { 
-            body { 
-                background: #fff; 
-                display: block; 
-            } 
-            
-            .no-print { display: none !important; }
-            
-            .standee-container { 
-                /* Perfect balanced margin around the standee inside the A4/A5 page */
-                padding: 5vmin; 
-                height: 100vh; 
-                width: 100vw;
-            }
-            
-            .standee { 
-                /* Remove screen constraints to allow it to fill A4/A5 completely */
-                max-width: none; 
-                max-height: none; 
-                box-shadow: none; 
-                border-width: 2.5vmin;
-                border-radius: 4vmin;
-                padding: 5vmin;
-            } 
+        p {
+            line-height: 1.1;
         }
+    }
+
+    /* =========================================
+       A4 PRINT MODE
+       Add class="a4-mode" on body/container
+       ========================================= */
+    .a4-mode {
+        width: 210mm;
+        height: 297mm;
+    }
+
+    /* =========================================
+       A5 PRINT MODE
+       Add class="a5-mode" on body/container
+       ========================================= */
+    .a5-mode {
+        width: 148mm;
+        height: 210mm;
+    }
 </style>
     </head>
     <body>
