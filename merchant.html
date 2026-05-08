@@ -1151,16 +1151,16 @@ window.exportStandee = async (format) => {
       container.style.left = '-9999px';
       container.style.top = '0';
       container.innerHTML = `
-        <div id="pdf-content" style="width: 210mm; height: 297mm; background: #e5e7eb; display: flex; align-items: center; justify-content: center; padding: 25mm; box-sizing: border-box; font-family: 'Nunito', sans-serif;">
-           <div style="width: 100%; height: 100%; background: #ffffff; border: 16px solid #FF5722; border-radius: 32px; padding: 8%; text-align: center; box-sizing: border-box; display: flex; flex-direction: column; justify-content: center; align-items: center; overflow: hidden;">
-              <img src="https://nearpop.in/icons/logo.png" style="max-height: 60px; margin-bottom: 20px;">
+        <div id="pdf-content" style="width: 210mm; height: 297mm; background: #e5e7eb; display: flex; align-items: center; justify-content: center; padding: 15mm; box-sizing: border-box; font-family: 'Nunito', sans-serif;">
+           <div style="width: 100%; height: 100%; background: #ffffff; border: 12px solid #FF5722; border-radius: 32px; padding: 6%; text-align: center; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-evenly; align-items: center; overflow: hidden;">
+              <img src="https://nearpop.in/icons/logo.png" style="max-height: 50px;">
               ${shopLogoHtml}
-              <h1 style="font-family: 'Syne', sans-serif; color: #0F0F13; font-size: 32px; font-weight: 800; margin: 0 0 20px 0; line-height: 1.2;">Welcome to <br><span style="color:#FF5722">${LS('mname') || 'Our Store'}</span></h1>
-              <div style="background: #fff; padding: 20px; border-radius: 24px; border: 6px solid #e5e7eb; margin-bottom: 20px;">
-                 <img src="${qrDataUrl}" style="width: 220px; height: 220px; max-width: 100%; object-fit: contain;">
+              <h1 style="font-family: 'Syne', sans-serif; color: #0F0F13; font-size: 34px; font-weight: 800; margin: 0; line-height: 1.2;">Welcome to <br><span style="color:#FF5722">${LS('mname') || 'Our Store'}</span></h1>
+              <div style="background: #fff; padding: 20px; border-radius: 24px; border: 6px solid #e5e7eb;">
+                 <img src="${qrDataUrl}" style="width: 280px; height: 280px; object-fit: contain;">
               </div>
-              <h2 style="color: #FF5722; font-size: 24px; font-weight: 900; margin: 0 0 10px 0;">Scan to see today's deals!</h2>
-              <p style="color: #6b7280; font-size: 14px; font-weight: 800; margin: 0; text-transform: uppercase; letter-spacing: 1px;">No app download required<br>Powered by nearpop.in</p>
+              <h2 style="color: #FF5722; font-size: 26px; font-weight: 900; margin: 0;">Scan to see today's deals!</h2>
+              <p style="color: #6b7280; font-size: 15px; font-weight: 800; margin: 0; text-transform: uppercase; letter-spacing: 1px;">No app download required<br>Powered by nearpop.in</p>
            </div>
         </div>
       `;
@@ -1211,56 +1211,114 @@ window.generatePermanentStandee = () => {
       <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
       <link rel="preconnect" href="https://fonts.googleapis.com">
       <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;900&family=Syne:wght@800&display=swap" rel="stylesheet">
-      <style>
-        @page { size: A4 portrait; margin: 15mm; }
-        body { font-family: 'Nunito', sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; margin: 0; background: #e5e7eb; -webkit-print-color-adjust: exact; box-sizing: border-box; }
-        .standee-container { flex: 1; display: flex; align-items: center; justify-content: center; padding: 20mm; height: 100vh; width: 100%; box-sizing: border-box; }
-        .standee { width: 100%; max-width: 500px; background: #ffffff; border: 12px solid #FF5722; border-radius: 32px; padding: 40px 30px; text-align: center; box-sizing: border-box; box-shadow: 0 20px 50px rgba(0,0,0,0.15); overflow: hidden; }
-        .logo { max-height: 50px; margin-bottom: 15px; } 
-        .standee > img:not(.logo) { max-height: 90px !important; margin-bottom: 15px !important; }
-        h1 { font-family: 'Syne', sans-serif; color: #0F0F13; font-size: 26px; font-weight: 800; margin: 0 0 15px 0; line-height: 1.2; word-wrap: break-word; }
-        .qr-box { background: #fff; padding: 15px; border-radius: 20px; display: inline-block; margin-bottom: 15px; border: 4px solid #e5e7eb; box-shadow: 0 8px 24px rgba(0,0,0,0.06); }
-        .qr-code { width: 180px; height: 180px; max-width: 100%; display: block; margin: 0 auto; object-fit: contain; } 
-        h2 { color: #FF5722; font-size: 18px; font-weight: 900; margin: 0 0 10px 0; line-height: 1.3; }
-        p { color: #6b7280; font-size: 12px; font-weight: 800; margin: 0; text-transform: uppercase; letter-spacing: 1px; }
+<style>
+        /* Force CSS to handle margins, not the printer */
+        @page { size: auto; margin: 0; }
+        
+        body { 
+          font-family: 'Nunito', sans-serif; 
+          display: flex; 
+          justify-content: center; 
+          align-items: center; 
+          min-height: 100vh; 
+          margin: 0; 
+          background: #e5e7eb; 
+          -webkit-print-color-adjust: exact; 
+          box-sizing: border-box; 
+          overflow: hidden; 
+        }
+
+        .standee-container { 
+          width: 100vw; 
+          height: 100vh; 
+          padding: 5vh 5vw; /* Perfectly balanced padding for any screen or paper size */
+          display: flex; 
+          box-sizing: border-box; 
+          justify-content: center; 
+          align-items: center; 
+        }
+
+        .standee { 
+          width: 100%; 
+          height: 100%; 
+          max-width: 800px; 
+          background: #ffffff; 
+          border: 1.5vh solid #FF5722; /* Border scales with paper size */
+          border-radius: 4vh; 
+          padding: 4vh 4vw; 
+          text-align: center; 
+          box-sizing: border-box; 
+          box-shadow: 0 2vh 5vh rgba(0,0,0,0.15); 
+          display: flex; 
+          flex-direction: column; 
+          justify-content: space-evenly; /* MAGIC TRICK: Auto-distributes all empty space */
+          align-items: center; 
+        }
+
+        .logo { 
+          max-height: 7vh; 
+          max-width: 80%; 
+          object-fit: contain; 
+        } 
+
+        .standee > img:not(.logo) { 
+          max-height: 12vh !important; 
+          max-width: 80%; 
+          object-fit: contain; 
+          border-radius: 2vh; 
+        }
+
+        h1 { 
+          font-family: 'Syne', sans-serif; 
+          color: #0F0F13; 
+          font-size: 4vh; /* Dynamic Font Sizing */
+          font-weight: 800; 
+          margin: 0; 
+          line-height: 1.2; 
+          word-wrap: break-word; 
+        }
+
+        .qr-box { 
+          background: #fff; 
+          padding: 2vh; 
+          border-radius: 3vh; 
+          border: 0.5vh solid #e5e7eb; 
+          box-shadow: 0 1vh 3vh rgba(0,0,0,0.06); 
+          display: flex; 
+          justify-content: center; 
+          align-items: center; 
+        }
+
+        /* Maximizes QR visibility safely */
+        .qr-code { 
+          height: 35vh; 
+          width: 35vh; 
+          max-width: 70vw; 
+          max-height: 70vw; 
+          object-fit: contain; 
+        } 
+
+        h2 { 
+          color: #FF5722; 
+          font-size: 2.5vh; 
+          font-weight: 900; 
+          margin: 0; 
+          line-height: 1.3; 
+        }
+
+        p { 
+          color: #6b7280; 
+          font-size: 1.5vh; 
+          font-weight: 800; 
+          margin: 0; 
+          text-transform: uppercase; 
+          letter-spacing: 1px; 
+        }
 
         @media print { 
-          body { padding: 0; background: #fff; display: block; align-items: flex-start; justify-content: flex-start; } 
+          body { background: #fff; } 
           .no-print { display: none !important; }
-          
-          .standee-container { 
-              padding: 20mm; 
-              display: flex; 
-              align-items: center; 
-              justify-content: center; 
-              height: 100vh; 
-              width: 100vw;
-              box-sizing: border-box;
-          }
-          
-          .standee { 
-              max-width: 100%; 
-              width: 100%; 
-              max-height: 100%; 
-              border-width: 14px; 
-              border-radius: 32px; 
-              padding: 5vh 5vw; 
-              box-shadow: none; 
-              display: flex; 
-              flex-direction: column; 
-              justify-content: center; 
-              align-items: center; 
-              box-sizing: border-box;
-              overflow: hidden;
-          } 
-          
-          .logo { max-height: 6vh; margin-bottom: 2vh; } 
-          .standee > img:not(.logo) { max-height: 10vh !important; width: auto !important; margin-bottom: 2vh !important; }
-          h1 { font-size: 3.5vh; margin-bottom: 2vh; }
-          .qr-box { padding: 1.5vh; border-radius: 3vh; border-width: 4px; margin-bottom: 2vh; box-shadow:none; }
-          .qr-code { width: 25vh; height: 25vh; max-width: 100%; object-fit: contain; } 
-          h2 { font-size: 2.5vh; margin-bottom: 1vh; }
-          p { font-size: 1.5vh; }
+          .standee { box-shadow: none; max-width: 100%; border-width: 1.5vh; }
         }
       </style>
     </head>
