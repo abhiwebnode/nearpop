@@ -1,26 +1,20 @@
 // ╔══════════════════════════════════════════════════════╗
 // ║  notifications.js — 3-Layer Hyperlocal Engine        ║
-// ║                                                      ║
-// ║  LAYER 1  Geo Filter & Cooldown                      ║
-// ║  LAYER 2  Relevance Scoring → rank by signal         ║
-// ║  LAYER 3  Spam Control  → decide send / suppress     ║
+// ║  WITH SMART BUFFERING & INFINITE DEFAULTS            ║
 // ╚══════════════════════════════════════════════════════╝
 
 import { LS, SS, TC, isExpired, go, triggerLocalBuzz } from './app.js';
 import { distM } from './app.js';
 
-// ── Current user location ────────────────────────────────
 export let loc = null;
 export function setLoc(newLoc) {
   loc = newLoc;
   if (newLoc) SS('lastLoc', newLoc);
 }
 
-// ── Listing array (set by data loader) ───────────────────
 export let listings = [];
 export function setListings(arr) { listings = arr; }
 
-// ── Distance from current loc to a listing object ────────
 export function dist(l) {
   const position = loc || LS('lastLoc');
   if (!position || !l.lat) return Infinity;
@@ -28,7 +22,7 @@ export function dist(l) {
 }
 
 // ════════════════════════════════════════════════════════
-// MARKET MODE ZONES — known dense commercial areas
+// MARKET MODE ZONES
 // ════════════════════════════════════════════════════════
 const MARKET_ZONES = [
   { name: 'Sector 15 Market',     lat: 28.4143, lng: 77.3090, r: 300 },
@@ -48,7 +42,7 @@ export function inMarketZone(position) {
 }
 
 // ════════════════════════════════════════════════════════
-// TRACKING ENGINE — Remembers what has been notified
+// TRACKING & BUDGET ENGINES
 // ════════════════════════════════════════════════════════
 function getGeoStates()   { return LS('geo_states') || {}; }
 function saveGeoStates(s) { SS('geo_states', s); }
@@ -59,9 +53,6 @@ export function markGeofenceNotified(id) {
   saveGeoStates(states);
 }
 
-// ════════════════════════════════════════════════════════
-// FEATURE 2 — VENDOR DAILY NOTIFICATION CAP
-// ════════════════════════════════════════════════════════
 export function vendorCapReached(l) {
   const cap   = parseInt(l.budget || 100) >= 500 ? 100 : 20;
   const vcap  = LS('vendor_cap') || {};
@@ -85,10 +76,7 @@ export function markVendorCapUsed(l) {
   SS('vendor_cap', vcap);
 }
 
-// ════════════════════════════════════════════════════════
-// FEATURE 3 — AREA DENSITY CONTROL (~100m grid cells)
-// ════════════════════════════════════════════════════════
-const GRID_SIZE    = 0.001; // ~100m per cell
+const GRID_SIZE    = 0.001; 
 const MAX_PER_CELL = 3;
 
 export function applyDensityControl(candidates) {
@@ -101,9 +89,6 @@ export function applyDensityControl(candidates) {
   });
 }
 
-// ════════════════════════════════════════════════════════
-// FEATURE 6 — BUDGET THROTTLING (hourly pacing)
-// ════════════════════════════════════════════════════════
 export function budgetThrottled(l) {
   const dailyBudget  = parseInt(l.budget || 100);
   const maxPopsHour  = Math.floor((dailyBudget / 12) / 2); 
@@ -132,29 +117,28 @@ function engagementScore(id) {
 }
 
 // ════════════════════════════════════════════════════════
-// USER PREFERENCES
+// USER PREFERENCES & LOGGING
 // ════════════════════════════════════════════════════════
-
-// 🚀 NEW: Silent Mode Toggle
 export function toggleSilentMode() {
   const current = LS('pref_paused') || false;
   SS('pref_paused', !current);
-  return !current; // returns true if now silent, false if active
+  return !current; 
 }
 
+// 🚀 UPDATED: Max limits default to Infinity
 export function getPrefs() {
   return {
-    maxPerDay:    LS('pref_maxDay')       != null ? LS('pref_maxDay')    : 100,
-    maxPerHour:   LS('pref_maxHour')      != null ? LS('pref_maxHour')   : 50,
-    paused:       LS('pref_paused')       || false,
-    mutedCats:    LS('pref_mutedCats')    || [],
+    maxPerDay:    LS('pref_maxDay')    != null ? LS('pref_maxDay')    : Infinity,
+    maxPerHour:   LS('pref_maxHour')   != null ? LS('pref_maxHour')   : Infinity,
+    paused:       LS('pref_paused')    || false,
+    mutedCats:    LS('pref_mutedCats') || [],
     mutedVendors: LS('pref_mutedVendors') || [],
-    interests:    LS('pref_interests')    || ['deal', 'rental', 'pg', 'job'],
+    interests:    LS('pref_interests') || ['deal', 'rental', 'pg', 'job'],
   };
 }
 
-function getNLogs()            { return (LS('notif_log') || []).filter(t => Date.now() - t < 86400000); }
-export function logNotif()     { const l = getNLogs(); l.push(Date.now()); SS('notif_log', l); }
+function getNLogs()             { return (LS('notif_log') || []).filter(t => Date.now() - t < 86400000); }
+export function logNotif()      { const l = getNLogs(); l.push(Date.now()); SS('notif_log', l); }
 export function notifsThisHour()  { return getNLogs().filter(t => Date.now() - t < 3600000).length; }
 export function notifsToday()     { return getNLogs().length; }
 
@@ -211,20 +195,66 @@ export function showSoftBanner(l) {
   window._banTimer = setTimeout(() => { if (ban) ban.style.opacity = '0'; }, 5000);
 }
 
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 🚀 THE SMART BUFFER ENGINE (Inbox Grouping)
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+let notificationBuffer = [];
+let bufferTimer = null;
+let currentShowNotifFn = null; 
+
+function flushNotificationBuffer() {
+  if (notificationBuffer.length === 0 || !currentShowNotifFn) return;
+
+  const uniqueDeals = Array.from(new Set(notificationBuffer.map(a => a.id)))
+    .map(id => notificationBuffer.find(a => a.id === id))
+    .sort((a, b) => b._score - a._score); 
+
+  const topDeal = uniqueDeals[0];
+  const count = uniqueDeals.length;
+
+  let title = count > 1 ? `📍 ${count} Deals Nearby!` : `${topDeal.emoji || '📍'} ${topDeal.title}`;
+  let body = count > 1 
+    ? `Top: ${topDeal.title} + ${count - 1} more nearby.` 
+    : (topDeal.price ? topDeal.price + ' · ' : '') + (topDeal.desc || 'Tap to view details').slice(0, 40) + '...';
+
+  // Fire in-app UI
+  currentShowNotifFn(topDeal);
+
+  // Fire System Notification safely
+  if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+    navigator.serviceWorker.ready.then(registration => {
+      registration.showNotification(title, {
+        body: body,
+        icon: '/icons/icon-192.png',
+        badge: '/icons/badge-96.png',
+        vibrate: [500, 250, 500, 250, 1000],
+        requireInteraction: true,
+        data: { url: '/detail.html?id=' + topDeal.id }
+      });
+    });
+  } else {
+    triggerLocalBuzz(title, body, '/detail.html?id=' + topDeal.id);
+  }
+
+  if (navigator.vibrate) navigator.vibrate([500, 250, 1000]);
+
+  // Reset Buffer
+  notificationBuffer = [];
+  bufferTimer = null;
+}
+
 // ════════════════════════════════════════════════════════
-// checkProximity() — THE REWRITTEN ENGINE
+// checkProximity() — CORE LOGIC UNTOUCHED
 // ════════════════════════════════════════════════════════
 export function checkProximity(showNotifFn, showMarketNotifFn) {
   const position = loc || LS('lastLoc');
   if (!position || !listings.length) return;
   const prefs = getPrefs();
 
-  // 1. HARD LIMITS
-  if (prefs.paused)                         return; // 🚀 Honors Silent Mode
+  if (prefs.paused)                         return; 
   if (notifsToday()    >= prefs.maxPerDay)  return;
   if (notifsThisHour() >= prefs.maxPerHour) return;
 
-  // Market Zone Check
   const zone = inMarketZone(position);
   if (zone && zone.name !== lastMarketZone) {
     lastMarketZone = zone.name;
@@ -232,25 +262,21 @@ export function checkProximity(showNotifFn, showMarketNotifFn) {
     if (cnt >= 3) {
       showMarketNotifFn(zone, cnt);
       logNotif();
-      // Lock the engine generally, but high-scoring items can still punch through it
       SS('last_ping', { time: Date.now(), score: 60, type: 'market' });
       return;
     }
   }
   if (!zone) lastMarketZone = null;
 
-  // LAYER 1 — INTELLIGENT GEOFENCE COOLDOWN
   const states = getGeoStates();
   const layer1 = listings.filter(l => {
     if (!l.lat || !l.lng) return false;
     if (isExpired(l))     return false;
     
-    // Check if physically inside the radius
     const d = dist(l);
     const rad = Math.min(l.radius || 300, 1500);
     if (d > rad) return false; 
     
-    // Per-Listing Cooldown: Do not notify about the SAME listing more than once every 1 hour
     const prev = states[l.id] || { notifiedAt: 0 };
     const hoursSinceNotif = (Date.now() - (prev.notifiedAt || 0)) / 3600000;
     
@@ -259,7 +285,6 @@ export function checkProximity(showNotifFn, showMarketNotifFn) {
 
   if (!layer1.length) return;
 
-  // LAYER 2 — RELEVANCE SCORING
   const layer2 = layer1
     .map(l => ({ ...l, _dist: dist(l), _score: scoreL(l, dist(l), prefs) }))
     .filter(l => {
@@ -271,78 +296,46 @@ export function checkProximity(showNotifFn, showMarketNotifFn) {
     .sort((a, b) => b._score - a._score);
   if (!layer2.length) return;
 
-  // LAYER 3 — BUDGET & VENDOR SPAM
   const layer3 = layer2.filter(l => !vendorCapReached(l) && !budgetThrottled(l));
   if (!layer3.length) return;
 
   const final  = applyDensityControl(layer3);
   if (!final.length) return;
 
-  // WE HAVE A WINNER
   const winner = final[0];
   const ntype  = getNotifType(winner._dist);
 
-  // 🚀 THE "SMART OVERRIDE" PACING ENGINE
   const lastPing = LS('last_ping') || { time: 0, score: 0, type: '' };
   const timeSincePing = Date.now() - lastPing.time;
 
-  // 🚀 FIX: Reduced to 10 seconds if app is open
   const lockDuration = document.visibilityState === 'visible' ? 10000 : 120000; 
 
   if (timeSincePing < lockDuration) {
-    // It is too soon. Let's see if this deal is worth breaking the lock for:
     const isDifferentCategory = winner.type !== lastPing.type;
-    
-    // 🚀 FIX: Relaxed requirement. Now only needs to be 5 points better instead of 15.
     const isMuchBetterDeal = winner._score >= (lastPing.score + 5); 
 
-    // If it's the same category AND not significantly better, enforce the lock and stay silent.
     if (!isDifferentCategory && !isMuchBetterDeal) {
       return; 
     }
   }
 
+  // 🚀 UPDATED: Buffer Implementation for Hard Notifications
   if (ntype === 'hard') {
-    // 1. Fire the in-app UI update
-    showNotifFn(winner);
+    notificationBuffer.push(winner);
+    currentShowNotifFn = showNotifFn; // Store the function reference safely
     
-    // 2. Unconditionally trigger the native System Push Notification
-    // It will now show up in the device's system tray/banner exactly like a standard app notification.
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.ready.then(registration => {
-        registration.showNotification(
-          (winner.emoji || '📍') + ' ' + (winner.title || 'New Deal Nearby!'),
-          {
-            body: (winner.price ? winner.price + ' · ' : '') + (winner.desc || 'Tap to view details').slice(0, 40) + '...',
-            icon: '/icons/icon-192.png',
-            badge: '/icons/badge-96.png',
-            vibrate: [500, 250, 500, 250, 1000, 250, 1000], 
-            requireInteraction: true, 
-            data: { url: '/detail.html?id=' + winner.id } 
-          }
-        );
-      });
-    } else {
-      triggerLocalBuzz(
-        (winner.emoji || '📍') + ' ' + (winner.title || 'New Deal Nearby!'),
-        (winner.price ? winner.price + ' · ' : '') + (winner.desc || 'Tap to view details').slice(0, 40) + '...',
-        '/detail.html?id=' + winner.id
-      );
+    if (!bufferTimer) {
+      bufferTimer = setTimeout(flushNotificationBuffer, 3000);
     }
-    
-    // Fallback hardware buzz in case system notifications are blocked but vibration is allowed
-    if (navigator.vibrate) navigator.vibrate([500, 250, 1000]);
+
+    markGeofenceNotified(winner.id);
+    markVendorCapUsed(winner);
+    markBudgetUsed(winner);
+    logNotif();
+    SS('last_ping', { time: Date.now(), score: winner._score, type: winner.type }); 
 
   } else if (ntype === 'soft') {
     showSoftBanner(winner);
     if (navigator.vibrate) navigator.vibrate([250]);
   }
-
-  // UPDATE ENGINE STATE
-  markGeofenceNotified(winner.id);
-  markVendorCapUsed(winner);
-  markBudgetUsed(winner);
-  logNotif();
-  // Save the state so the engine can compare future deals against this one
-  SS('last_ping', { time: Date.now(), score: winner._score, type: winner.type }); 
 }

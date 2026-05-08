@@ -113,26 +113,26 @@
       </div>
       <div class="pr" style="flex-direction:column;align-items:flex-start;gap:8px">
         <div style="display:flex;align-items:center;gap:11px;width:100%">
-          <span class="pr-ic">📅</span><span class="pr-lbl" style="flex:1">Max per day</span><span class="pr-val" id="lbl-day">3</span>
+          <span class="pr-ic">📅</span><span class="pr-lbl" style="flex:1">Max per day</span><span class="pr-val" id="lbl-day">No limit</span>
         </div>
         <div class="chips">
-          <button class="chip" onclick="window.setMaxDay(1,this)">1</button>
-          <button class="chip on" onclick="window.setMaxDay(3,this)">3</button>
           <button class="chip" onclick="window.setMaxDay(5,this)">5</button>
           <button class="chip" onclick="window.setMaxDay(10,this)">10</button>
-          <button class="chip" onclick="window.setMaxDay(999,this)">No limit</button>
+          <button class="chip" onclick="window.setMaxDay(20,this)">20</button>
+          <button class="chip" onclick="window.setMaxDay(50,this)">50</button>
+          <button class="chip on" onclick="window.setMaxDay(Infinity,this)">No limit</button>
         </div>
       </div>
       <div class="pr" style="flex-direction:column;align-items:flex-start;gap:8px">
         <div style="display:flex;align-items:center;gap:11px;width:100%">
-          <span class="pr-ic">⏰</span><span class="pr-lbl" style="flex:1">Max per hour</span><span class="pr-val" id="lbl-hour">1</span>
+          <span class="pr-ic">⏰</span><span class="pr-lbl" style="flex:1">Max per hour</span><span class="pr-val" id="lbl-hour">No limit</span>
         </div>
         <div class="chips">
-          <button class="chip on" onclick="window.setMaxHour(1,this)">1</button>
           <button class="chip" onclick="window.setMaxHour(2,this)">2</button>
-          <button class="chip" onclick="window.setMaxHour(3,this)">3</button>
-		  <button class="chip" onclick="window.setMaxHour(5,this)">5</button>
-          <button class="chip" onclick="window.setMaxHour(999,this)">No limit</button>
+          <button class="chip" onclick="window.setMaxHour(5,this)">5</button>
+          <button class="chip" onclick="window.setMaxHour(10,this)">10</button>
+          <button class="chip" onclick="window.setMaxHour(20,this)">20</button>
+          <button class="chip on" onclick="window.setMaxHour(Infinity,this)">No limit</button>
         </div>
       </div>
     </div>
@@ -375,28 +375,55 @@ async function loadSavedListings() {
 function loadPrefs(data) {
   const d    = data || {};
   const p    = d.prefs || {};
-  const maxDay    = p.maxDay    ?? LS('pref_maxDay')    ?? 999;
-  const maxHour   = p.maxHour   ?? LS('pref_maxHour')   ?? 999;
+  
+  // Safely check for null to allow 0, fallback to Infinity (No Limit)
+  const maxDay    = p.maxDay    != null ? p.maxDay    : (LS('pref_maxDay')    != null ? LS('pref_maxDay')    : Infinity);
+  const maxHour   = p.maxHour   != null ? p.maxHour   : (LS('pref_maxHour')   != null ? LS('pref_maxHour')   : Infinity);
   const paused    = p.paused    ?? LS('pref_paused')    ?? false;
   const interests = p.interests ?? LS('pref_interests') ?? ['deal','rental','pg','job'];
 
   const tog = document.getElementById('tog-pause');
   paused ? tog.classList.add('on') : tog.classList.remove('on');
-  document.getElementById('lbl-day').textContent  = maxDay  === 999 ? 'No limit' : maxDay;
-  document.getElementById('lbl-hour').textContent = maxHour === 999 ? 'No limit' : maxHour;
+  
+  // Update Labels (Handling legacy 999 users if any exist)
+  document.getElementById('lbl-day').textContent  = (maxDay  === Infinity || maxDay === 999) ? 'No limit' : maxDay;
+  document.getElementById('lbl-hour').textContent = (maxHour === Infinity || maxHour === 999) ? 'No limit' : maxHour;
 
+  // Toggle correct chips dynamically based on the value
   document.querySelectorAll('[onclick^="window.setMaxDay"]').forEach(b => {
-    const v = parseInt(b.textContent) || 999;
-    b.classList.toggle('on', v === maxDay || (b.textContent === 'No limit' && maxDay === 999));
+    const rawVal = b.getAttribute('onclick').match(/\(([^,]+)/)[1];
+    const v = rawVal === 'Infinity' ? Infinity : parseInt(rawVal);
+    b.classList.toggle('on', v === maxDay || (v === Infinity && maxDay === 999));
   });
+  
   document.querySelectorAll('[onclick^="window.setMaxHour"]').forEach(b => {
-    const v = parseInt(b.textContent) || 999;
-    b.classList.toggle('on', v === maxHour || (b.textContent === 'No limit' && maxHour === 999));
+    const rawVal = b.getAttribute('onclick').match(/\(([^,]+)/)[1];
+    const v = rawVal === 'Infinity' ? Infinity : parseInt(rawVal);
+    b.classList.toggle('on', v === maxHour || (v === Infinity && maxHour === 999));
   });
+  
   document.querySelectorAll('[data-cat]').forEach(b => {
     b.classList.toggle('on', interests.includes(b.dataset.cat));
   });
 }
+
+window.setMaxDay = (n, btn) => {
+  SS('pref_maxDay', n);
+  syncField(uid, 'prefs.maxDay', n);
+  document.getElementById('lbl-day').textContent = n === Infinity ? 'No limit' : n;
+  document.querySelectorAll('[onclick^="window.setMaxDay"]').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+  toast('📅', 'Max ' + (n === Infinity ? 'unlimited' : n) + ' per day');
+};
+
+window.setMaxHour = (n, btn) => {
+  SS('pref_maxHour', n);
+  syncField(uid, 'prefs.maxHour', n);
+  document.getElementById('lbl-hour').textContent = n === Infinity ? 'No limit' : n;
+  document.querySelectorAll('[onclick^="window.setMaxHour"]').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+  toast('⏰', 'Max ' + (n === Infinity ? 'unlimited' : n) + ' per hour');
+};
 
 window.togglePause = tog => {
   tog.classList.toggle('on');
@@ -405,25 +432,6 @@ window.togglePause = tog => {
   syncField(uid, 'prefs.paused', v);
   toast(v ? '⏸️' : '▶️', v ? 'Notifications paused' : 'Notifications resumed');
 };
-
-window.setMaxDay = (n, btn) => {
-  SS('pref_maxDay', n);
-  syncField(uid, 'prefs.maxDay', n);
-  document.getElementById('lbl-day').textContent = n === 999 ? 'No limit' : n;
-  document.querySelectorAll('[onclick^="window.setMaxDay"]').forEach(b => b.classList.remove('on'));
-  btn.classList.add('on');
-  toast('📅', 'Max ' + (n === 999 ? 'unlimited' : n) + ' per day');
-};
-
-window.setMaxHour = (n, btn) => {
-  SS('pref_maxHour', n);
-  syncField(uid, 'prefs.maxHour', n);
-  document.getElementById('lbl-hour').textContent = n === 999 ? 'No limit' : n;
-  document.querySelectorAll('[onclick^="window.setMaxHour"]').forEach(b => b.classList.remove('on'));
-  btn.classList.add('on');
-  toast('⏰', 'Max ' + (n === 999 ? 'unlimited' : n) + ' per hour');
-};
-
 window.toggleInterest = (cat, btn) => {
   const interests = new Set(LS('pref_interests') || ['deal','rental','pg','job']);
   interests.has(cat) ? interests.delete(cat) : interests.add(cat);

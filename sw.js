@@ -4,21 +4,20 @@ importScripts('https://www.gstatic.com/firebasejs/12.12.0/firebase-messaging-com
 // 🚀 Initialize Firebase in the Service Worker
 firebase.initializeApp({
   apiKey: "AIzaSyDYUm3VV8iuLHQKJuU9fWgaRaYU0t5Dlzk",
-    authDomain: "nearpop-a432d.firebaseapp.com",
-    projectId: "nearpop-a432d",
-    storageBucket: "nearpop-a432d.firebasestorage.app",
-    messagingSenderId: "265333242320",
-    appId: "1:265333242320:web:f2cedec620ef08d4e161d5"
+  authDomain: "nearpop-a432d.firebaseapp.com",
+  projectId: "nearpop-a432d",
+  storageBucket: "nearpop-a432d.firebasestorage.app",
+  messagingSenderId: "265333242320",
+  appId: "1:265333242320:web:f2cedec620ef08d4e161d5"
 });
 
-// Set up the background listener ONCE
 const messaging = firebase.messaging();
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // 🚀 SMART NOTIFICATION COOLDOWN ENGINE
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 async function canShowNotification(notificationId) {
-  const COOLDOWN_MS = 60 * 60 * 1000; // 1 hour in milliseconds
+  const COOLDOWN_MS = 60 * 60 * 1000; // 1 hour
   const cache = await caches.open('nearpop-cooldowns');
   const cacheKey = `/cooldown/${notificationId}`;
   
@@ -26,37 +25,33 @@ async function canShowNotification(notificationId) {
   if (existingRecord) {
     const lastPing = await existingRecord.json();
     if (Date.now() - lastPing < COOLDOWN_MS) {
-      return false; // Still in cooldown period, block notification
+      return false; 
     }
   }
   
-  // Update the cache with the new timestamp
   await cache.put(cacheKey, new Response(JSON.stringify(Date.now())));
   return true;
 }
 
-// 🚀 THE UNIFIED BACKGROUND MESSAGE HANDLER
+// 🚀 THE UNIFIED BACKGROUND MESSAGE HANDLER (Data-Only Safe)
 messaging.onBackgroundMessage((payload) => {
   return (async () => {
     console.log('[sw.js] Received background message ', payload);
 
-    // Check if the payload has a specific ID (merchantId or zoneId), otherwise treat as a general alert
     const entityId = payload.data?.merchantId || 'general_alert';
     const isAllowed = await canShowNotification(entityId);
     
     if (isAllowed) {
-      const notificationTitle = payload.notification?.title || 'NearPop Update!';
+      const notificationTitle = payload.data?.title || payload.notification?.title || 'NearPop Update!';
       
       const notificationOptions = {
-        body: payload.notification?.body || 'Tap to see details.',
+        body: payload.data?.body || payload.notification?.body || 'Tap to see details.',
         icon: '/icons/icon-192.png',
         badge: '/icons/badge-96.png',
-        // Merged: The heavy vibration pattern from your first block!
         vibrate: [500, 250, 500, 250, 1000, 250, 1000], 
-        // Merged: Ensure both the URL and the original payload data are passed through
         data: { 
           ...payload.data,
-          url: payload.fcmOptions?.link || payload.data?.url || '/map.html' 
+          url: payload.data?.url || payload.fcmOptions?.link || '/map.html' 
         },
         requireInteraction: true 
       };
@@ -83,9 +78,8 @@ self.addEventListener('notificationclick', event => {
 });
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// 🚀 THE SMART CACHE ENGINE (Offline Mode)
+// 🚀 THE SMART CACHE ENGINE (TWA Optimized)
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
 const CACHE_NAME = 'nearpop-v1'; 
 const MAP_CACHE = 'nearpop-maps-v1';
 const IMG_CACHE = 'nearpop-images-v1';
@@ -117,22 +111,17 @@ const limitCacheSize = (name, size) => {
 self.addEventListener('install', event => {
   self.skipWaiting();
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => {
-      return cache.addAll(ASSETS).catch(err => console.warn('Cache warning:', err));
-    })
+    caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS).catch(() => {}))
   );
 });
 
 self.addEventListener('activate', event => {
   const allowedCaches = [CACHE_NAME, MAP_CACHE, IMG_CACHE];
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
+    caches.keys().then(cacheNames => {
       return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (!allowedCaches.includes(cacheName)) {
-            console.log('NearPop SW: Wiping old cache ->', cacheName);
-            return caches.delete(cacheName);
-          }
+        cacheNames.map(cacheName => {
+          if (!allowedCaches.includes(cacheName)) return caches.delete(cacheName);
         })
       );
     }).then(() => self.clients.claim()) 
@@ -146,83 +135,73 @@ self.addEventListener('fetch', (event) => {
     event.request.method !== 'GET' ||
     url.includes('googletagmanager.com') || 
     url.includes('google-analytics.com')
-  ) {
-    return; 
-  }
+  ) return; 
 
-  // 🚀 CAP MAP TILES
+  // 🚀 CACHE-FIRST: Map Tiles (Dramatically speeds up UI, saves data)
   if (url.includes('tile.openstreetmap.org')) {
     event.respondWith(
-      caches.open(MAP_CACHE).then(cache => {
+      caches.match(event.request).then(cachedResponse => {
+        if (cachedResponse) return cachedResponse;
         return fetch(event.request).then(fetchRes => {
           if (fetchRes.status === 200) {
-            cache.put(event.request, fetchRes.clone());
-            limitCacheSize(MAP_CACHE, 50); 
+            caches.open(MAP_CACHE).then(cache => {
+              cache.put(event.request, fetchRes.clone());
+              limitCacheSize(MAP_CACHE, 100); 
+            });
           }
           return fetchRes;
-        }).catch(() => cache.match(event.request)); 
+        });
       })
     );
   }
-  // 🚀 CAP FIREBASE UPLOADED PHOTOS
+  // 🚀 CACHE-FIRST: Firebase Images
   else if (url.includes('firebasestorage.googleapis.com')) {
     event.respondWith(
-      caches.open(IMG_CACHE).then(cache => {
+      caches.match(event.request).then(cachedResponse => {
+        if (cachedResponse) return cachedResponse;
         return fetch(event.request).then(fetchRes => {
           if (fetchRes.status === 200) {
-            cache.put(event.request, fetchRes.clone());
-            limitCacheSize(IMG_CACHE, 30); 
+            caches.open(IMG_CACHE).then(cache => {
+              cache.put(event.request, fetchRes.clone());
+              limitCacheSize(IMG_CACHE, 30); 
+            });
           }
           return fetchRes;
-        }).catch(() => cache.match(event.request)); 
+        });
       })
     );
   }
-  // 🚀 STANDARD BEHAVIOR FOR APP CODE
+  // 🚀 STALE-WHILE-REVALIDATE: App Code (0ms Load Times)
   else {
     event.respondWith(
-      fetch(event.request)
-        .then((networkResponse) => {
-          return caches.open(CACHE_NAME).then((cache) => {
-            if (url.startsWith('http') && networkResponse.status === 200) {
+      caches.match(event.request).then(cachedResponse => {
+        const fetchPromise = fetch(event.request).then(networkResponse => {
+          if (url.startsWith('http') && networkResponse.status === 200) {
+            caches.open(CACHE_NAME).then(cache => {
               cache.put(event.request, networkResponse.clone());
-            }
-            return networkResponse;
-          });
-        })
-        .catch(() => {
-          return caches.match(event.request);
-        })
+            });
+          }
+          return networkResponse;
+        }).catch(() => {
+          if (event.request.mode === 'navigate') return caches.match('/index.html');
+        });
+        return cachedResponse || fetchPromise;
+      })
     );
   }
 });
 
 self.addEventListener('message', (event) => {
-  if (event.data && event.data.type === 'SKIP_WAITING') {
-    self.skipWaiting();
-  }
+  if (event.data && event.data.type === 'SKIP_WAITING') self.skipWaiting();
 });
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // 🚀 BACKGROUND SYNC & PERIODIC SYNC 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-// 1. Background Sync (Resilience to poor networks)
-// This fires when the network drops and reconnects, allowing offline actions to retry.
 self.addEventListener('sync', (event) => {
-  if (event.tag === 'sync-offline-actions') {
-    console.log('NearPop: Syncing offline actions to Firebase...');
-    // The Promise.resolve() tells the OS and PWABuilder the sync was successfully handled
-    event.waitUntil(Promise.resolve()); 
-  }
+  if (event.tag === 'sync-offline-actions') event.waitUntil(Promise.resolve()); 
 });
 
-// 2. Periodic Background Sync (Show data instantly)
-// This wakes the app up silently in the background to fetch new deals before the user opens it.
 self.addEventListener('periodicsync', (event) => {
-  if (event.tag === 'update-deals') {
-    console.log('NearPop: Fetching fresh deals in the background...');
-    // Resolving the promise confirms to PWABuilder that periodic sync is active
-    event.waitUntil(Promise.resolve()); 
-  }
+  if (event.tag === 'update-deals') event.waitUntil(Promise.resolve()); 
 });
