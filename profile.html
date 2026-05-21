@@ -194,8 +194,8 @@
       </div>
 
 	  <div id="dev-reset" style="text-align:center; margin-top:50px; color:#ccc; font-size:10px; cursor:pointer;">
-  v1.0 (Reset Data)
-</div>
+        v1.0 (Reset Data)
+      </div>
     </div>
 
     <button class="lout" onclick="window.logout()">🚪 Sign Out</button>
@@ -208,6 +208,7 @@
 
 <script type="module">
 import { db, LS, SS, TC, TE, toast, cacheClear, loadNavigation, requestPushPermissions } from './js/app.js';
+import { sanitizer } from './js/sanitizer.js';
 import { pushUserData, pullUserData, watchUserData, isRealAuthUser, syncField } from './js/userSync.js';
 import { doc, getDoc, getDocs, query, collection, where, updateDoc, increment, deleteDoc } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
 import { getAuth, signOut, onAuthStateChanged, deleteUser } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js';
@@ -217,6 +218,10 @@ window.go = href => window.location.href = href;
 
 const uid = LS('uid');
 if (!uid) { window.location.href = 'index.html'; }
+
+window.haptic = (ms = 50) => {
+  try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) {}
+};
 
 // ── Render stats header ────────────────────────────────────
 function renderHeader(data) {
@@ -235,26 +240,41 @@ function renderHeader(data) {
 
   const pavEl = document.getElementById('pav');
   
+  // ✅ SECURE: Safe avatar rendering with sanitization
+  pavEl.innerHTML = ''; // Clear first
+  
   if (role === 'merchant') {
     if (logoUrl) {
-      pavEl.innerHTML = `<img src="${logoUrl}" style="width:100%; height:100%; border-radius:22px; object-fit:contain; background:#fff; border:2px solid rgba(59,130,246,0.2);"><div style="position:absolute; bottom:-6px; right:-6px; background:#3B82F6; font-size:12px; padding:4px; border-radius:50%; box-shadow:0 2px 8px rgba(0,0,0,0.3);">✏️</div>`;
+      const img = document.createElement('img');
+      img.src = sanitizer.sanitizeUrl(logoUrl);
+      img.style.cssText = 'width:100%; height:100%; border-radius:22px; object-fit:contain; background:#fff; border:2px solid rgba(59,130,246,0.2);';
+      pavEl.appendChild(img);
       SS('logoUrl', logoUrl);
     } else {
-      pavEl.innerHTML = `🏪<div style="position:absolute; bottom:-6px; right:-6px; background:#3B82F6; font-size:12px; padding:4px; border-radius:50%; box-shadow:0 2px 8px rgba(0,0,0,0.3);">✏️</div>`;
+      const emoji = document.createTextNode('🏪');
+      pavEl.appendChild(emoji);
     }
+    
+    const editBtn = document.createElement('div');
+    editBtn.style.cssText = 'position:absolute; bottom:-6px; right:-6px; background:#3B82F6; font-size:12px; padding:4px; border-radius:50%; box-shadow:0 2px 8px rgba(0,0,0,0.3);';
+    editBtn.textContent = '✏️';
+    pavEl.appendChild(editBtn);
+    
     pavEl.style.cursor = 'pointer';
     pavEl.onclick = () => document.getElementById('logo-upload').click();
   } else {
     if (photoUrl) {
-      pavEl.innerHTML = `<img src="${photoUrl}" style="width:100%; height:100%; border-radius:22px; object-fit:cover; border:2px solid rgba(255,255,255,0.15);">`;
+      const img = document.createElement('img');
+      img.src = sanitizer.sanitizeUrl(photoUrl);
+      img.style.cssText = 'width:100%; height:100%; border-radius:22px; object-fit:cover; border:2px solid rgba(255,255,255,0.15);';
+      pavEl.appendChild(img);
       SS('photoURL', photoUrl);
     } else {
-      pavEl.innerHTML = '😊';
+      pavEl.textContent = '😊';
     }
     pavEl.style.cursor = 'default';
     pavEl.onclick = null;
   }
-  
   pavEl.className = 'pav ' + role;
   
   if (role === 'merchant') {
@@ -356,59 +376,86 @@ async function loadSavedListings() {
       block.innerHTML = '<div class="no-saved">Saved listings have been removed.</div>';
       return;
     }
-    let html = '<div class="saved-grid">';
+    // ✅ SECURE: Safe DOM rendering with sanitization
+    block.innerHTML = '';
+    const grid = document.createElement('div');
+    grid.className = 'saved-grid';
+    
     all.forEach(l => {
-      const col = TC(l.type);
-      html += `<div class="scard" onclick="window.go('detail.html?id=${encodeURIComponent(l.id)}')">
-        <div class="scard-type" style="color:${col}">${TE(l.type)} ${(l.type||'').toUpperCase()}</div>
-        <div class="scard-title">${l.title||''}</div>
-        <div class="scard-price">${l.price||'—'}</div>
-      </div>`;
+      const card = document.createElement('div');
+      card.className = 'scard';
+      card.onclick = () => window.go('detail.html?id=' + encodeURIComponent(l.id));
+      
+      const type = document.createElement('div');
+      type.className = 'scard-type';
+      type.style.color = TC(l.type);
+      type.textContent = TE(l.type) + ' ' + sanitizer.sanitizeText((l.type || '').toUpperCase(), { maxLength: 20 });
+      
+      const title = document.createElement('div');
+      title.className = 'scard-title';
+      title.textContent = sanitizer.sanitizeText(l.title || '', { maxLength: 200 });
+      
+      const price = document.createElement('div');
+      price.className = 'scard-price';
+      price.textContent = sanitizer.sanitizeText(l.price || '—', { maxLength: 50 });
+      
+      card.appendChild(type);
+      card.appendChild(title);
+      card.appendChild(price);
+      grid.appendChild(card);
     });
-    html += '</div>';
-    block.innerHTML = html;
+    
+    block.appendChild(grid);
   } catch(e) {
     block.innerHTML = '<div class="no-saved">Could not load listings.</div>';
   }
 }
 
+// ─── SAFE NATIVE NOTIFICATION PREFS ───
 function loadPrefs(data) {
-  const d    = data || {};
-  const p    = d.prefs || {};
-  const maxDay    = p.maxDay    ?? LS('pref_maxDay')    ?? 999;
-  const maxHour   = p.maxHour   ?? LS('pref_maxHour')   ?? 999;
-  const paused    = p.paused    ?? LS('pref_paused')    ?? false;
-  const interests = p.interests ?? LS('pref_interests') ?? ['deal','rental','pg','job'];
+  const d = data || {};
+  const maxDay    = d.pref_maxDay    || LS('pref_maxDay')    || 5;
+  const maxHour   = d.pref_maxHour   || LS('pref_maxHour')   || 1;
+  const paused    = d.pref_paused    || LS('pref_paused')    || false;
+  const interests = d.pref_interests || LS('pref_interests') || ['deal', 'rental', 'pg', 'job'];
 
   const tog = document.getElementById('tog-pause');
-  paused ? tog.classList.add('on') : tog.classList.remove('on');
-  document.getElementById('lbl-day').textContent  = maxDay  === 999 ? 'No limit' : maxDay;
-  document.getElementById('lbl-hour').textContent = maxHour === 999 ? 'No limit' : maxHour;
+  if (tog) { paused ? tog.classList.add('on') : tog.classList.remove('on'); }
+
+  const lblDay = document.getElementById('lbl-day');
+  if (lblDay) lblDay.textContent = maxDay === 999 ? 'No limit' : maxDay;
+
+  const lblHour = document.getElementById('lbl-hour');
+  if (lblHour) lblHour.textContent = maxHour === 999 ? 'No limit' : maxHour;
 
   document.querySelectorAll('[onclick^="window.setMaxDay"]').forEach(b => {
     const v = parseInt(b.textContent) || 999;
     b.classList.toggle('on', v === maxDay || (b.textContent === 'No limit' && maxDay === 999));
   });
+  
   document.querySelectorAll('[onclick^="window.setMaxHour"]').forEach(b => {
     const v = parseInt(b.textContent) || 999;
     b.classList.toggle('on', v === maxHour || (b.textContent === 'No limit' && maxHour === 999));
   });
+  
   document.querySelectorAll('[data-cat]').forEach(b => {
     b.classList.toggle('on', interests.includes(b.dataset.cat));
   });
 }
 
 window.togglePause = tog => {
+  window.haptic(30);
   tog.classList.toggle('on');
   const v = tog.classList.contains('on');
-  SS('pref_paused', v);
-  syncField(uid, 'prefs.paused', v);
+  LS('pref_paused', v);
+  syncField(uid, 'pref_paused', v);
   toast(v ? '⏸️' : '▶️', v ? 'Notifications paused' : 'Notifications resumed');
 };
 
 window.setMaxDay = (n, btn) => {
-  SS('pref_maxDay', n);
-  syncField(uid, 'prefs.maxDay', n);
+  window.haptic(30);
+  LS('pref_maxDay', n);
+  syncField(uid, 'pref_maxDay', n);
   document.getElementById('lbl-day').textContent = n === 999 ? 'No limit' : n;
   document.querySelectorAll('[onclick^="window.setMaxDay"]').forEach(b => b.classList.remove('on'));
   btn.classList.add('on');
@@ -416,8 +463,9 @@ window.setMaxDay = (n, btn) => {
 };
 
 window.setMaxHour = (n, btn) => {
-  SS('pref_maxHour', n);
-  syncField(uid, 'prefs.maxHour', n);
+  window.haptic(30);
+  LS('pref_maxHour', n);
+  syncField(uid, 'pref_maxHour', n);
   document.getElementById('lbl-hour').textContent = n === 999 ? 'No limit' : n;
   document.querySelectorAll('[onclick^="window.setMaxHour"]').forEach(b => b.classList.remove('on'));
   btn.classList.add('on');
@@ -425,11 +473,18 @@ window.setMaxHour = (n, btn) => {
 };
 
 window.toggleInterest = (cat, btn) => {
-  const interests = new Set(LS('pref_interests') || ['deal','rental','pg','job']);
+  window.haptic(30);
+  const interests = new Set(LS('pref_interests') || ['deal', 'rental', 'pg', 'job']);
   interests.has(cat) ? interests.delete(cat) : interests.add(cat);
-  if (!interests.size) { interests.add(cat); toast('⚠️', 'Need at least one interest'); return; }
-  SS('pref_interests', [...interests]);
-  syncField(uid, 'prefs.interests', [...interests]);
+  
+  if (!interests.size) { 
+    interests.add(cat); 
+    toast('⚠️', 'Need at least one interest'); 
+    return; 
+  }
+  
+  LS('pref_interests', [...interests]);
+  syncField(uid, 'pref_interests', [...interests]);
   btn.classList.toggle('on', interests.has(cat));
   toast('🎯', 'Interests saved');
 };
@@ -699,8 +754,6 @@ document.getElementById('dev-reset').addEventListener('click', () => {
     window.location.reload(true);
   }
 });
-
-
 </script>
 </body>
 </html>

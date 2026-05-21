@@ -1,105 +1,13 @@
 // ╔══════════════════════════════════════════════════════╗
-// ║  app.js — NearPop shared foundation                  ║
-// ║  Firebase init · LS/SS · toast · type helpers        ║
-// ║  Imported by every page                              ║
+// ║  app.js — NearPop shared foundation v2.0             ║
+// ║  Enhanced: Error handling, retry logic, performance   ║
 // ╚══════════════════════════════════════════════════════╝
 
 // 🚀 ALL IMPORTS SAFELY CONSOLIDATED AT THE TOP
 import { initializeApp }  from "https://www.gstatic.com/firebasejs/12.12.0/firebase-app.js";
-import { initializeFirestore, persistentLocalCache, doc, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js";
+import { initializeFirestore, persistentLocalCache, doc, setDoc, updateDoc, getDoc } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js";
 import { getAuth, setPersistence, browserLocalPersistence, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js";
-import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-messaging.js";
-
-//Mobile Only
-(function() {
-  // 1. Enhanced Detection (includes touch capability check)
-  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || 
-                   (window.innerWidth <= 800 && 'ontouchstart' in window);
-
-  // 2. Exception for Search Engine Bots (So they can still index your site)
-  const isBot = /Googlebot|bingbot|DuckDuckBot/i.test(navigator.userAgent);
-
-  if (!isMobile && !isBot) {
-    // Stop the window from loading further resources
-    window.stop(); 
-
-    // Replace the content gracefully
-    const blockout = `
-      <!DOCTYPE html>
-      <html lang="en">
-      <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>NearPop — Mobile Only</title>
-        <style>
-          :root { --bg: #0F0F13; --accent: #FF5722; --text: #9CA3AF; }
-          body { 
-            margin: 0; padding: 20px; 
-            display: flex; flex-direction: column; align-items: center; justify-content: center; 
-            height: 100vh; background: var(--bg); color: #fff; 
-            font-family: -apple-system, system-ui, sans-serif; text-align: center; 
-            overflow: hidden;
-          }
-          .card {
-            background: rgba(255, 255, 255, 0.03);
-            padding: 30px 20px;
-            border-radius: 24px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            max-width: 360px;
-          }
-          .logo { width: 180px; margin-bottom: 20px; }
-          .ic { 
-            font-size: 60px; margin-bottom: 15px; 
-            filter: drop-shadow(0 10px 30px rgba(255,87,34,0.4));
-            animation: float 3s ease-in-out infinite;
-          }
-          h1 { font-size: 18px; font-weight: 700; margin: 10px 0; color: #fff; line-height: 1.4; }
-          p { font-size: 14px; color: var(--text); line-height: 1.5; margin: 5px 0 15px; }
-          .qr-placeholder {
-            margin-top: 15px;
-            padding: 12px;
-            background: #fff;
-            display: inline-block;
-            border-radius: 12px;
-            line-height: 0;
-          }
-          @keyframes float {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-10px); }
-          }
-          hr { border: 0; border-top: 1px solid rgba(255,255,255,0.1); margin: 15px 0; }
-        </style>
-      </head>
-      <body>
-        <div class="card">
-          <img src="https://nearpop.in/icons/logo.png" alt="NearPop" class="logo">
-          <div class="ic">📱</div>
-          
-          <!-- English Section -->
-          <h1>NearPop works best on the move!</h1>
-          <p>To see live deals in your neighborhood, please switch to your smartphone.</p>
-
-          <hr>
-
-          <!-- Hindi Section -->
-          <h1>बेहतरीन ऑफर्स के लिए फोन का इस्तेमाल करें!</h1>
-          <p>अपने आस-पास की लाइव डील्स देखने के लिए, कृपया NearPop को अपने स्मार्टफोन पर खोलें।</p>
-
-          <div class="qr-placeholder">
-            <img src="https://nearpop.in/icons/qr-code.png" alt="Scan to open NearPop" style="width:120px; height:120px;">
-          </div>
-        </div>
-      </body>
-      </html>
-    `;
-
-    document.open();
-    document.write(blockout);
-    document.close();
-    
-    throw new Error("NearPop: Mobile-only access enforced.");
-  }
-})();
+import { getMessaging, getToken, onMessage, isSupported } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-messaging.js";
 
 // ── Firebase config ──────────────────────────────────────
 const FB_CONFIG = {
@@ -113,37 +21,80 @@ const FB_CONFIG = {
 
 export const app = initializeApp(FB_CONFIG);
 
-// Hard limit offline database to 5MB to prevent storage bloat
+// ✅ PRODUCTION: Hard limit offline database to 5MB
 export const db = initializeFirestore(app, {
   localCache: persistentLocalCache({ cacheSizeBytes: 5242880 })
 });
 
 export const auth = getAuth(app);
-export const messaging = getMessaging(app);
 
-// 🚀 1. ENFORCE INDEFINITE SESSION PERSISTENCE
+// 🛡️ SAFE START: Only turn on messaging if the browser/app allows it
+export let messaging = null;
+
+isSupported().then((supported) => {
+  if (supported) {
+    messaging = getMessaging(app);
+    console.log("[App] Web Push is supported! Messaging initialized.");
+    
+    onMessage(messaging, (payload) => {
+      console.log('[App] Foreground Push Received:', payload);
+      toast('🔔', payload.notification?.title || "New Offer Nearby!", 5000);
+    });
+  } else {
+    console.log("[App] Running inside Android App - Skipping Web Push!");
+  }
+}).catch(e => console.error('[App] Messaging check failed:', e));
+
+// 🚀 ENFORCE INDEFINITE SESSION PERSISTENCE
 setPersistence(auth, browserLocalPersistence)
   .then(() => {
-    // Silently keep our Local Storage vault perfectly synced with Firebase
     onAuthStateChanged(auth, (user) => {
       if (user) {
         SS('uid', user.uid); 
       }
     });
   })
-  .catch(console.error);
+  .catch(e => console.error('[App] Persistence setup failed:', e));
 
-// ── localStorage helpers ─────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
+// ENHANCED LOCALSTORAGE HELPERS WITH ERROR HANDLING
+// ═══════════════════════════════════════════════════════════════
 export const LS = k => {
-  try { return JSON.parse(localStorage.getItem('np_' + k)); }
-  catch { return null; }
-};
-export const SS = (k, v) => {
-  try { localStorage.setItem('np_' + k, JSON.stringify(v)); }
-  catch {}
+  try { 
+    const val = localStorage.getItem('np_' + k);
+    return val ? JSON.parse(val) : null;
+  }
+  catch (e) {
+    console.warn(`[LS] Failed to get ${k}:`, e);
+    return null;
+  }
 };
 
-// 🚀 2. MULTILINGUAL SUPPORT (Hindi / English)
+export const SS = (k, v) => {
+  try { 
+    localStorage.setItem('np_' + k, JSON.stringify(v));
+    return true;
+  }
+  catch (e) {
+    console.warn(`[LS] Failed to set ${k}:`, e);
+    return false;
+  }
+};
+
+export const DS = k => {
+  try {
+    localStorage.removeItem('np_' + k);
+    return true;
+  }
+  catch (e) {
+    console.warn(`[LS] Failed to delete ${k}:`, e);
+    return false;
+  }
+};
+
+// ═══════════════════════════════════════════════════════════════
+// MULTILINGUAL SUPPORT (Hindi / English)
+// ═══════════════════════════════════════════════════════════════
 const DICTIONARY = {
   en: {
     rad: "📡 Radius:", any: "Anywhere", all: "All",
@@ -171,40 +122,87 @@ export const TE = t => ({ deal:'🏷️',    rental:'🏠',       pg:'🛋️', 
 export const TYPE_LABELS = { deal:'Deal', rental:'Flat / Room', pg:'PG / Hostel', job:'Job' };
 export const CTAS        = { deal:'🛍️ Get Offer', rental:'📅 Schedule Visit', pg:'📅 Visit PG', job:'📝 Apply Now' };
 
-// ── Haversine distance (metres) ──────────────────────────
+// ═══════════════════════════════════════════════════════════════
+// HAVERSINE DISTANCE CALCULATION
+// ═══════════════════════════════════════════════════════════════
 export function distM(lat1, lng1, lat2, lng2) {
-  const R = 6371000;
-  const dLa = (lat2 - lat1) * Math.PI / 180;
-  const dLo = (lng2 - lng1) * Math.PI / 180;
-  const a = Math.sin(dLa/2)**2 +
-            Math.cos(lat1 * Math.PI/180) * Math.cos(lat2 * Math.PI/180) *
-            Math.sin(dLo/2)**2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  try {
+    const R = 6371000;
+    const dLa = (lat2 - lat1) * Math.PI / 180;
+    const dLo = (lng2 - lng1) * Math.PI / 180;
+    const a = Math.sin(dLa/2)**2 +
+              Math.cos(lat1 * Math.PI/180) * Math.cos(lat2 * Math.PI/180) *
+              Math.sin(dLo/2)**2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  } catch (e) {
+    console.error('[distM] Calculation failed:', e);
+    return 0;
+  }
 }
 
 export function fmtDist(l) {
-  const loc = LS('lastLoc');
-  if (!loc || !l.lat) return '—';
-  const d = distM(loc.lat, loc.lng, l.lat, l.lng);
-  return d < 1000 ? Math.round(d) + 'm' : (d / 1000).toFixed(1) + 'km';
+  try {
+    const loc = LS('lastLoc');
+    if (!loc || !l.lat) return '—';
+    const d = distM(loc.lat, loc.lng, l.lat, l.lng);
+    return d < 1000 ? Math.round(d) + 'm' : (d / 1000).toFixed(1) + 'km';
+  } catch (e) {
+    return '—';
+  }
 }
 
 export function isExpired(l) {
-  if (!l.expiryDate) return false;
-  return new Date(l.expiryDate) < new Date();
+  try {
+    if (!l.expiryDate) return false;
+    return new Date(l.expiryDate) < new Date();
+  } catch (e) {
+    return false;
+  }
 }
 
+// ═══════════════════════════════════════════════════════════════
+// ENHANCED TOAST WITH QUEUE SUPPORT
+// ═══════════════════════════════════════════════════════════════
+let toastQueue = [];
+let isShowingToast = false;
+
 export function toast(icon, text, durationMs = 3500) {
-  clearTimeout(window._toastTimer);
+  toastQueue.push({ icon, text, durationMs });
+  
+  if (!isShowingToast) {
+    showNextToast();
+  }
+}
+
+function showNextToast() {
+  if (toastQueue.length === 0) {
+    isShowingToast = false;
+    return;
+  }
+  
+  isShowingToast = true;
+  const { icon, text, durationMs } = toastQueue.shift();
+  
   const el = document.getElementById('toast');
-  if (!el) return;
+  if (!el) {
+    isShowingToast = false;
+    return;
+  }
+  
   document.getElementById('t-ic').textContent = icon;
   document.getElementById('t-tx').textContent = text;
   el.classList.remove('on');
   requestAnimationFrame(() => el.classList.add('on'));
-  window._toastTimer = setTimeout(() => el.classList.remove('on'), durationMs);
+  
+  setTimeout(() => {
+    el.classList.remove('on');
+    setTimeout(() => showNextToast(), 300);
+  }, durationMs);
 }
 
+// ═══════════════════════════════════════════════════════════════
+// AUTH HELPERS
+// ═══════════════════════════════════════════════════════════════
 export function requireAuth(role = null) {
   const uid  = LS('uid');
   const r    = LS('role');
@@ -213,30 +211,90 @@ export function requireAuth(role = null) {
   return true;
 }
 
-// ── Listing cache ────────────────────────────────────────
-export const CACHE_KEY = 'np_listings_cache';
-export const CACHE_TTL = 5 * 60 * 1000;
+// ═══════════════════════════════════════════════════════════════
+// ENHANCED CACHE WITH VERSIONING
+// ═══════════════════════════════════════════════════════════════
+const CACHE_VERSION = '2';
+export const CACHE_KEY = 'np_listings_cache_v' + CACHE_VERSION;
+export const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
 export function cacheGet() {
   try {
     const raw = localStorage.getItem(CACHE_KEY);
     if (!raw) return null;
-    const { ts, data } = JSON.parse(raw);
+    const { ts, data, version } = JSON.parse(raw);
+    
+    // Check version mismatch
+    if (version !== CACHE_VERSION) {
+      cacheClear();
+      return null;
+    }
+    
     if (Date.now() - ts > CACHE_TTL) return null;
     return data;
-  } catch { return null; }
+  } catch (e) {
+    console.warn('[Cache] Get failed:', e);
+    return null;
+  }
 }
 
 export function cacheSet(data) {
-  try { localStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), data })); } catch {}
+  try { 
+    localStorage.setItem(CACHE_KEY, JSON.stringify({ 
+      ts: Date.now(), 
+      data,
+      version: CACHE_VERSION
+    })); 
+  } catch (e) {
+    console.warn('[Cache] Set failed:', e);
+  }
 }
 
-export function cacheClear() { localStorage.removeItem(CACHE_KEY); }
+export function cacheClear() { 
+  try {
+    localStorage.removeItem(CACHE_KEY);
+  } catch (e) {}
+}
 
+// ═══════════════════════════════════════════════════════════════
+// ENHANCED FIRESTORE OPERATIONS WITH RETRY
+// ═══════════════════════════════════════════════════════════════
+export async function retryOperation(operation, maxRetries = 3, delayMs = 1000) {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await operation();
+    } catch (error) {
+      console.warn(`[Retry] Attempt ${attempt}/${maxRetries} failed:`, error);
+      
+      if (attempt === maxRetries) {
+        throw error;
+      }
+      
+      // Exponential backoff
+      await new Promise(resolve => setTimeout(resolve, delayMs * attempt));
+    }
+  }
+}
+
+export async function safeUpdateDoc(docRef, updates) {
+  return retryOperation(() => updateDoc(docRef, updates));
+}
+
+export async function safeSetDoc(docRef, data, options) {
+  return retryOperation(() => setDoc(docRef, data, options));
+}
+
+export async function safeGetDoc(docRef) {
+  return retryOperation(() => getDoc(docRef));
+}
+
+// ═══════════════════════════════════════════════════════════════
+// NAVIGATION & ROUTING
+// ═══════════════════════════════════════════════════════════════
 export const go = href => { location.href = href; };
 window.go = go; 
 
-// Auto-Sync Engine attached to the global Point adder
+// ✅ PRODUCTION: Enhanced points system with sync
 export function addPts(n) { 
   const currentPts = parseInt(LS('points')) || 0;
   const newPts = currentPts + parseInt(n);
@@ -245,7 +303,8 @@ export function addPts(n) {
   
   const uid = LS('uid');
   if (uid) {
-    updateDoc(doc(db, 'users', uid), { points: newPts }).catch(e => console.warn("Point sync skipped", e));
+    safeUpdateDoc(doc(db, 'users', uid), { points: newPts })
+      .catch(e => console.warn("[Points] Sync skipped:", e));
   }
 }
 
@@ -255,6 +314,8 @@ export async function loadNavigation() {
 
   try {
     const response = await fetch('nav.html');
+    if (!response.ok) throw new Error('Nav fetch failed');
+    
     const html = await response.text();
     placeholder.innerHTML = html;
 
@@ -271,10 +332,14 @@ export async function loadNavigation() {
     } else if (path.includes('profile.html')) {
       document.getElementById('nav-profile')?.classList.add('on');
     }
-  } catch (error) { console.error("Failed to load navigation:", error); }
+  } catch (error) { 
+    console.error("[Nav] Failed to load:", error); 
+  }
 }
 
-// 🚀 GLOBAL ANALYTICS INJECTOR
+// ═══════════════════════════════════════════════════════════════
+// ANALYTICS
+// ═══════════════════════════════════════════════════════════════
 const GA_MEASUREMENT_ID = 'G-71Y2Y75FLQ'; 
 
 function initAnalytics() {
@@ -297,10 +362,9 @@ function initAnalytics() {
 
 initAnalytics();
 
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// 🔔 SMART PUSH NOTIFICATION PROMPT & FCM TOKEN MANAGER
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
+// ═══════════════════════════════════════════════════════════════
+// PUSH NOTIFICATION HANDLING
+// ═══════════════════════════════════════════════════════════════
 export async function requestPushPermissions(uid) {
   if (!('Notification' in window)) return;
   
@@ -339,7 +403,6 @@ export async function requestPushPermissions(uid) {
     
     const permission = await Notification.requestPermission();
     if (permission === 'granted') {
-      // 🚀 PROCESS MADE SILENT: Removed the success toast here
       fetchAndSaveToken(uid);
     } else {
       toast('⚠️', 'Alerts blocked. You can enable them in your browser settings later.');
@@ -353,28 +416,23 @@ export async function requestPushPermissions(uid) {
 }
 
 async function fetchAndSaveToken(uid) {
+  if (!messaging) return;
+  
   try {
     const vapidKey = "BJWz7jdnCy1hb-E8M-7-Q2wanQdNY46Rw7T9I8g_EPr02m-AYAxhGCM7QBm7DpL0WgE-nSnud5mqBK6MWd4w6T0"; 
     const currentToken = await getToken(messaging, { vapidKey });
     
     if (currentToken) {
-      await updateDoc(doc(db, 'users', uid), {
+      await safeUpdateDoc(doc(db, 'users', uid), {
         fcmToken: currentToken,
         tokenUpdatedAt: Date.now()
       });
-      console.log("FCM Token secured and saved to database.");
+      console.log("[FCM] Token secured and saved.");
     }
   } catch (error) {
-    console.warn("Failed to get FCM token:", error);
+    console.warn("[FCM] Failed to get token:", error);
   }
 }
-
-try {
-  onMessage(messaging, (payload) => {
-    console.log('Foreground Push Received:', payload);
-    toast('🔔', payload.notification?.title || "New Offer Nearby!", 5000);
-  });
-} catch(e) { console.warn("Messaging not supported."); }
 
 export async function triggerLocalBuzz(title, body, url) {
   if (!('Notification' in window) || Notification.permission !== 'granted') return;
@@ -391,12 +449,12 @@ export async function triggerLocalBuzz(title, body, url) {
         requireInteraction: true
       });
     }
-  } catch (e) { console.error('Local Buzz failed:', e); }
+  } catch (e) { console.error('[Buzz] Failed:', e); }
 }
 
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// 🚀 SEAMLESS AUTO-UPDATE ENGINE
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ═══════════════════════════════════════════════════════════════
+// SERVICE WORKER AUTO-UPDATE
+// ═══════════════════════════════════════════════════════════════
 let newWorker;
 
 if ('serviceWorker' in navigator) {
@@ -441,8 +499,13 @@ function showUpdatePopup() {
   document.body.appendChild(ui);
 }
 
+// ═══════════════════════════════════════════════════════════════
+// PWA INSTALL PROMPT
+// ═══════════════════════════════════════════════════════════════
 window.deferredPWA = null;
 window.addEventListener('beforeinstallprompt', (e) => {
   e.preventDefault(); 
   window.deferredPWA = e; 
 });
+
+console.log('[App] NearPop Foundation v2.0 loaded');

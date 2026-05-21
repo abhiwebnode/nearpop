@@ -88,6 +88,46 @@
   animation: shimmer 1.5s infinite linear;
   border-radius: 8px;
 }
+
+/* ✨ Hero Loading Placeholder */
+.hero-loading {
+  position: absolute;
+  inset: 0;
+  background: #f9fafb;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 20;
+  transition: opacity 0.4s ease, visibility 0.4s ease;
+}
+
+.hero-loading.hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.hero-loading-icon {
+  width: 140px;
+  height: 140px;
+  object-fit: contain;
+  opacity: 1;
+  filter: drop-shadow(0 0 18px rgba(255, 87, 34, 0.28));
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 0.7;
+    transform: scale(0.95);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+}
 @keyframes shimmer { 
   0% { background-position: 200% 0; } 
   100% { background-position: -200% 0; } 
@@ -114,9 +154,14 @@
     <div class="hero-ov"></div>
     <span id="d-em" style="position:relative;z-index:1">🏠</span>
     <button class="hero-back" onclick="window.location.href='map.html'" aria-label="Go home">🏠</button>
-    <button class="hero-share" id="d-share" onclick="shareListing()" aria-label="Share listing">📤</button>
+    <button class="hero-share" id="d-share" onclick="shareListing()" aria-label="Share listing">🔗</button>
     <button class="hero-like" id="d-like" onclick="toggleLike()" aria-label="Save listing">🤍</button>
     <div class="hero-badge" id="d-badge">RENTAL</div>
+    
+    <!-- ✨ Loading Placeholder -->
+    <div class="hero-loading" id="hero-loading">
+      <img src="/icons/icon-512.png" alt="Loading..." class="hero-loading-icon">
+    </div>
   </div>
 
   <div class="dbody" id="dbody">
@@ -155,8 +200,9 @@
 </div>
 
 <script type="module">
-// 🚀 ALL imports natively restored
+// ✅ FIXED: Added sanitizer import
 import { db, LS, SS, TC, TE, distM, fmtDist, isExpired, toast, addPts } from './js/app.js';
+import { sanitizer } from './js/sanitizer.js';
 import { trackEng } from './js/notifications.js';
 import { syncField } from './js/userSync.js';
 import { getDocs, query, collection, orderBy, doc, getDoc, updateDoc, increment } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
@@ -195,16 +241,62 @@ async function load() {
 
 function render(l) {
   const imgUrl = l.imageUrl || l.image;
+  const heroLoading = document.getElementById('hero-loading');
+  
+  // ✅ SECURE: Sanitize image URL before using
   if (imgUrl) {
-    document.getElementById('hero').style.background = `#ffffff url('${imgUrl}') center/contain no-repeat`;
-    document.getElementById('d-em').style.display = 'none'; 
+    const safeImgUrl = sanitizer.sanitizeUrl(imgUrl);
+    if (safeImgUrl) {
+      // Show loading placeholder
+      heroLoading.classList.remove('hidden');
+      
+      // Preload image
+      const img = new Image();
+      img.onload = () => {
+        // Image loaded successfully
+        document.getElementById('hero').style.background = `#f9fafb url('${safeImgUrl}') center/contain no-repeat`;
+        document.getElementById('d-em').style.display = 'none';
+        
+        // Hide loading placeholder with smooth transition
+        setTimeout(() => {
+          heroLoading.classList.add('hidden');
+        }, 100);
+      };
+      
+      img.onerror = () => {
+        // Image failed to load - use gradient fallback
+        document.getElementById('hero').style.background = l.bg || 'linear-gradient(135deg,#667eea,#764ba2)';
+        document.getElementById('d-em').textContent = sanitizer.sanitizeText(l.emoji || TE(l.type), { maxLength: 10 });
+        document.getElementById('d-em').style.display = 'inline';
+        heroLoading.classList.add('hidden');
+      };
+      
+      // Start loading
+      img.src = safeImgUrl;
+      
+      // Timeout fallback (if image takes too long)
+      setTimeout(() => {
+        if (!heroLoading.classList.contains('hidden')) {
+          heroLoading.classList.add('hidden');
+        }
+      }, 3000); // 3 second timeout
+      
+    } else {
+      // URL rejected by sanitizer - use gradient fallback
+      document.getElementById('hero').style.background = l.bg || 'linear-gradient(135deg,#667eea,#764ba2)';
+      document.getElementById('d-em').textContent = sanitizer.sanitizeText(l.emoji || TE(l.type), { maxLength: 10 });
+      document.getElementById('d-em').style.display = 'inline';
+      heroLoading.classList.add('hidden');
+    }
   } else {
+    // No image - use gradient/emoji
     document.getElementById('hero').style.background = l.bg || 'linear-gradient(135deg,#667eea,#764ba2)';
-    document.getElementById('d-em').textContent = l.emoji || TE(l.type);
+    document.getElementById('d-em').textContent = sanitizer.sanitizeText(l.emoji || TE(l.type), { maxLength: 10 });
     document.getElementById('d-em').style.display = 'inline';
+    heroLoading.classList.add('hidden');
   }
 
-  document.getElementById('d-badge').textContent = (l.type || '').toUpperCase();
+  document.getElementById('d-badge').textContent = sanitizer.sanitizeText((l.type || '').toUpperCase(), { maxLength: 20 });
   document.getElementById('d-badge').style.background = l.color || TC(l.type);
 
   const liked = new Set(LS('liked') || []);
@@ -217,10 +309,13 @@ function render(l) {
     distTxt = d < 1000 ? Math.round(d) + 'm' : (d / 1000).toFixed(1) + 'km';
   }
 
+  // ✅ SECURE: Sanitize amenities
   const amens = (l.amenities || []).map(a => {
     const ic = typeof a === 'object' ? a.ic : a[0];
     const lb = typeof a === 'object' ? a.lb : a[1];
-    return `<div class="ait"><span class="ai">${ic}</span><span class="at">${lb}</span></div>`;
+    const safeIc = sanitizer.sanitizeText(ic || '⭐', { maxLength: 10 });
+    const safeLb = sanitizer.sanitizeText(lb || '', { maxLength: 50 });
+    return `<div class="ait"><span class="ai">${safeIc}</span><span class="at">${safeLb}</span></div>`;
   }).join('');
 
   // 🚀 FOMO Expiry Logic Maintained
@@ -244,11 +339,21 @@ function render(l) {
     }
   }
 
+  // ✅ SECURE: Sanitize all text data
+  const safeTitle = sanitizer.sanitizeText(l.title || '', { maxLength: 200 });
+  const safePrice = sanitizer.sanitizeText(l.price || '', { maxLength: 50 });
+  const safePriceLabel = sanitizer.sanitizeText(l.priceLabel || '', { maxLength: 50 });
+  const safeDesc = sanitizer.sanitizeText(l.desc || '', { maxLength: 1000 });
+  const safeOwner = sanitizer.sanitizeText(l.owner || '', { maxLength: 100 });
+  const safeOwnerTag = sanitizer.sanitizeText(l.ownerTag || '', { maxLength: 100 });
+  const safeOwnerEmoji = sanitizer.sanitizeText(l.ownerEmoji || '🏪', { maxLength: 10 });
+  const safeType = sanitizer.sanitizeText((l.type || '').toUpperCase(), { maxLength: 20 });
+
   document.getElementById('dbody').innerHTML = `
     ${expiryHTML}
-    <div class="dtype" style="color:${l.color || TC(l.type)}">${(l.type || '').toUpperCase()}</div>
-    <div class="dtitle">${l.title || ''}</div>
-    <div class="dprice">${l.price || ''} <span>${l.priceLabel || ''}</span></div>
+    <div class="dtype" style="color:${l.color || TC(l.type)}">${safeType}</div>
+    <div class="dtitle">${safeTitle}</div>
+    <div class="dprice">${safePrice} <span>${safePriceLabel}</span></div>
     
     <div class="ddist" style="cursor:pointer;" onclick="openGoogleMaps(${l.lat}, ${l.lng})">
       📍 ${distTxt} from you <span style="color:var(--blue); margin-left:3px">↗</span>
@@ -256,13 +361,13 @@ function render(l) {
 
     ${amens ? `<div class="agrid">${amens}</div>` : ''}
     <div class="sec">About this listing</div>
-    <div class="desc">${l.desc || ''}</div>
+    <div class="desc">${safeDesc}</div>
     <div class="sec">Posted by</div>
     <div class="ocard">
-      <div class="oav">${l.ownerEmoji || '🏪'}</div>
+      <div class="oav">${safeOwnerEmoji}</div>
       <div>
-        <div class="oname">${l.owner || ''}</div>
-        <div class="otag">${l.ownerTag || ''}</div>
+        <div class="oname">${safeOwner}</div>
+        <div class="otag">${safeOwnerTag}</div>
         ${l.verified !== false ? '<div class="ovrf">✅ Verified on NearPop</div>' : ''}
       </div>
     </div>
@@ -271,7 +376,7 @@ function render(l) {
   document.getElementById('d-cta').textContent = CTAS[l.type] || '📅 Contact';
   document.getElementById('dfooter').style.display = 'flex';
 
-  document.title = l.title || 'NearPop';
+  document.title = safeTitle || 'NearPop';
 
   injectFootfallBanner();
 }
@@ -329,13 +434,19 @@ window.openContact = () => {
   
   updateDoc(doc(db, 'listings', id), { visits: increment(1) }).catch(e => console.warn(e));
   
-  document.getElementById('contact-body').innerHTML = `<strong style="color:var(--deep)">${listing.owner || ''}</strong><br><span style="color:var(--gray)">${listing.ownerTag || ''}</span><br><br>📞 <strong style="color:var(--deep)">${listing.contact || 'Contact via NearPop'}</strong>`;
+  // ✅ SECURE: Sanitize contact info
+  const safeOwner = sanitizer.sanitizeText(listing.owner || '', { maxLength: 100 });
+  const safeOwnerTag = sanitizer.sanitizeText(listing.ownerTag || '', { maxLength: 100 });
+  const safeContact = sanitizer.sanitizeText(listing.contact || 'Contact via NearPop', { maxLength: 20 });
+  
+  document.getElementById('contact-body').innerHTML = `<strong style="color:var(--deep)">${safeOwner}</strong><br><span style="color:var(--gray)">${safeOwnerTag}</span><br><br>📞 <strong style="color:var(--deep)">${safeContact}</strong>`;
   document.getElementById('btn-call').onclick = () => { if (listing.contact) window.open('tel:' + listing.contact); trackEng(id, 5); };
   
-  // 🚀 NEW: Dynamic WhatsApp Pre-filled Message
+  // 🚀 NEW: Dynamic WhatsApp Pre-filled Message (with sanitized title)
   document.getElementById('btn-wa').onclick = () => { 
     if (listing.contact) {
-      const message = encodeURIComponent(`Hi! I saw your offer for '${listing.title || 'your shop'}' on NearPop. Is this still available?`);
+      const safeTitle = sanitizer.sanitizeText(listing.title || 'your shop', { maxLength: 100 });
+      const message = encodeURIComponent(`Hi! I saw your offer for '${safeTitle}' on NearPop. Is this still available?`);
       window.open('https://wa.me/' + listing.contact.replace(/\D/g, '') + '?text=' + message); 
     }
     trackEng(id, 15); 
@@ -389,7 +500,9 @@ function startFootfallTracking() {
 function confirmFootfall() {
   const ffBanner = document.getElementById('ff-banner');
   if (ffBanner) {
-    ffBanner.innerHTML = `<div class="ff-title">✅ Visit Confirmed!</div><div class="ff-sub">You've been verified at ${listing.owner || 'this location'}. Reward points added!</div><button class="ff-btn" onclick="claimVisitReward()">🎁 Claim +50 Points</button>`;
+    // ✅ SECURE: Sanitize merchant name
+    const safeOwner = sanitizer.sanitizeText(listing.owner || 'this location', { maxLength: 100 });
+    ffBanner.innerHTML = `<div class="ff-title">✅ Visit Confirmed!</div><div class="ff-sub">You've been verified at ${safeOwner}. Reward points added!</div><button class="ff-btn" onclick="claimVisitReward()">🎁 Claim +50 Points</button>`;
   }
   addPts(50);
   syncField(LS('uid'), 'points', LS('points') || 0);

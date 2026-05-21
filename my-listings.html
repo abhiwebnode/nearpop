@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="NearPop — My Listings">
+<meta name="theme-color" content="#FF5722">
+<meta name="color-scheme" content="light dark"> 
+<meta name="mobile-web-app-capable" content="yes">
+<title>NearPop — My Listings</title>
+<link rel="manifest" href="manifest.json">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800;900&family=Syne:wght@700;800&display=swap">
+<link rel="stylesheet" href="css/shared.css">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+#wrap{display:flex;flex-direction:column;height:100vh;height:100dvh;background:var(--bg-body)}
+
+.page-header{background:#FF5722;padding:16px;color:#fff;flex-shrink:0;box-shadow:0 2px 12px rgba(255,87,34,.3);display:flex;align-items:center;gap:12px}
+.back-btn{width:40px;height:40px;border-radius:12px;background:rgba(255,255,255,.2);color:#fff;border:none;display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer}
+.page-title{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;flex:1}
+
+.page-body{flex:1;overflow-y:auto;padding:16px 16px 90px}
+
+.section{margin-bottom:24px}
+.section-title{font-size:16px;font-weight:800;color:var(--deep);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+
+.mcd{background:var(--card);border-radius:16px;padding:14px;margin-bottom:12px;border:1px solid var(--bdr);box-shadow:0 4px 12px rgba(0,0,0,.04)}
+.mcd-ic{width:42px;height:42px;border-radius:12px;background:var(--bg-body);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.mcd-t{font-size:14px;font-weight:800;color:var(--deep);margin-bottom:4px;line-height:1.2}
+.mcd-m{font-size:11px;color:var(--gray);font-weight:600}
+.mcd-s{text-align:right}
+.mcd-p{font-size:16px;font-weight:900;color:var(--or)}
+.mcd-pl{font-size:10px;font-weight:700;color:var(--gray)}
+
+.badge{padding:2px 6px;border-radius:4px;font-size:9px;font-weight:800;margin-left:4px;vertical-align:middle}
+.badge.live{background:rgba(16, 185, 129, 0.1);color:var(--grn)}
+.badge.pause{background:var(--light);color:var(--gray)}
+.badge.smart{background:rgba(59, 130, 246, 0.1);color:var(--blue);border:1px solid rgba(59, 130, 246, 0.2);}
+
+.mcd-acts{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;border-top:1px solid var(--bdr);padding-top:12px;margin-top:12px}
+.act-btn{padding:8px;border-radius:8px;font-size:11px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;transition:transform 0.2s;border:none;font-family:inherit}
+.act-btn:active{transform:scale(0.95)}
+.act-edit{background:rgba(59, 130, 246, 0.1);color:var(--blue);border:1px solid rgba(59, 130, 246, 0.2)}
+.act-pause{background:var(--bg-body);color:var(--deep);border:1px solid var(--bdr)}
+.act-del{background:rgba(239, 68, 68, 0.1);color:#EF4444;border:1px solid rgba(239, 68, 68, 0.2)}
+.act-btn-full{grid-column:1 / -1;background:linear-gradient(135deg, #25D366, #128C7E);color:#fff;border:none;padding:12px;border-radius:10px;font-size:13px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 12px rgba(37, 211, 102, 0.25);font-family:inherit;transition:transform 0.2s}
+.act-btn-full:active{transform:scale(0.97)}
+
+.edit-lbl{font-size:11px;font-weight:800;color:var(--gray);margin-bottom:4px;display:block;text-transform:uppercase;letter-spacing:0.5px}
+.edit-grp{margin-bottom:12px}
+.a-inp{width:100%;padding:12px;border-radius:10px;border:2px solid var(--bdr);background:var(--bg-body);font-size:13px;font-weight:700;color:var(--deep);font-family:inherit}
+.a-inp:focus{border-color:var(--or);outline:none}
+.a-inp-row{display:flex;gap:8px}
+
+.hmap-box{background:var(--card);border-radius:16px;padding:16px;margin-bottom:20px;border:1px solid var(--bdr);box-shadow:0 4px 12px rgba(0,0,0,.04)}
+.hmap-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+.hmap-title{font-size:15px;font-weight:800;color:var(--deep)}
+
+.funnel{display:flex;flex-direction:column;gap:12px;margin-bottom:16px}
+.f-row{display:flex;align-items:center;gap:12px}
+.f-lbl{width:70px;font-size:11px;font-weight:800;color:var(--gray);text-align:right;flex-shrink:0}
+.f-bar-wrap{flex:1;height:24px;background:var(--light);border-radius:12px;position:relative;overflow:hidden}
+.f-bar{height:100%;border-radius:12px;transition:width 1s cubic-bezier(0.34, 1.56, 0.64, 1);display:flex;align-items:center;padding-left:10px;font-size:11px;font-weight:800;color:#fff}
+.f-val{font-size:14px;font-weight:900;color:var(--deep);width:40px;text-align:right}
+
+.roi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;background:var(--bg-body);padding:12px;border-radius:12px;margin-bottom:16px}
+.roi-box{text-align:center}
+.roi-v{font-size:15px;font-weight:900;color:var(--deep);margin-bottom:2px}
+.roi-l{font-size:9px;font-weight:700;color:var(--gray);text-transform:uppercase}
+
+.insight{background:rgba(16, 185, 129, 0.1);border:1px solid rgba(16, 185, 129, 0.3);border-radius:12px;padding:12px;display:flex;gap:10px;align-items:flex-start}
+.insight-ic{font-size:18px}
+.insight-txt{font-size:12px;color:var(--grn);font-weight:600;line-height:1.4}
+
+.la-list{margin-top:16px;max-height:220px;overflow-y:auto;padding-right:4px}
+.la-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--bdr)}
+.la-row:last-child{border-bottom:none;padding-bottom:0}
+.la-name{font-size:12px;font-weight:800;color:var(--deep)}
+.la-stats{display:flex;gap:16px}
+.la-stat{text-align:right}
+.la-sv{font-size:13px;font-weight:900}
+.la-sl{font-size:9px;color:var(--gray);font-weight:600}
+
+.empty-state{text-align:center;padding:50px 20px;background:var(--card);border-radius:24px;border:2px dashed var(--bdr);box-shadow:0 10px 30px rgba(0,0,0,0.05)}
+.empty-state h3{color:var(--deep);font-size:18px;font-weight:900;margin-bottom:8px;font-family:'Syne', sans-serif}
+.empty-state p{color:var(--gray);font-size:13px;font-weight:600;line-height:1.5;margin-bottom:24px}
+
+.fab-create{position:fixed;bottom:24px;right:24px;height:56px;padding:0 24px 0 16px;background:linear-gradient(135deg, #FF5722, #D97706);color:#fff;border-radius:28px;display:flex;align-items:center;justify-content:center;gap:8px;font-size:15px;font-weight:800;box-shadow:0 8px 24px rgba(255, 87, 34, 0.4);cursor:pointer;z-index:900;border:none;transition:transform 0.2s;font-family:'Nunito', sans-serif;text-decoration:none}
+.fab-create:active{transform:scale(0.95)}
+.fab-icon{font-size:26px;font-weight:300;line-height:1;margin-top:-2px}
+</style>
+</head>
+<body>
+<div id="app-shell"><div id="wrap">
+  <div class="page-header">
+    <button class="back-btn" onclick="window.location.href='merchant.html'">←</button>
+    <div class="page-title">📋 My Listings</div>
+  </div>
+
+  <div class="page-body">
+    <div class="section" id="analytics">
+      <div class="section-title">📈 Analytics Dashboard</div>
+      <div class="hmap-box">
+        <div class="hmap-hdr">
+          <div class="hmap-title">Customer Journey</div>
+        </div>
+        
+        <div class="funnel">
+          <div class="f-row">
+            <div class="f-lbl">Discovered</div>
+            <div class="f-bar-wrap"><div class="f-bar" id="fb-disc" style="width:0%;background:#94A3B8"></div></div>
+            <div class="f-val" id="fv-disc">0</div>
+          </div>
+          <div class="f-row">
+            <div class="f-lbl">Interested</div>
+            <div class="f-bar-wrap"><div class="f-bar" id="fb-int" style="width:0%;background:var(--or)"></div></div>
+            <div class="f-val" id="fv-int">0</div>
+          </div>
+          <div class="f-row">
+            <div class="f-lbl">Engaged</div>
+            <div class="f-bar-wrap"><div class="f-bar" id="fb-eng" style="width:0%;background:var(--blue)"></div></div>
+            <div class="f-val" id="fv-eng">0</div>
+          </div>
+          <div class="f-row">
+            <div class="f-lbl">Visited</div>
+            <div class="f-bar-wrap"><div class="f-bar" id="fb-vis" style="width:0%;background:var(--grn)"></div></div>
+            <div class="f-val" id="fv-vis">0</div>
+          </div>
+        </div>
+        
+        <div class="roi-grid">
+          <div class="roi-box"><div class="roi-v" id="rr-ctr">0%</div><div class="roi-l">Interest Rate</div></div>
+          <div class="roi-box"><div class="roi-v" id="rr-conv">0%</div><div class="roi-l">Visit Rate</div></div>
+          <div class="roi-box"><div class="roi-v" id="rr-spend">0 🪙</div><div class="roi-l">Est. Spend</div></div>
+        </div>
+        
+        <div class="insight" id="insight-box">
+          <div class="insight-ic">💡</div>
+          <div class="insight-txt" id="insight-txt">Gathering data...</div>
+        </div>
+        
+        <div style="margin-top:20px;font-size:13px;font-weight:800;color:var(--deep);border-bottom:1px solid var(--bdr);padding-bottom:8px">Listing Breakdown</div>
+        <div class="la-list" id="listing-analytics"></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">
+        <span>🏷️ Active Listings</span>
+        <span style="margin-left:auto;font-size:13px;color:var(--or);cursor:pointer;" onclick="window.checkPremium()">+ Create New</span>
+      </div>
+      <div id="mcards"></div>
+    </div>
+  </div>
+</div>
+
+<a href="create.html" class="fab-create" title="Create New Listing">
+  <span class="fab-icon">＋</span> Create Listing
+</a>
+
+<div class="modal" id="mod-edit" onclick="if(event.target===this)this.classList.remove('on')">
+  <div class="msht" style="max-height: 85vh; overflow-y: auto;">
+    <div class="mh"></div>
+    <div class="mt">✏️ Edit Listing</div>
+    <input type="hidden" id="edit-id">
+    <div class="edit-grp"><label class="edit-lbl">Title</label><input type="text" id="edit-title" class="a-inp"></div>
+    <div class="edit-grp"><label class="edit-lbl">Description</label><textarea id="edit-desc" class="a-inp" style="height: 80px; resize: none;"></textarea></div>
+    
+    <div class="edit-grp">
+      <label class="edit-lbl">Update Shop/Deal Image</label>
+      <div class="a-inp" style="text-align: center; cursor: pointer; color: var(--or); display: flex; align-items: center; justify-content: center; gap: 8px;" onclick="window.openPhotoChoice('edit')">
+        <span style="font-size:18px;">📷</span> Tap to change photo
+      </div>
+      <div id="edit-img-status" style="font-size:11px; color:var(--or); margin-top:4px; font-weight:800; text-align:center;"></div>
+    </div>
+
+    <div class="a-inp-row">
+      <div class="edit-grp" style="flex:1"><label class="edit-lbl">Price/Text</label><input type="text" id="edit-price" class="a-inp"></div>
+      <div class="edit-grp" style="flex:1"><label class="edit-lbl">Daily Budget</label><input type="number" id="edit-budget" class="a-inp" min="25" step="25"></div>
+    </div>
+    
+    <div class="edit-grp">
+      <label class="edit-lbl" style="display:flex; justify-content:space-between;">
+        <span>Max Alerts Per Hour</span>
+        <span style="color:var(--blue);">🛡️ Smart Pacing</span>
+      </label>
+      <select id="edit-hourly" class="a-inp" style="background: rgba(59, 130, 246, 0.05); border-color: rgba(59, 130, 246, 0.3);">
+        <option value="999">No limit (Burn budget instantly)</option>
+        <option value="50">50 Alerts / Hour (Recommended)</option>
+        <option value="25">25 Alerts / Hour (Slow Pacing)</option>
+        <option value="10">10 Alerts / Hour (Conservative)</option>
+      </select>
+      <p style="font-size: 10px; color: var(--gray); margin-top: 4px; line-height: 1.4;">Spread your budget throughout the day.</p>
+    </div>
+
+    <div class="edit-grp"><label class="edit-lbl">Reach Radius</label>
+      <select id="edit-radius" class="a-inp"><option value="300">300m (Hyperlocal)</option><option value="500">500m (Standard)</option><option value="1500">1.5km (Neighborhood)</option><option value="5000">5km (City Area)</option></select>
+    </div>
+    <div style="display: flex; gap: 10px; margin-top: 16px;">
+      <button class="btn-lt" style="flex:1" onclick="document.getElementById('mod-edit').classList.remove('on')">Cancel</button>
+      <button class="btn-or" style="flex:1" onclick="window.saveEdit()">💾 Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="mod-photo-choice" onclick="if(event.target===this)this.classList.remove('on')">
+  <div class="msht" style="padding-bottom: 30px;">
+    <div class="mh"></div>
+    <div style="text-align: center; margin-bottom: 10px; font-weight: 800; font-size: 16px; color: var(--deep);">Upload Photo</div>
+    <button class="btn-or" onclick="document.getElementById('img-camera').click(); document.getElementById('mod-photo-choice').classList.remove('on');" style="width: 100%; margin-bottom: 12px; font-size: 15px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+      <span style="font-size: 20px;">📸</span> Take Live Photo
+    </button>
+    <button class="btn-lt" onclick="document.getElementById('img-gallery').click(); document.getElementById('mod-photo-choice').classList.remove('on');" style="width: 100%; font-size: 15px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+      <span style="font-size: 20px;">🖼️</span> Choose from Gallery
+    </button>
+    <input type="file" id="img-camera" accept="image/*" capture="environment" style="display:none;">
+    <input type="file" id="img-gallery" accept="image/*" style="display:none;">
+  </div>
+</div>
+
+<div class="modal" id="mod-premium" onclick="if(event.target===this)this.classList.remove('on')">
+  <div class="msht">
+    <div class="mh"></div>
+    <div class="mt" style="font-size:22px;">👑 Go Premium</div>
+    <p style="font-size:13px;color:var(--gray);margin-bottom:16px;line-height:1.5;">You've reached the limit of 1 free listing. Upgrade to Premium to run multiple campaigns.</p>
+    <div style="background:rgba(245, 158, 11, 0.1); border:1px solid rgba(245, 158, 11, 0.3); border-radius:12px; padding:16px; margin-bottom:16px;">
+      <div style="font-weight:900; color:var(--or); margin-bottom:8px;">Premium Perks:</div>
+      <ul style="font-size:12px; color:var(--deep); margin-left:16px; line-height:1.6;"><li>Unlimited Active Listings</li><li>Priority Search Ranking</li><li>Advanced Insights & Analytics</li></ul>
+    </div>
+    <button class="btn-or" onclick="window.upgradePremium()" style="background:linear-gradient(135deg, #F59E0B, #D97706); width:100%;">⚡ Upgrade for 499 Credits</button>
+    <button class="btn-lt" style="width:100%; margin-top:8px;" onclick="document.getElementById('mod-premium').classList.remove('on')">Maybe Later</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"><span id="t-ic">✅</span><span id="t-tx"></span></div>
+</div>
+
+<script type="module">
+import { db, auth, LS, SS, toast, cacheGet, cacheSet, cacheClear } from './js/app.js';
+import { sanitizer } from './js/sanitizer.js';
+import { getDoc, getDocs, query, collection, where, updateDoc, deleteDoc, doc, setDoc } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
+
+if (!LS('uid') || LS('role') !== 'merchant') { window.location.href = 'index.html'; }
+
+const uid = LS('uid');
+let wallet = LS('wallet')||500;
+let currentListings = [];
+let userPlan = LS('plan') || 'free';
+let pendingEditImageB64 = null;
+let currentPhotoTarget = '';
+
+window.haptic = (ms = 50) => {
+  try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) {}
+};
+
+window.openPhotoChoice = (target) => {
+  window.haptic(30);
+  currentPhotoTarget = target;
+  document.getElementById('mod-photo-choice').classList.add('on');
+};
+
+const handleImageSelection = (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  toast('⏳', 'Processing photo...');
+  const reader = new FileReader();
+  reader.onload = (event) => {
+    const img = new Image();
+    img.onload = async () => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const MAX_WIDTH = 800;
+      let scaleSize = MAX_WIDTH / img.width;
+      if (scaleSize > 1) scaleSize = 1;
+      canvas.width = img.width * scaleSize;
+      canvas.height = img.height * scaleSize;
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      const compressedB64 = canvas.toDataURL('image/webp', 0.8);
+      e.target.value = '';
+      pendingEditImageB64 = compressedB64;
+      document.getElementById('edit-img-status').textContent = '✅ New photo attached!';
+      toast('✅', 'Photo attached! Click Save Changes.');
+    };
+    img.src = event.target.result;
+  };
+  reader.readAsDataURL(file);
+};
+
+document.getElementById('img-camera').addEventListener('change', handleImageSelection);
+document.getElementById('img-gallery').addEventListener('change', handleImageSelection);
+
+async function uploadToImgBB(base64Str) {
+  const apiKey = "4dd5a19986e0ffeabe66a2eb0114d358";
+  const formData = new FormData();
+  formData.append("image", base64Str.split(',')[1]);
+  const res = await fetch(`https://api.imgbb.com/1/upload?key=${apiKey}`, { method: "POST", body: formData });
+  const data = await res.json();
+  if (data.success) return data.data.url;
+  throw new Error("ImgBB rejection");
+}
+
+async function loadListings(force = true) {
+  try {
+    if(force) cacheClear();
+    const c = cacheGet(); 
+    
+    // Fetch User Doc to get QR analytics to populate the funnel accurately
+    const userDocRef = doc(db, 'users', uid);
+    const userDocSnap = await getDoc(userDocRef);
+    const userData = userDocSnap.exists() ? userDocSnap.data() : {};
+    
+    if(c && !force){
+      renderFromData(c, userData);
+      return;
+    }
+    
+    const snap = await getDocs(query(collection(db,'listings'), where('uid','==',uid)));
+    let all = snap.docs.map(d => ({id:d.id,...d.data()}));
+    all.sort((a,b) => (b.createdAt || 0) - (a.createdAt || 0));
+    
+    cacheSet(all); 
+    renderFromData(all, userData);
+  } catch(e) {
+    console.error('[Listings] Load error:', e);
+    const c = cacheGet(); 
+    if(c) renderFromData(c, {});
+    toast('⚠️', 'Showing cached version.');
+  }
+}
+
+function renderFromData(all, userData) {
+  const mine = all.filter(l => l.uid === uid);
+  currentListings = mine;
+  renderCards(mine);
+  
+  // Analytics Calculations (Matched perfectly to old_merchant.html)
+  const totMapViews = mine.reduce((a,l)=>a+(l.popups||0), 0);
+  const totVisits = mine.reduce((a,l)=>a+(l.visits||0), 0); 
+  
+  const qrScans = userData.qrScans || 0;
+  const qrOpens = userData.qrOpens || 0;
+
+  const discovered = totMapViews + qrScans;
+  const interested = qrOpens + mine.reduce((a,l)=>a+(l.opens||0), 0); 
+  const engaged = mine.reduce((a,l)=>a+(l.engagements||0), 0);
+  const visited = totVisits;
+  
+  document.getElementById('fv-disc').textContent = discovered;
+  document.getElementById('fv-int').textContent = interested;
+  document.getElementById('fv-eng').textContent = engaged;
+  document.getElementById('fv-vis').textContent = visited;
+
+  const pct = x => discovered > 0 ? Math.max(4, Math.round((x / discovered) * 100)) : 4;
+  setTimeout(() => {
+    document.getElementById('fb-disc').style.width = '100%';
+    document.getElementById('fb-int').style.width  = pct(interested)+'%';
+    document.getElementById('fb-eng').style.width  = pct(engaged)+'%';
+    document.getElementById('fb-vis').style.width  = pct(visited)+'%';
+  }, 100);
+
+  const intRate = discovered > 0 ? ((interested / discovered) * 100).toFixed(1) + '%' : '0%';
+  const finalRate = discovered > 0 ? ((visited / discovered) * 100).toFixed(1) + '%' : '0%';
+  const estimatedSpend = mine.reduce((a,l)=>a+((l.popups||0) * 0.1), 0); 
+  
+  document.getElementById('rr-ctr').textContent = intRate;
+  document.getElementById('rr-conv').textContent = finalRate;
+  document.getElementById('rr-spend').textContent = Math.floor(estimatedSpend) + ' 🪙';
+
+  const insightBox = document.getElementById('insight-box');
+  const insightTxt = document.getElementById('insight-txt');
+  
+  if (discovered === 0) {
+    insightBox.style.background = 'rgba(245, 158, 11, 0.1)';
+    insightBox.style.borderColor = 'rgba(245, 158, 11, 0.3)';
+    insightTxt.style.color = 'var(--or)';
+    insightTxt.innerHTML = '⚡ <b>Your shop is live!</b><br>Put your QR Standee on the counter so customers can start scanning it.';
+  } else if (qrScans > 0 && qrOpens === 0) {
+    insightBox.style.background = 'rgba(239, 68, 68, 0.1)';
+    insightBox.style.borderColor = 'rgba(239, 68, 68, 0.3)';
+    insightTxt.style.color = '#EF4444';
+    insightTxt.innerHTML = '⚠️ <b>Scans but no clicks.</b><br>People are scanning your QR code but leaving immediately. Try making your deal titles more exciting!';
+  } else if (interested > 0 && visited === 0) {
+    insightBox.style.background = 'rgba(59, 130, 246, 0.1)';
+    insightBox.style.borderColor = 'rgba(59, 130, 246, 0.3)';
+    insightTxt.style.color = 'var(--blue)';
+    insightTxt.innerHTML = '💡 <b>High interest, low conversion.</b><br>Customers are looking at your offers. Make sure your staff is ready to greet them when they walk in!';
+  } else {
+    insightBox.style.background = 'rgba(16, 185, 129, 0.1)';
+    insightBox.style.borderColor = 'rgba(16, 185, 129, 0.3)';
+    insightTxt.style.color = 'var(--grn)';
+    insightTxt.innerHTML = '🔥 <b>Excellent performance!</b><br>You are successfully driving real, trackable foot traffic to your business.';
+  }
+
+  document.getElementById('listing-analytics').innerHTML = mine.map(l => {
+    const pop = l.popups || 0; 
+    const vis = l.visits || 0;
+    const exp = l.expiryDate ? new Date(l.expiryDate) : null;
+    const expTxt = exp ? (exp < new Date() ? '❌ Expired' : Math.ceil((exp - new Date()) / 86400000) + 'd') : '♾️ Life';
+    return `<div class="la-row"><span class="la-name">${l.emoji||'📍'} ${(l.title||'').slice(0,28)}</span><div class="la-stats"><div class="la-stat"><div class="la-sv" style="color:var(--or)">${pop}</div><div class="la-sl">views</div></div><div class="la-stat"><div class="la-sv" style="color:var(--blue)">${vis}</div><div class="la-sl">visits</div></div><div class="la-stat"><div class="la-sv" style="color:var(--gray);font-size:9px">${expTxt}</div><div class="la-sl">expiry</div></div></div></div>`;
+  }).join('');
+}
+
+function renderCards(mine) {
+  const el = document.getElementById('mcards');
+  
+  if (!mine || !mine.length) {
+    el.innerHTML = `
+      <div class="empty-state">
+        <svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin: 0 auto 16px; display: block;">
+          <circle cx="60" cy="60" r="50" fill="rgba(255,87,34,0.1)"/>
+          <rect x="25" y="50" width="70" height="50" rx="6" fill="var(--bg-body)" stroke="var(--bdr)" stroke-width="4"/>
+          <path d="M15 50C15 44.477 19.477 40 25 40H95C100.523 40 105 44.477 105 50V55H15V50Z" fill="#FF5722"/>
+          <path d="M15 55L25 45H95L105 55H15Z" fill="rgba(255,255,255,0.2)"/>
+          <rect x="40" y="65" width="40" height="25" rx="4" fill="rgba(255,87,34,0.15)" stroke="#FF5722" stroke-width="2"/>
+          <path d="M85 30V20M80 25H90" stroke="#F59E0B" stroke-width="3" stroke-linecap="round"/>
+          <path d="M30 25V15M25 20H35" stroke="#3B82F6" stroke-width="3" stroke-linecap="round"/>
+        </svg>
+        <h3>Your storefront is empty</h3>
+        <p>Don't let nearby customers walk past your business! Post your first deal to instantly show up on the local map.</p>
+        <button class="btn-or" onclick="window.checkPremium()" style="box-shadow:0 8px 20px rgba(255,87,34,0.3); padding:14px 28px; border-radius:14px; margin-top:16px;">🚀 Create First Listing</button>
+      </div>
+    `;
+    return;
+  }
+  
+  el.innerHTML = mine.map(l => {
+    const dailyCap = parseInt(l.budget) || 100;
+    const sent = l.popupsSentToday || 0;
+    const capPctFixed = Math.min(100, Math.round((sent / dailyCap) * 100));
+    
+    const isUnlimited = !l.expiryDate;
+    const hrsLeft = !isUnlimited ? (new Date(l.expiryDate) - new Date()) / 3600000 : null;
+    const daysLeft = !isUnlimited ? Math.ceil(hrsLeft / 24) : null;
+    
+    let expiryBadge = '';
+    if (isUnlimited) {
+      expiryBadge = '<span class="badge" style="background:rgba(16, 185, 129, 0.1);color:var(--grn)">♾️ Unlimited</span>';
+    } else if (hrsLeft > 0 && hrsLeft <= 24) {
+      expiryBadge = '<span class="badge" style="background:#EF4444;color:#fff;animation:fomo-pulse 1.5s infinite;box-shadow: 0 4px 10px rgba(239,68,68,0.4);">🔥 Ends in ' + Math.ceil(hrsLeft) + 'h</span>';
+    } else if (daysLeft <= 7 && daysLeft > 0) {
+      expiryBadge = '<span class="badge" style="background:rgba(245, 158, 11, 0.1);color:var(--or)">⏰ ' + daysLeft + 'd left</span>';
+    } else if (hrsLeft <= 0) {
+      expiryBadge = '<span class="badge" style="background:rgba(239, 68, 68, 0.1);color:#EF4444">❌ Expired</span>';
+    } else {
+      expiryBadge = '<span class="badge" style="background:rgba(16, 185, 129, 0.1);color:var(--grn)">✅ Active</span>';
+    }
+    
+    const smartBadge = (l.hourlyCap && l.hourlyCap < 999) ? '<span class="badge smart">🛡️ Smart Pacing</span>' : '';
+    
+    // ✅ SECURE: Sanitize all user-controlled data
+    const safeTitle = sanitizer.sanitizeText(l.title || '', { maxLength: 200 });
+    const safeImageUrl = l.image ? sanitizer.sanitizeUrl(l.image) : '';
+    const safeEmoji = sanitizer.sanitizeText(l.emoji || '📍', { maxLength: 10 });
+    const safeId = (l.id || '').replace(/['"\\]/g, ''); // Remove quotes for onclick safety
+    const safeStatus = (l.status || 'active').replace(/['"\\]/g, '');
+    const safeRadius = parseInt(l.radius) || 300;
+    const safeBudget = parseInt(l.budget) || 25;
+    const safeVisits = parseInt(l.visits) || 0;
+    
+    return `
+      <div class="mcd">
+        <div style="display:flex; gap:12px;">
+          <div class="mcd-ic" style="overflow: hidden; padding: 0;">
+            ${safeImageUrl ? '<img src="' + safeImageUrl + '" style="width: 100%; height: 100%; object-fit: cover;">' : safeEmoji}
+          </div>
+          <div style="flex:1;">
+            <div class="mcd-t">${safeTitle}</div>
+            <div class="mcd-m">
+              ${safeRadius}m radius · ${safeBudget} Credits/day 
+              <span class="badge ${safeStatus === 'paused' ? 'pause' : 'live'}">${safeStatus === 'paused' ? '⏸ PAUSED' : '● LIVE'}</span>
+              ${expiryBadge}
+              ${smartBadge}
+            </div>
+            ${capPctFixed > 0 ? '<div style="margin-top:5px;background:var(--light);border-radius:3px;height:3px"><div style="background:var(--or);border-radius:3px;height:3px;width:' + capPctFixed + '%"></div></div>' : ''}
+          </div>
+          <div class="mcd-s">
+            <div class="mcd-p">${safeVisits}</div>
+            <div class="mcd-pl">visits</div>
+          </div>
+        </div>
+        <div class="mcd-acts">
+          <button class="act-btn act-edit" onclick="window.openEdit('${safeId}')">✏️ Edit</button>
+          <button class="act-btn act-pause" onclick="window.togglePause('${safeId}', '${safeStatus}')">${safeStatus === 'paused' ? '▶️ Unpause' : '⏸️ Pause'}</button>
+          <button class="act-btn act-del" onclick="window.deleteListing('${safeId}')">🗑️ Delete</button>
+          <button class="act-btn-full" onclick="window.exportStatus('${safeId}')"><span style="font-size:16px;">📱</span> Share to WhatsApp Status</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+window.openEdit = (id) => {
+  window.haptic(30);
+  const l = currentListings.find(x => x.id === id);
+  if (!l) return;
+  document.getElementById('edit-id').value = l.id;
+  document.getElementById('edit-title').value = l.title || '';
+  document.getElementById('edit-desc').value = l.desc || '';
+  document.getElementById('edit-price').value = l.price || '';
+  document.getElementById('edit-budget').value = l.budget || 25;
+  document.getElementById('edit-hourly').value = l.hourlyCap || 999;
+  document.getElementById('edit-radius').value = l.radius || 300;
+  pendingEditImageB64 = null;
+  document.getElementById('edit-img-status').textContent = '';
+  document.getElementById('mod-edit').classList.add('on');
+};
+
+window.saveEdit = async () => {
+  window.haptic(50);
+  const id = document.getElementById('edit-id').value;
+  const budget = parseInt(document.getElementById('edit-budget').value) || 25;
+  if (budget < 25 || budget % 25 !== 0) return toast('⚠️', 'Budget must be a multiple of 25 Credits');
+  const btn = document.querySelector('#mod-edit .btn-or');
+  btn.textContent = 'Saving...';
+  try {
+    const rawTitle = document.getElementById('edit-title').value;
+    const rawDesc = document.getElementById('edit-desc').value;
+    const rawPrice = document.getElementById('edit-price').value;
+    let updateData = {
+      title: sanitizer.sanitizeText(rawTitle, { maxLength: 200 }),
+      desc: sanitizer.sanitizeText(rawDesc, { maxLength: 2000, allowNewlines: true }),
+      price: sanitizer.sanitizeText(rawPrice, { maxLength: 50 }),
+      budget: budget,
+      dailyPopupLimit: budget * 10,
+      hourlyCap: parseInt(document.getElementById('edit-hourly').value) || 999,
+      radius: parseInt(document.getElementById('edit-radius').value) || 300
+    };
+    if (pendingEditImageB64) {
+      btn.textContent = 'Uploading photo...';
+      try {
+        const newImgUrl = await uploadToImgBB(pendingEditImageB64);
+        updateData.imageUrl = newImgUrl;
+        updateData.image = newImgUrl;
+      } catch (err) {
+        toast('❌', 'Image upload failed. Saving text only.');
+      }
+    }
+    await updateDoc(doc(db, 'listings', id), updateData);
+    toast('✅', 'Listing updated successfully!');
+    document.getElementById('mod-edit').classList.remove('on');
+    loadListings(true);
+  } catch(e) {
+    toast('❌', 'Update failed. Try again.');
+    btn.textContent = '💾 Save Changes';
+  }
+};
+
+window.togglePause = async (id, currentStatus) => {
+  window.haptic(30);
+  const newStatus = currentStatus === 'paused' ? 'active' : 'paused';
+  try {
+    await updateDoc(doc(db, 'listings', id), { status: newStatus });
+    toast('✅', newStatus === 'paused' ? 'Listing paused' : 'Listing activated');
+    loadListings(true);
+  } catch(e) {
+    toast('❌', 'Status update failed.');
+  }
+};
+
+window.deleteListing = async (id) => {
+  window.haptic(50);
+  if (!confirm('🚨 Are you sure you want to permanently delete this listing?')) return;
+  try {
+    await deleteDoc(doc(db, 'listings', id));
+    toast('✅', 'Listing deleted');
+    loadListings(true);
+  } catch(e) {
+    toast('❌', 'Delete failed.');
+  }
+};
+
+// Advanced WhatsApp Status Generator (Ported perfectly from old_merchant.html)
+window.exportStatus = async (id) => {
+  window.haptic(30);
+  const l = currentListings.find(x => x.id === id);
+  if (!l) return;
+  
+  toast('⏳', 'Generating Status Image...');
+
+  if (!window.html2canvas) {
+      await new Promise((resolve) => {
+          const script = document.createElement('script');
+          script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+          script.onload = resolve;
+          document.head.appendChild(script);
+      });
+  }
+
+  const container = document.createElement('div');
+  container.style.position = 'absolute';
+  container.style.left = '-9999px';
+  container.style.top = '0';
+  
+  const col = l.color || '#FF5722';
+  
+  const imgUrl = l.imageUrl || l.image;
+  const imgHtml = imgUrl 
+    ? `<img src="${imgUrl}" crossorigin="anonymous" style="width:100%; max-height:650px; object-fit:cover; border-radius:30px; margin-bottom:30px; box-shadow: 0 15px 40px rgba(0,0,0,0.2); flex-shrink:0;">` 
+    : `<div style="width:100%; height:500px; max-height:650px; background:${col}20; border-radius:30px; display:flex; align-items:center; justify-content:center; font-size:250px; margin-bottom:30px; box-shadow: 0 15px 40px rgba(0,0,0,0.1); border: 4px solid ${col}40; flex-shrink:0;">${l.emoji || '🏷️'}</div>`;
+
+  const currMerchantLogo = LS('logoUrl') || null;
+  const mLogoHtml = currMerchantLogo 
+    ? `<img src="${currMerchantLogo}" crossorigin="anonymous" style="width: 110px; height: 110px; border-radius: 25px; object-fit: contain; background: #fff; border: 3px solid rgba(255,255,255,0.2); box-shadow: 0 10px 20px rgba(0,0,0,0.2);">` 
+    : `<div style="width: 110px; height: 110px; border-radius: 25px; background: rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; font-size: 55px; border: 3px solid rgba(255,255,255,0.2); box-shadow: 0 10px 20px rgba(0,0,0,0.2);">🏪</div>`;
+
+  container.innerHTML = `
+    <div id="status-export-wrap" style="width: 1080px; height: 1920px; background-color: #111827; background-image: radial-gradient(circle at 10% 10%, #FF572240 0%, transparent 40%), radial-gradient(circle at 90% 90%, ${col}40 0%, #111827 50%); display: flex; align-items: center; justify-content: center; box-sizing: border-box; font-family: 'Nunito', sans-serif; position:relative; overflow:hidden;">
+       
+       <div style="width: 86%; height: 88%; display: flex; flex-direction: column; position: relative; z-index: 2;">
+          
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom: 35px; flex-shrink: 0;">
+            <div style="display:flex; flex-direction: column; gap: 15px;">
+              ${mLogoHtml}
+              <div style="background:rgba(255,255,255,0.1); padding:10px 20px; border-radius:100px; font-size:24px; font-weight:900; color:#fff; text-transform:uppercase; letter-spacing:2px; border:2px solid rgba(255,255,255,0.2); display: inline-block; align-self: flex-start;">${(l.type || 'Offer')}</div>
+            </div>
+            <img src="https://nearpop.in/icons/logo.png" style="height: 60px; filter: brightness(0) invert(1);">
+          </div>
+
+          ${imgHtml}
+          
+          <div style="flex:1; display:flex; flex-direction:column; justify-content:center; text-align:center; margin-bottom: 25px;">
+            <h1 style="font-family: 'Syne', sans-serif; color: #fff; font-size: 65px; font-weight: 800; line-height: 1.2; margin: 0 0 20px 0; text-shadow: 0 4px 15px rgba(0,0,0,0.5); word-break: break-word; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">${l.title}</h1>
+            <div style="font-size: 85px; font-weight: 900; color: #FF5722; text-shadow: 0 4px 15px rgba(0,0,0,0.5); margin-bottom: 30px;">${l.price}</div>
+            <div style="font-size: 28px; color: #9CA3AF; font-weight: 700; background: rgba(0,0,0,0.3); padding: 20px 40px; border-radius: 24px; display:inline-block; margin: 0 auto; word-break: break-word; overflow-wrap: anywhere; max-width: 95%;">📍 Available at <strong style="color:#fff;">${l.owner || 'Our Store'}</strong></div>
+          </div>
+
+          <div style="margin-top: auto; background: rgba(255,255,255,0.1); padding: 30px 35px; border-radius: 30px; display: flex; align-items: center; justify-content: space-between; border: 2px solid rgba(255,255,255,0.2); flex-shrink: 0;">
+            <div>
+              <div style="color:#fff; font-size: 34px; font-weight:900; margin-bottom:6px;">Find us on NearPop</div>
+              <div style="color:#9CA3AF; font-size: 22px; font-weight:600;">Download the app & search around you!</div>
+            </div>
+            
+            <div style="background:#000; padding: 12px 20px; border-radius:15px; display:flex; align-items:center; justify-content:center; box-shadow:0 8px 20px rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1);">
+              <svg width="50" height="50" viewBox="0 0 24 24" fill="#fff" xmlns="http://www.w3.org/2000/svg"><path d="M3.609 1.814L13.792 12 3.61 22.186a1.981 1.981 0 0 1-.36-.088A1.91 1.91 0 0 1 2 20.316V3.684a1.91 1.91 0 0 1 1.25-1.782c.115-.043.235-.073.359-.088zM14.85 13.06l3.418 3.417-6.07 3.504-4.59-4.591 7.242-2.33zM21.576 9.176l-3.308-1.91-3.418 3.418 3.418 3.418 3.308-1.91a1.915 1.915 0 0 0 0-3.016zM18.268 7.266L14.85 10.684 7.608 8.354l6.07-3.504 4.59 4.591H18.268z"/></svg>
+              <div style="margin-left: 12px; text-align: left;">
+                <div style="font-size: 10px; color: #fff; text-transform: uppercase; letter-spacing: 0.5px;">Get it on</div>
+                <div style="font-size: 16px; font-weight: 700; color: #fff; line-height: 1.1;">Google Play</div>
+              </div>
+            </div>
+          </div>
+          
+       </div>
+    </div>
+  `;
+  document.body.appendChild(container);
+
+  setTimeout(async () => {
+     try {
+        const canvas = await html2canvas(document.getElementById('status-export-wrap'), {
+           scale: 1, 
+           useCORS: true,
+           backgroundColor: null
+        });
+        
+        canvas.toBlob(async (blob) => {
+            const fileName = `NearPop_Status_${Date.now()}.jpg`;
+            const file = new File([blob], fileName, { type: 'image/jpeg' });
+            
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                try {
+                    await navigator.share({
+                        files: [file],
+                        title: 'My Store Status',
+                        text: 'Check out our latest deal on NearPop!'
+                    });
+                    toast('✅', 'Opening WhatsApp...');
+                } catch (shareError) {
+                    console.log('Share canceled or failed', shareError);
+                }
+            } else {
+                const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+                const link = document.createElement('a');
+                link.download = fileName;
+                link.href = dataUrl;
+                link.click();
+                toast('✅', 'Image saved! Open WhatsApp to share it.');
+            }
+            document.body.removeChild(container);
+        }, 'image/jpeg', 0.85);
+
+     } catch(err) {
+        console.error(err);
+        toast('❌', 'Failed to generate image.');
+        if(container.parentNode) document.body.removeChild(container);
+     }
+  }, 1000);
+};
+
+window.checkPremium = () => {
+  window.haptic(30);
+  if (userPlan === 'premium' || currentListings.length === 0) {
+    window.location.href = 'create.html';
+  } else {
+    document.getElementById('mod-premium').classList.add('on');
+  }
+};
+
+window.upgradePremium = async () => {
+  window.haptic(50);
+  if (wallet < 499) {
+    toast('⚠️', 'Insufficient credits. Earn more first!');
+    document.getElementById('mod-premium').classList.remove('on');
+    return;
+  }
+  const btn = document.querySelector('#mod-premium .btn-or');
+  btn.textContent = 'Upgrading...';
+  try {
+    const newWallet = wallet - 499;
+    await setDoc(doc(db, 'users', uid), { wallet: newWallet, plan: 'premium' }, { merge: true });
+    wallet = newWallet;
+    SS('wallet', wallet);
+    SS('plan', 'premium');
+    userPlan = 'premium';
+    toast('👑', 'Welcome to Premium!');
+    document.getElementById('mod-premium').classList.remove('on');
+    setTimeout(() => { window.location.href = 'create.html'; }, 1200);
+  } catch(e) {
+    toast('❌', 'Upgrade failed.');
+    btn.textContent = '⚡ Upgrade for 499 Credits';
+  }
+};
+
+window.toast = toast;
+
+// Start data fetch
+loadListings(true);
+</script>
+</body>
+</html>

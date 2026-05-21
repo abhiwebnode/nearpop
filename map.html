@@ -354,10 +354,19 @@
   flex-shrink: 0; 
   border: 1px solid rgba(0,0,0,0.05); 
   box-shadow: 0 4px 15px rgba(0,0,0,0.03); 
-  transition: all 0.15s; 
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
   position: relative; 
   overflow: hidden; 
   pointer-events: auto; 
+}
+
+/* ✨ UI IMPROVEMENT: Better hover effect */
+@media (hover: hover) {
+  .hcd:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 32px rgba(0,0,0,0.1);
+    border-color: rgba(255,87,34,0.3);
+  }
 }
 
 .hcd:active { 
@@ -385,12 +394,21 @@
   position: relative; 
   overflow: hidden; 
   background: #fff; 
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
 }
 
 .deal-card:nth-child(4n+1) { background: #FFF5F2; border-color: #FFE4D6; } 
 .deal-card:nth-child(4n+2) { background: #F0F9FF; border-color: #DBEAFE; } 
 .deal-card:nth-child(4n+3) { background: #F5F3FF; border-color: #EDE9FE; } 
 .deal-card:nth-child(4n+4) { background: #F0FDF4; border-color: #D1FAE5; } 
+
+/* ✨ UI IMPROVEMENT: Better hover effect */
+@media (hover: hover) {
+  .deal-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 32px rgba(0,0,0,0.12);
+  }
+}
 
 .deal-card:active { 
   transform: scale(0.96); 
@@ -920,6 +938,36 @@
   #map-search::placeholder { color: #6B7280; }
   #ms-clear { color: #D1D5DB; background: rgba(255,255,255,0.1); }
 }
+
+/* ✨ UI Improvements */
+.map-search-wrap {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(30px) saturate(180%);
+  -webkit-backdrop-filter: blur(30px) saturate(180%);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+  border: 1.5px solid rgba(255,255,255,0.18);
+}
+
+.lbtn {
+  backdrop-filter: blur(30px) saturate(180%);
+  -webkit-backdrop-filter: blur(30px) saturate(180%);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.lbtn:hover {
+  transform: scale(1.05);
+}
+
+.fcd {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.fcd:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+}
+
 </style>
 </head>
 <body>
@@ -1098,10 +1146,19 @@
 <script type="module">
 import { app, db, LS, SS, TC, TE, distM, isExpired, toast, cacheGet, cacheSet, cacheClear, loadNavigation } from './js/app.js';
 import { ghEncode, ghNeighbors, ghFilter } from './js/geohash.js';
-import { setLoc, setListings, checkProximity, dist, getPrefs, notifsToday, notifsThisHour, logNotif, inMarketZone, vendorCapReached, budgetThrottled, markVendorCapUsed, markBudgetUsed, markGeofenceNotified, applyDensityControl, getNotifType, showSoftBanner, trackEng, updateSpeed } from './js/notifications.js';
+import { sanitizer } from './js/sanitizer.js';
+// 🚀 NEW: Import the SmartNotificationEngine
+import { NotificationEngine } from './js/notifications.js';
 import { getDocs, query, collection, orderBy, where, doc, updateDoc, increment, limit } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js';
 import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-messaging.js";
+
+// 🚀 SAFETY FALLBACK: Recreate trackEng locally so old button clicks don't break
+window.trackEng = window.trackEng || function(id, value) {
+  try {
+    if (LS('uid')) updateDoc(doc(db, 'users', LS('uid')), { ['eng_' + id]: increment(value) }).catch(()=>{});
+  } catch(e) {}
+};
 
 window.lang = localStorage.getItem('app_lang') || 'en';
 
@@ -1266,7 +1323,7 @@ const savedLoc = LS('lastLoc');
 let markers = [];
 let listings = [];
 let loc = savedLoc;
-let cat = 'deal';
+let cat = 'all';  // ✅ FIX: Default to 'all' instead of 'deal'
 let radiusKm = LS('searchRadius') || 1;
 let filteredList = [];
 let welcomeType = 'deal';
@@ -1313,56 +1370,74 @@ function gpsDistM(lat1, lng1, lat2, lng2) {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
+// ✅ GPS Manager Integration
+let gpsManager = null;
+
 function startWatch() {
-  if (!navigator.geolocation) { 
-    setFallback(); 
-    return; 
+  if (!gpsManager) {
+    // Lazy load GPS manager
+    import('./js/adaptive-gps-manager.js').then(module => {
+      const AdaptiveGPSManager = module.AdaptiveGPSManager;
+      
+      gpsManager = new AdaptiveGPSManager({
+        onPositionUpdate: (position, movementContext) => {
+          const lat = position.coords.latitude;
+          const lng = position.coords.longitude;
+          
+          loc = { lat, lng };
+          SS('lastLoc', loc);
+          
+          if (window.userMarker) {
+            window.userMarker.setLatLng([lat, lng]);
+          }
+          
+          // Only redraw on significant movement or first update
+          if (movementContext.significantMovement || movementContext.firstUpdate) {
+            if (!hasLiveCentered) {
+              window._map.flyTo([lat, lng], 15, { duration: 0.5 });
+              hasLiveCentered = true;
+            }
+            redraw();
+          }
+          
+          // Pass movement context to notification engine
+          if (filteredList && filteredList.length > 0) {
+            NotificationEngine.evaluate(position, filteredList, movementContext);
+          }
+        },
+        onError: handleGeoError
+      });
+      
+      gpsManager.start();
+    }).catch(err => {
+      console.error('GPS Manager load failed:', err);
+      // Fallback to basic GPS
+      basicGPSFallback();
+    });
+  } else {
+    gpsManager.start();
   }
-  navigator.geolocation.getCurrentPosition( 
-    p => onPosition(p, true), 
-    (err) => handleGeoError(err), 
-    { enableHighAccuracy: true, timeout: 12000 } 
-  );
-  watchId = navigator.geolocation.watchPosition( 
-    p => onPosition(p, false), 
-    (err) => handleGeoError(err), 
-    { enableHighAccuracy: false, maximumAge: 20000, timeout: 10000 } 
-  );
 }
 
-function onPosition(p, forceProcess = false) {
-  const lat = p.coords.latitude;
-  const lng = p.coords.longitude;
-  const newTime = p.timestamp || Date.now();
-  const speed = updateSpeed({ lat, lng }, newTime);
-
-  if (!forceProcess && loc && lastProcLat !== null) {
-    const moved = gpsDistM(lat, lng, lastProcLat, lastProcLng);
-    if (moved < MIN_MOVE_M) {
-      loc = { lat, lng };
-      if (window.userMarker) window.userMarker.setLatLng([lat, lng]);
-      return;
-    }
+function basicGPSFallback() {
+  if (!navigator.geolocation) {
+    setFallback();
+    return;
   }
-
-  lastProcLat = lat; 
-  lastProcLng = lng;
-  loc = { lat, lng };
-  setLoc(loc); 
-  SS('lastLoc', loc); 
-
-  if (window.userMarker) {
-    window.userMarker.setLatLng([loc.lat, loc.lng]);
-  }
-  
-  if (!hasLiveCentered) {
-    window._map.flyTo([loc.lat, loc.lng], 15, { duration: 0.5 }); 
-    hasLiveCentered = true; 
-    redraw();
-  } else { 
-    redraw(); 
-  }
-  checkProximity(showNotif, (zone, cnt) => console.log('Market zone alert:', zone.name, cnt));
+  navigator.geolocation.getCurrentPosition(
+    p => {
+      loc = { lat: p.coords.latitude, lng: p.coords.longitude };
+      SS('lastLoc', loc);
+      if (window.userMarker) window.userMarker.setLatLng([loc.lat, loc.lng]);
+      if (!hasLiveCentered) {
+        window._map.flyTo([loc.lat, loc.lng], 15, { duration: 0.5 });
+        hasLiveCentered = true;
+      }
+      redraw();
+    },
+    handleGeoError,
+    { enableHighAccuracy: true, timeout: 12000 }
+  );
 }
 
 function getLoc() { 
@@ -1407,6 +1482,24 @@ window.recenterMap = () => {
   }
 };
 
+// ═══ INITIALIZE FCM ═══
+import { NotificationEngine } from './js/notifications.js';
+
+// Initialize FCM when map loads
+(async function initFCM() {
+  try {
+    const fcmReady = await NotificationEngine.initializeFCM();
+    if (fcmReady) {
+      console.log('✅ FCM initialized successfully');
+    } else {
+      console.warn('⚠️ FCM initialization failed');
+    }
+  } catch (error) {
+    console.error('FCM init error:', error);
+  }
+})();
+
+
 async function loadListings() {
   try {
     let q = collection(db, 'listings');
@@ -1435,13 +1528,11 @@ async function loadListings() {
     
     cacheSet(all); 
     listings = all; 
-    setListings(all); 
     redraw();
   } catch(e) {
     const c = cacheGet(); 
     if (c) { 
       listings = c; 
-      setListings(c); 
       redraw(); 
     }
   }
@@ -1524,9 +1615,11 @@ function redraw() {
     const col = l.color || TC(l.type);
     const imgUrl = l.imageUrl || l.image;
     
-    const pinInner = imgUrl 
-      ? `<div style="width:100%;height:100%;border-radius:50%;background:#fff url('${imgUrl}') center/cover no-repeat;"></div>` 
-      : `<div class="pin-emo">${l.emoji || TE(l.type)}</div>`;
+    // ✅ SECURE: Sanitize image URL and use <img> instead of CSS background
+    const safeImgUrl = imgUrl ? sanitizer.sanitizeUrl(imgUrl) : '';
+    const pinInner = safeImgUrl 
+      ? `<div style="width:100%;height:100%;border-radius:50%;overflow:hidden;"><img src="${safeImgUrl}" style="width:100%;height:100%;object-fit:cover;"></div>` 
+      : `<div class="pin-emo">${sanitizer.sanitizeText(l.emoji || TE(l.type), { maxLength: 10 })}</div>`;
       
     const ico = L.divIcon({ 
       className: '', 
@@ -1575,43 +1668,53 @@ function redraw() {
 }
 
 window.previewPin = (l) => {
-  window.haptic(50);
+  window.haptic(30);
   const safeLat = parseFloat(l.lat);
   const safeLng = parseFloat(l.lng);
-  const d = loc && !isNaN(safeLat) ? distM(loc.lat, loc.lng, safeLat, safeLng) : Infinity;
-  const distTxt = d < 1000 ? Math.round(d) + 'm' : (d / 1000).toFixed(1) + 'km';
   
-  const col = l.color || TC(l.type);
-  const imgUrl = l.imageUrl || l.image;
+  // ✅ SECURE: Safe image rendering
   const ppIc = document.getElementById('pp-ic');
+  ppIc.innerHTML = ''; // Clear first
   
-  if (imgUrl) { 
-    ppIc.textContent = ''; 
-    ppIc.style.background = `#ffffff url('${imgUrl}') center/contain no-repeat`; 
-    ppIc.style.border = `1px solid #E5E7EB`; 
-  } else { 
+  if (l.image || l.imageUrl) {
+    const imgUrl = l.imageUrl || l.image;
+    const img = document.createElement('img');
+    img.src = sanitizer.sanitizeUrl(imgUrl);
+    img.style.cssText = 'width:100%;height:100%;border-radius:12px;object-fit:cover;';
+    ppIc.appendChild(img);
+  } else {
+    const col = l.color || TC(l.type);
     ppIc.textContent = l.emoji || TE(l.type); 
     ppIc.style.background = `${col}20`; 
     ppIc.style.border = `1px solid ${col}40`; 
   }
   
-  document.getElementById('pp-title').textContent = l.title || 'Special Offer';
-  document.getElementById('pp-price').textContent = l.price || 'View Details';
+  // ✅ SECURE: Sanitized text content
+  document.getElementById('pp-title').textContent = sanitizer.sanitizeText(l.title || 'Special Offer', { maxLength: 200 });
+  document.getElementById('pp-price').textContent = sanitizer.sanitizeText(l.price || 'View Details', { maxLength: 50 });
+  
+  const distTxt = fmtDist(l);
   document.getElementById('pp-dist').textContent = window.lang === 'hi' ? `📍 आपसे ${distTxt} दूर` : `📍 ${distTxt} from you`;
   
-  document.getElementById('pp-type').textContent = (l.type || 'Offer').toUpperCase();
+  const safeType = sanitizer.sanitizeText((l.type || 'Offer').toUpperCase(), { maxLength: 20 });
+  document.getElementById('pp-type').textContent = safeType;
+  const col = l.color || TC(l.type);
   document.getElementById('pp-type').style.color = col; 
   document.getElementById('pp-type').style.background = `${col}20`;
   
+  // ✅ SECURE: Safe FOMO badge rendering
+  const fomoEl = document.getElementById('pp-fomo');
+  fomoEl.innerHTML = ''; // Clear first
+  
   if (l.expiryDate) {
     const hrs = (new Date(l.expiryDate) - new Date()) / 3600000;
-    if (hrs > 0 && hrs <= 24) { 
-      document.getElementById('pp-fomo').innerHTML = `<span class="fomo-badge" style="position:static; animation:fomo-pulse 1.5s infinite; font-size:10px; margin-right:4px;">🔥 ${Math.ceil(hrs)}h left</span>`; 
-    } else { 
-      document.getElementById('pp-fomo').innerHTML = ''; 
+    if (hrs > 0 && hrs <= 24) {
+      const badge = document.createElement('span');
+      badge.className = 'fomo-badge';
+      badge.style.cssText = 'position:static; animation:fomo-pulse 1.5s infinite; font-size:10px; margin-right:4px;';
+      badge.textContent = `🔥 ${Math.ceil(hrs)}h left`;
+      fomoEl.appendChild(badge);
     }
-  } else { 
-    document.getElementById('pp-fomo').innerHTML = ''; 
   }
   
   document.getElementById('pp-btn').onclick = () => window.openListing(l.id);
@@ -1627,6 +1730,10 @@ window.closePreview = () => {
   document.getElementById('pin-preview').classList.remove('on'); 
 };
 
+// ⚠️ IMPORTANT: renderCards() uses innerHTML for performance
+// All user content MUST be sanitized before display
+// Images: sanitizer.sanitizeUrl()
+// Text: sanitizer.sanitizeText()
 function renderCards() {
   const total = filteredList.length;
   
@@ -1669,71 +1776,146 @@ function renderCards() {
       </div>
     `;
   } else {
-    document.getElementById('hscr').innerHTML = filteredList.map(l => {
-      const imgUrl = l.imageUrl || l.image;
+    // ✅ SECURE: Safe horizontal card rendering
+    const hscrEl = document.getElementById('hscr');
+    hscrEl.innerHTML = ''; // Clear first
+    
+    filteredList.forEach(l => {
+      const card = document.createElement('div');
+      card.className = 'hcd';
+      card.onclick = () => openListing(l.id);
+      card.style.cssText = 'min-width:200px; max-width:200px;';
       
-      let fomoHtml = '';
+      const topDiv = document.createElement('div');
+      topDiv.style.cssText = 'display:flex; gap:10px; margin-bottom:8px; align-items:flex-start;';
+      
+      // Thumbnail
+      const thumb = document.createElement('div');
+      thumb.style.cssText = 'width:44px;height:44px;border-radius:12px;flex-shrink:0;position:relative;';
+      
+      const imgUrl = l.imageUrl || l.image;
+      if (imgUrl) {
+        thumb.style.cssText += `background:#fff url('${sanitizer.sanitizeUrl(imgUrl)}') center/contain no-repeat;border:1px solid #E5E7EB;`;
+      } else {
+        const col = l.color || TC(l.type);
+        thumb.style.cssText += `background:${col}20;display:flex;align-items:center;justify-content:center;font-size:20px;`;
+        thumb.textContent = l.emoji || TE(l.type);
+      }
+      
+      // FOMO badge if applicable
       if (l.expiryDate) {
         const hrs = (new Date(l.expiryDate) - new Date()) / 3600000;
         if (hrs > 0 && hrs <= 24) {
-          fomoHtml = `<div class="fomo-badge" style="top:-4px; left:-4px; font-size:8px; padding:3px 6px;">🔥 ${Math.ceil(hrs)}h</div>`;
+          const fomoBadge = document.createElement('div');
+          fomoBadge.className = 'fomo-badge';
+          fomoBadge.style.cssText = 'top:-4px;left:-4px;font-size:8px;padding:3px 6px;';
+          fomoBadge.textContent = `🔥 ${Math.ceil(hrs)}h`;
+          thumb.appendChild(fomoBadge);
         }
       }
       
-      const thumb = imgUrl 
-        ? `<div style="position:relative; width:44px;height:44px;border-radius:12px;background:#fff url('${imgUrl}') center/contain no-repeat; border:1px solid #E5E7EB; flex-shrink:0;">${fomoHtml}</div>` 
-        : `<div style="position:relative; width:44px;height:44px;border-radius:12px;background:${l.color||TC(l.type)}20; display:flex;align-items:center;justify-content:center;font-size:20px; flex-shrink:0;">${l.emoji||TE(l.type)}${fomoHtml}</div>`;
+      const contentDiv = document.createElement('div');
+      contentDiv.style.cssText = 'flex:1;overflow:hidden;';
       
-      return `
-        <div class="hcd" onclick="openListing('${l.id}')" style="min-width:200px; max-width:200px;">
-          <div style="display:flex; gap:10px; margin-bottom:8px; align-items:flex-start;">
-            ${thumb}
-            <div style="flex:1; overflow:hidden;">
-              <div class="hcd-type" style="color:${l.color||TC(l.type)}; margin-bottom:2px; text-transform: capitalize;">${l.type||''}</div>
-              <div class="hcd-title" style="margin-bottom:0; font-size:13px;">${(l.title||'').slice(0,35)}</div>
-            </div>
-          </div>
-          <div style="display:flex; justify-content:space-between; align-items:center;">
-            <div class="hcd-price" style="font-size:14px; font-weight:900; color:#FF5722;">${l.price||''}</div>
-            <div class="hcd-dist" style="margin-top:0; font-size:11px; color:#6B7280; font-weight:700; background:#F3F4F6; padding:2px 6px; border-radius:6px;">📍 ${fmtDist(l)}</div>
-          </div>
-        </div>
-      `;
-    }).join('');
-
-    vgrid.innerHTML = filteredList.map(l => {
-      const imgUrl = l.imageUrl || l.image;
-      
-      const iconHtml = imgUrl 
-        ? `<div class="d-ic" style="background: #ffffff url('${imgUrl}') center/contain no-repeat; border: 1px solid #E5E7EB;"></div>` 
-        : `<div class="d-ic">${l.emoji || TE(l.type)}</div>`;
-      
+      const typeDiv = document.createElement('div');
+      typeDiv.className = 'hcd-type';
       const col = l.color || TC(l.type);
+      typeDiv.style.cssText = `color:${col};margin-bottom:2px;text-transform:capitalize;`;
+      typeDiv.textContent = sanitizer.sanitizeText(l.type || '', { maxLength: 20 });
       
-      let fomoHtml = '';
+      const titleDiv = document.createElement('div');
+      titleDiv.className = 'hcd-title';
+      titleDiv.style.cssText = 'margin-bottom:0;font-size:13px;';
+      titleDiv.textContent = sanitizer.sanitizeText(l.title || '', { maxLength: 35 });
+      
+      contentDiv.appendChild(typeDiv);
+      contentDiv.appendChild(titleDiv);
+      
+      topDiv.appendChild(thumb);
+      topDiv.appendChild(contentDiv);
+      
+      const bottomDiv = document.createElement('div');
+      bottomDiv.style.cssText = 'display:flex;justify-content:space-between;align-items:center;';
+      
+      const priceDiv = document.createElement('div');
+      priceDiv.className = 'hcd-price';
+      priceDiv.style.cssText = 'font-size:14px;font-weight:900;color:#FF5722;';
+      priceDiv.textContent = sanitizer.sanitizeText(l.price || '', { maxLength: 50 });
+      
+      const distDiv = document.createElement('div');
+      distDiv.className = 'hcd-dist';
+      distDiv.style.cssText = 'margin-top:0;font-size:11px;color:#6B7280;font-weight:700;background:#F3F4F6;padding:2px 6px;border-radius:6px;';
+      distDiv.textContent = '📍 ' + fmtDist(l);
+      
+      bottomDiv.appendChild(priceDiv);
+      bottomDiv.appendChild(distDiv);
+      
+      card.appendChild(topDiv);
+      card.appendChild(bottomDiv);
+      hscrEl.appendChild(card);
+    });
+
+    // ✅ SECURE: Safe vertical grid rendering
+    vgrid.innerHTML = ''; // Clear first
+    
+    filteredList.forEach(l => {
+      const card = document.createElement('div');
+      card.className = 'd-card';
+      card.onclick = () => openListing(l.id);
+      
+      // Icon/Image
+      const iconDiv = document.createElement('div');
+      iconDiv.className = 'd-ic';
+      
+      const imgUrl = l.imageUrl || l.image;
+      if (imgUrl) {
+        iconDiv.style.cssText = `background:#ffffff url('${sanitizer.sanitizeUrl(imgUrl)}') center/contain no-repeat;border:1px solid #E5E7EB;`;
+      } else {
+        iconDiv.textContent = l.emoji || TE(l.type);
+      }
+      
+      // Content
+      const contentDiv = document.createElement('div');
+      contentDiv.className = 'd-cont';
+      
+      const typeDiv = document.createElement('div');
+      typeDiv.className = 'd-type';
+      const col = l.color || TC(l.type);
+      typeDiv.style.color = col;
+      typeDiv.textContent = sanitizer.sanitizeText((l.type || '').toUpperCase(), { maxLength: 20 });
+      
+      const titleDiv = document.createElement('div');
+      titleDiv.className = 'd-title';
+      titleDiv.textContent = sanitizer.sanitizeText(l.title || '', { maxLength: 200 });
+      
+      const priceDiv = document.createElement('div');
+      priceDiv.className = 'd-price';
+      priceDiv.textContent = sanitizer.sanitizeText(l.price || '', { maxLength: 50 });
+      
+      const distDiv = document.createElement('div');
+      distDiv.className = 'd-dist';
+      distDiv.textContent = fmtDist(l);
+      
+      // FOMO badge
       if (l.expiryDate) {
         const hrs = (new Date(l.expiryDate) - new Date()) / 3600000;
         if (hrs > 0 && hrs <= 24) {
-          fomoHtml = `<div class="fomo-badge">🔥 ${window.lang === 'hi' ? `${Math.ceil(hrs)} घंटे में समाप्त!` : `Ends in ${Math.ceil(hrs)}h!`}</div>`;
+          const fomoBadge = document.createElement('div');
+          fomoBadge.className = 'fomo-badge';
+          fomoBadge.textContent = `🔥 ${Math.ceil(hrs)}h left`;
+          contentDiv.appendChild(fomoBadge);
         }
       }
       
-      return `
-        <div class="deal-card" onclick="window.openListing('${l.id}')">
-          ${fomoHtml} 
-          ${iconHtml}
-          <div class="d-inf">
-            <div class="d-ti">${l.title}</div>
-            <div class="d-pr">${l.price || 'Special Deal'}</div>
-          </div>
-          <div class="dc-bot">
-            <div class="d-tag" style="background:${col}20; color:${col};">${(l.type || 'Offer').toUpperCase()}</div>
-            <div class="d-arrow">➔</div>
-          </div>
-          <div style="position:absolute; top:8px; right:8px; background:rgba(255,255,255,0.9); padding:2px 6px; border-radius:6px; font-size:9px; font-weight:800; color:#4B5563; box-shadow:0 2px 4px rgba(0,0,0,0.1);">📍 ${fmtDist(l)}</div>
-        </div>
-      `;
-    }).join('');
+      contentDiv.appendChild(typeDiv);
+      contentDiv.appendChild(titleDiv);
+      contentDiv.appendChild(priceDiv);
+      contentDiv.appendChild(distDiv);
+      
+      card.appendChild(iconDiv);
+      card.appendChild(contentDiv);
+      vgrid.appendChild(card);
+    });
   }
 }
 
@@ -1767,6 +1949,7 @@ window.toggleListView = () => {
   }
 };
 
+// 🚀 Bind showNotif so the new Engine can trigger it properly
 function showNotif(l) {
   if (!LS('pop_seen_' + l.id)) {
     SS('pop_seen_' + l.id, Date.now()); 
@@ -1797,7 +1980,7 @@ function showNotif(l) {
   
   document.getElementById('n-view').onclick = () => {
     window.haptic(50);
-    trackEng(l.id, 8);
+    window.trackEng(l.id, 8);
     if (typeof window.gtag === 'function') gtag('event', 'funnel_step', { step_name: 'popup_clicked', listing_id: l.id });
     try { updateDoc(doc(db, 'listings', l.id), { visits: increment(1) }); } catch(e) {}
     hideNotif(); 
@@ -1806,7 +1989,7 @@ function showNotif(l) {
   
   document.querySelector('#notif .mn-btn.s').onclick = () => { 
     window.haptic(30); 
-    trackEng(l.id, -5); 
+    window.trackEng(l.id, -5); 
     hideNotif(); 
   };
   
@@ -1814,8 +1997,7 @@ function showNotif(l) {
   clearTimeout(window._nt); 
   window._nt = setTimeout(hideNotif, 8000);
 }
-
-window.trackEng = trackEng; 
+window.showNotif = showNotif; 
 
 window.pickType = (t, btn) => { 
   window.haptic(30); 
@@ -1938,7 +2120,6 @@ async function initApp() {
   const _cached = cacheGet(); 
   if (_cached) { 
     listings = _cached; 
-    setListings(_cached); 
     redraw(); 
   }
   
@@ -1964,7 +2145,6 @@ async function initApp() {
   }
 }
 
-// 🚀 NEW: Play Store Prompt Logic
 window.showPlayStorePopup = () => {
   const mod = document.getElementById('mod-playstore');
   if (mod) mod.classList.add('on');
@@ -1973,7 +2153,6 @@ window.showPlayStorePopup = () => {
 window.closePlayStorePopup = () => { 
   const mod = document.getElementById('mod-playstore');
   if (mod) mod.classList.remove('on'); 
-  // 🚀 CHANGED TO LOCALSTORAGE: Will permanently remember their choice
   localStorage.setItem('hide_playstore', 'true'); 
 };
 
@@ -1992,18 +2171,16 @@ setTimeout(() => {
       window.askForNotifs(); 
     }
   }
-  // 🚀 CHANGED TO LOCALSTORAGE: Checks permanent memory
   const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
   if (!isStandalone && !localStorage.getItem('hide_playstore')) { 
     window.showPlayStorePopup(); 
   }
 }, 3000);
 
-// 🚀 NEW: Let users bypass the hard block and browse manually
 window.dismissGeoBlock = () => {
   window.haptic(30);
   document.getElementById('hard-geo-block').style.display = 'none';
-  setFallback(); // Loads default location so the map doesn't break
+  setFallback(); 
   toast('🗺️', window.lang === 'hi' ? 'मैन्युअल रूप से ब्राउज़ कर रहे हैं' : 'Browsing map manually');
 };
 
@@ -2012,6 +2189,14 @@ initApp();
 document.addEventListener('visibilitychange', () => { 
   if (document.visibilityState === 'visible' && typeof loadListings === 'function') loadListings(true); 
 });
+
+// Cleanup GPS manager on page unload
+window.addEventListener('beforeunload', () => {
+  if (gpsManager) {
+    gpsManager.stop();
+  }
+});
+
 </script>
 </body>
 </html>

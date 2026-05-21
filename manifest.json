@@ -5,6 +5,7 @@
   "description": "Turn on your GPS and find the best hyper-local shop discounts, flats, PGs, and jobs near you in real-time.",
   "lang": "en",
   "dir": "ltr",
+  "gcm_sender_id": "103953800507",
   "start_url": "/map.html?utm_source=pwa",
   "scope": "/",
   "scope_extensions": [

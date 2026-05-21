@@ -91,7 +91,6 @@
   .brand { display:flex; align-items:center; justify-content:center; gap:10px; margin-bottom:12px; }
   .tagline { font-size:14px; color:var(--gray); font-weight:600; margin-bottom:30px; line-height:1.4; }
   
-  /* 🚀 UI UPGRADE 1: iOS Sliding Pill Segments */
   .role-tog { 
     display:flex; 
     position: relative; 
@@ -113,7 +112,7 @@
     border-radius: 10px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.08);
     transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-    z-index: -1; /* Sits behind the text */
+    z-index: -1;
   }
 
   .rtb { 
@@ -129,18 +128,18 @@
   }
   
   .rtb.on { color:var(--deep); }
-  /* End UI UPGRADE 1 */
 
   .btn-google { display:flex; align-items:center; justify-content:center; gap:12px; width:100%; padding:14px; border-radius:12px; background:var(--bg-app); color:var(--deep); font-size:15px; font-weight:800; border:2px solid var(--bdr); cursor:pointer; transition:all 0.2s; font-family:inherit; box-shadow:0 4px 15px rgba(0,0,0,0.06); }
   .btn-google:active { transform:scale(0.97); background:var(--cream); }
   .btn-google img { width:20px; height:20px; transition: opacity 0.2s; }
 
-  /* 🚀 CSS for new Inline Spinner */
   @keyframes inline-spin { 100% { transform: rotate(360deg); } }
 
   .checkbox-wrapper { display:flex; align-items:flex-start; gap:10px; margin-bottom:20px; text-align:left; padding:0 4px; }
   .custom-checkbox { width:20px; height:20px; accent-color:#FF5722; cursor:pointer; flex-shrink:0; margin-top:2px; background-color:#ffffff; box-shadow:0 0 0 2px #9CA3AF; border-radius:3px; outline:none; -webkit-appearance:auto; transition: transform 0.2s; }
   .custom-checkbox:active { transform: scale(0.9); }
+  
+  .qr-highlight { color:#FF5722; font-size:18px; font-weight:900; }
 </style>
 </head>
 <body>
@@ -154,7 +153,6 @@
   <div class="tagline" id="tag-line">Sign in to discover nearby deals instantly.</div>
 
   <div class="role-tog" id="role-box">
-    <!-- The physical moving pill element -->
     <div class="sliding-pill" id="role-pill"></div>
     <div class="rtb on" id="rt-con" onclick="setRole('consumer')">📱 Customer</div>
     <div class="rtb" id="rt-mer" onclick="setRole('merchant')">🏪 Merchant</div>
@@ -169,10 +167,8 @@
     </label>
   </div>
   
-  <!-- 🚀 UI UPGRADE 3: Inline Loading Button -->
   <button class="btn-google" id="btn-login" onclick="window.loginWithGoogle()">
     <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" id="btn-google-icon" alt="Google">
-    <!-- Inline SVG Spinner (Hidden by default) -->
     <svg id="btn-spinner" style="display:none; width:20px; height:20px; animation: inline-spin 1s linear infinite;" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
       <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" stroke-dasharray="32" stroke-linecap="round" stroke-opacity="0.3"></circle>
       <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" stroke-width="3" stroke-linecap="round"></path>
@@ -210,6 +206,7 @@
 
 <script type="module">
 import { db, LS, SS, toast, cacheClear } from './js/app.js';
+import { sanitizer } from './js/sanitizer.js';
 import { getAuth, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js";
 import { doc, getDoc, setDoc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js";
 import { app } from './js/app.js';
@@ -229,13 +226,11 @@ const auth = getAuth(app);
 const provider = new GoogleAuthProvider();
 window.loginRole = 'consumer';
 
-// 🚀 JS for iOS Sliding Pill
 window.setRole = (r) => {
   window.loginRole = r;
   document.getElementById('rt-con').classList.toggle('on', r === 'consumer');
   document.getElementById('rt-mer').classList.toggle('on', r === 'merchant');
   
-  // Physically slide the pill background
   const pill = document.getElementById('role-pill');
   if(r === 'merchant') {
     pill.style.transform = 'translateX(100%)';
@@ -246,12 +241,25 @@ window.setRole = (r) => {
 
 const urlP = new URLSearchParams(window.location.search);
 if (urlP.get('qr') === '1') {
-  document.getElementById('tag-line').innerHTML = "<span style='color:#FF5722; font-size:18px; font-weight:900;'>Store Found! 🏪</span><br>Sign in to unlock deals and claim visit points.";
+  // ✅ SECURE: Using textContent instead of innerHTML
+  const tagLine = document.getElementById('tag-line');
+  tagLine.innerHTML = ''; // Clear first
+  
+  const highlight = document.createElement('span');
+  highlight.className = 'qr-highlight';
+  highlight.textContent = 'Store Found! 🏪';
+  
+  const br = document.createElement('br');
+  const msg = document.createTextNode('Sign in to unlock deals and claim visit points.');
+  
+  tagLine.appendChild(highlight);
+  tagLine.appendChild(br);
+  tagLine.appendChild(msg);
+  
   setRole('consumer');
   document.getElementById('role-box').style.display = 'none'; 
 }
 
-// 🚀 JS for Inline Button Loading
 function showLdr(msg) {
   const btn = document.getElementById('btn-login');
   document.getElementById('btn-google-icon').style.display = 'none';
@@ -261,7 +269,6 @@ function showLdr(msg) {
   btn.style.opacity = '0.9';
 }
 
-// 🚀 Safety Reset for Button if Login Fails/Cancels
 function resetLdr() {
   const btn = document.getElementById('btn-login');
   document.getElementById('btn-google-icon').style.display = 'block';
@@ -280,7 +287,8 @@ window.loginWithGoogle = async () => {
     const result = await signInWithPopup(auth, provider);
     const user = result.user; 
     const uid = user.uid; 
-    const gName = user.displayName || 'User';
+    const rawName = user.displayName || 'User';
+    const gName = sanitizer.sanitizeText(rawName, { maxLength: 100 });
     
     SS('uid', uid); SS('name', gName); SS('role', window.loginRole);
     
@@ -295,7 +303,7 @@ window.loginWithGoogle = async () => {
       
       if (existingRole !== window.loginRole) {
         await auth.signOut(); 
-        resetLdr(); // 🚀 Resets the inline button perfectly
+        resetLdr();
         
         if (existingRole === 'consumer') {
           return toast('⚠️', 'This Google account is registered as a Customer. You cannot log in as a Merchant.');
@@ -308,12 +316,28 @@ window.loginWithGoogle = async () => {
     if (window.loginRole === 'merchant') {
       let bname = gName + "'s Business";
       if (isNewUser) {
-        bname = prompt('What is your business / shop name?') || bname;
+        const rawBname = prompt('What is your business / shop name?') || bname;
+        // ✅ SECURE: Sanitize business name input
+        bname = sanitizer.sanitizeText(rawBname, { maxLength: 100, minLength: 3 });
+        if (bname.length < 3) {
+          bname = gName + "'s Business";
+        }
         SS('mname', bname); SS('wallet', 500); 
         await setDoc(userRef, { name: gName, role: 'merchant', mname: bname, wallet: 500, points: 0, liked: [], createdAt: Date.now() });
       } else {
-        if (userSnap.data().mname) { bname = userSnap.data().mname; SS('mname', bname); } 
-        else { bname = prompt('What is your business / shop name?') || bname; SS('mname', bname); await updateDoc(userRef, { role: 'merchant', mname: bname }); }
+        if (userSnap.data().mname) { 
+          const existingBname = userSnap.data().mname;
+          bname = sanitizer.sanitizeText(existingBname, { maxLength: 100 });
+          SS('mname', bname); 
+        } else { 
+          const rawBname = prompt('What is your business / shop name?') || bname;
+          bname = sanitizer.sanitizeText(rawBname, { maxLength: 100, minLength: 3 });
+          if (bname.length < 3) {
+            bname = gName + "'s Business";
+          }
+          SS('mname', bname); 
+          await updateDoc(userRef, { role: 'merchant', mname: bname }); 
+        }
         SS('wallet', userSnap.data().wallet !== undefined ? userSnap.data().wallet : 500);
         if (userSnap.data().plan) SS('plan', userSnap.data().plan);
       }
@@ -357,9 +381,42 @@ window.loginWithGoogle = async () => {
   } catch(e) {
     console.error("Firebase Auth Error:", e);
     toast('❌', 'Login failed. Please try again.');
-    resetLdr(); // 🚀 Resets button if the user closes the Google pop-up
+    resetLdr();
   }
 };
+// After successful login, request notification permission
+async function requestNotificationPermission() {
+  if ('Notification' in window && Notification.permission === 'default') {
+    // Show custom prompt first
+    const modal = document.createElement('div');
+    modal.className = 'notification-prompt-modal';
+    modal.innerHTML = `
+      <div class="prompt-content">
+        <h3>🔔 Enable Notifications</h3>
+        <p>Get instant alerts when deals pop up near you!</p>
+        <button onclick="acceptNotifications()" class="btn-primary">Enable</button>
+        <button onclick="this.closest('.notification-prompt-modal').remove()" class="btn-secondary">Maybe Later</button>
+      </div>
+    `;
+    document.body.appendChild(modal);
+  }
+}
+
+window.acceptNotifications = async function() {
+  try {
+    const permission = await Notification.requestPermission();
+    if (permission === 'granted') {
+      toast('✅', 'Notifications enabled!');
+    }
+  } catch (error) {
+    console.error('Permission error:', error);
+  }
+  document.querySelector('.notification-prompt-modal')?.remove();
+};
+
+// Call after login
+// Add this line after: window.location.href = 'map.html';
+requestNotificationPermission();
 </script>
 <div style="text-align: center; padding: 15px; font-size: 12px; z-index: 10; position: relative;">
   <a href="/privacy.html" style="color: rgba(255,255,255,0.8); text-decoration: none; font-weight: 700; text-shadow: 0 1px 3px rgba(0,0,0,0.5);">Privacy Policy</a>

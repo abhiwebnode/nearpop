@@ -1,348 +1,826 @@
-// ╔══════════════════════════════════════════════════════╗
-// ║  notifications.js — 3-Layer Hyperlocal Engine        ║
-// ║                                                      ║
-// ║  LAYER 1  Geo Filter & Cooldown                      ║
-// ║  LAYER 2  Relevance Scoring → rank by signal         ║
-// ║  LAYER 3  Spam Control  → decide send / suppress     ║
-// ╚══════════════════════════════════════════════════════╝
+// ╔══════════════════════════════════════════════════════════════════╗
+// ║  notifications.js — NearPop Smart Notification Engine v3.0       ║
+// ║  PRODUCTION-READY: Full FCM Integration + Background Support     ║
+// ║  ✅ Merged: Core logic + FCM push + trackEng export             ║
+// ║  ✅ Features: Smart linger, priority scoring, real notifications║
+// ╚══════════════════════════════════════════════════════════════════╝
 
-import { LS, SS, TC, isExpired, go, triggerLocalBuzz } from './app.js';
-import { distM } from './app.js';
+import { db, LS, SS, distM } from './app.js';
+import { updateDoc, doc, increment } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
+import { getMessaging, getToken, onMessage } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-messaging.js';
 
-// ── Current user location ────────────────────────────────
-export let loc = null;
-export function setLoc(newLoc) {
-  loc = newLoc;
-  if (newLoc) SS('lastLoc', newLoc);
-}
+// ═══════════════════════════════════════════════════════════════════
+// CONFIGURATION CONSTANTS
+// ═══════════════════════════════════════════════════════════════════
+const RULES = {
+    LINGER_MS: 5000,                      // 5 seconds wait before firing
+    GLOBAL_QUEUE_MS: 3 * 60 * 1000,       // 3 minutes between notifications
+    DEAL_COOLDOWN_MS: 48 * 60 * 60 * 1000, // 48 hours before repeating same deal
+    MAX_NOTIFS_PER_DAY: 5,                // Default daily limit
+    MIN_GPS_ACCURACY: 100,                // Reject poor GPS accuracy
+    CLEANUP_INTERVAL: 30000,              // Clean stale entries every 30s
+    STALE_THRESHOLD: 60000,               // Remove linger entries older than 60s
+    MAX_LINGER_CACHE_SIZE: 100,           // Prevent memory bloat
+    WRITE_QUEUE_BATCH_SIZE: 10,           // Batch Firestore writes
+    WRITE_QUEUE_FLUSH_INTERVAL: 5000      // Flush write queue every 5s
+};
 
-// ── Listing array (set by data loader) ───────────────────
-export let listings = [];
-export function setListings(arr) { listings = arr; }
-
-// ── Distance from current loc to a listing object ────────
-export function dist(l) {
-  const position = loc || LS('lastLoc');
-  if (!position || !l.lat) return Infinity;
-  return distM(position.lat, position.lng, l.lat, l.lng);
-}
-
-// ════════════════════════════════════════════════════════
-// MARKET MODE ZONES — known dense commercial areas
-// ════════════════════════════════════════════════════════
-const MARKET_ZONES = [
-  { name: 'Sector 15 Market',     lat: 28.4143, lng: 77.3090, r: 300 },
-  { name: 'Sector 16 Market',     lat: 28.4075, lng: 77.3195, r: 250 },
-  { name: 'NIT Market Faridabad', lat: 28.3985, lng: 77.3300, r: 350 },
-  { name: 'Crown Interiorz Mall', lat: 28.4050, lng: 77.3220, r: 400 },
-  { name: 'Old Faridabad Chowk',  lat: 28.4200, lng: 77.3050, r: 300 },
-];
-let lastMarketZone = null;
-
-export function inMarketZone(position) {
-  if (!position) return null;
-  for (const z of MARKET_ZONES) {
-    if (distM(position.lat, position.lng, z.lat, z.lng) <= z.r) return z;
-  }
-  return null;
-}
-
-// ════════════════════════════════════════════════════════
-// TRACKING ENGINE — Remembers what has been notified
-// ════════════════════════════════════════════════════════
-function getGeoStates()   { return LS('geo_states') || {}; }
-function saveGeoStates(s) { SS('geo_states', s); }
-
-export function markGeofenceNotified(id) {
-  const states = getGeoStates();
-  states[id] = { notifiedAt: Date.now() };
-  saveGeoStates(states);
-}
-
-// ════════════════════════════════════════════════════════
-// FEATURE 2 — VENDOR DAILY NOTIFICATION CAP
-// ════════════════════════════════════════════════════════
-export function vendorCapReached(l) {
-  const cap   = parseInt(l.budget || 100) >= 500 ? 100 : 20;
-  const vcap  = LS('vendor_cap') || {};
-  const today = new Date().toDateString();
-  const key   = l.uid || l.id;
-  const entry = vcap[key] || { date: '', count: 0 };
-  if (entry.date !== today) return false;
-  return entry.count >= cap;
-}
-
-export function markVendorCapUsed(l) {
-  const vcap  = LS('vendor_cap') || {};
-  const today = new Date().toDateString();
-  const key   = l.uid || l.id;
-  const entry = vcap[key] || { date: today, count: 0 };
-  if (entry.date !== today) { entry.date = today; entry.count = 0; }
-  entry.count++;
-  vcap[key] = entry;
-  const keys = Object.keys(vcap);
-  if (keys.length > 500) delete vcap[keys[0]];
-  SS('vendor_cap', vcap);
-}
-
-// ════════════════════════════════════════════════════════
-// FEATURE 3 — AREA DENSITY CONTROL (~100m grid cells)
-// ════════════════════════════════════════════════════════
-const GRID_SIZE    = 0.001; // ~100m per cell
-const MAX_PER_CELL = 3;
-
-export function applyDensityControl(candidates) {
-  const cells = {};
-  return candidates.filter(l => {
-    if (!l.lat || !l.lng) return true;
-    const ck = `${Math.round(l.lat / GRID_SIZE)}_${Math.round(l.lng / GRID_SIZE)}`;
-    cells[ck] = (cells[ck] || 0) + 1;
-    return cells[ck] <= MAX_PER_CELL;
-  });
-}
-
-// ════════════════════════════════════════════════════════
-// FEATURE 6 — BUDGET THROTTLING (hourly pacing)
-// ════════════════════════════════════════════════════════
-export function budgetThrottled(l) {
-  const dailyBudget  = parseInt(l.budget || 100);
-  const maxPopsHour  = Math.floor((dailyBudget / 12) / 2); 
-  const bt    = LS('budget_throttle') || {};
-  const hrKey = `${l.uid || l.id}_${new Date().getHours()}`;
-  return (bt[hrKey] || 0) >= maxPopsHour;
-}
-
-export function markBudgetUsed(l) {
-  const bt    = LS('budget_throttle') || {};
-  const hr    = new Date().getHours();
-  const hrKey = `${l.uid || l.id}_${hr}`;
-  bt[hrKey]   = (bt[hrKey] || 0) + 1;
-  Object.keys(bt).forEach(k => { if (!k.endsWith('_' + hr)) delete bt[k]; });
-  SS('budget_throttle', bt);
-}
-
-export function trackEng(id, delta) {
-  const eng = LS('engagement') || {};
-  eng[id] = Math.max(-50, Math.min(100, (eng[id] || 0) + delta));
-  SS('engagement', eng);
-}
-
-function engagementScore(id) {
-  return Math.min((LS('engagement') || {})[id] || 0, 15);
-}
-
-// ════════════════════════════════════════════════════════
-// USER PREFERENCES
-// ════════════════════════════════════════════════════════
-
-// 🚀 NEW: Silent Mode Toggle
-export function toggleSilentMode() {
-  const current = LS('pref_paused') || false;
-  SS('pref_paused', !current);
-  return !current; // returns true if now silent, false if active
-}
-
-export function getPrefs() {
-  return {
-    maxPerDay:    LS('pref_maxDay')       != null ? LS('pref_maxDay')    : 100,
-    maxPerHour:   LS('pref_maxHour')      != null ? LS('pref_maxHour')   : 50,
-    paused:       LS('pref_paused')       || false,
-    mutedCats:    LS('pref_mutedCats')    || [],
-    mutedVendors: LS('pref_mutedVendors') || [],
-    interests:    LS('pref_interests')    || ['deal', 'rental', 'pg', 'job'],
-  };
-}
-
-function getNLogs()            { return (LS('notif_log') || []).filter(t => Date.now() - t < 86400000); }
-export function logNotif()     { const l = getNLogs(); l.push(Date.now()); SS('notif_log', l); }
-export function notifsThisHour()  { return getNLogs().filter(t => Date.now() - t < 3600000).length; }
-export function notifsToday()     { return getNLogs().length; }
-
-let prevLoc = null, prevTime = null;
-export function updateSpeed(newLoc, newTime) {
-  if (!prevLoc || !prevTime) { prevLoc = newLoc; prevTime = newTime; return 0; }
-  const metres = distM(prevLoc.lat, prevLoc.lng, newLoc.lat, newLoc.lng);
-  const secs   = (newTime - prevTime) / 1000;
-  prevLoc = newLoc; prevTime = newTime;
-  return secs > 0 ? (metres / secs) * 3.6 : 0;
-}
-
-function scoreL(l, d, prefs) {
-  let s = 0;
-  if      (d <= 50)  s += 40;
-  else if (d <= 150) s += 25;
-  else if (d <= 300) s += 10;
-  if (prefs.interests.includes(l.type)) s += 30;
-  s += Math.round(Math.min(l.popups || 0, 100) / 10);
-  if (l.type === 'deal') s += 10;
-  if (l.verified)        s += 5;
-  if (parseInt(l.budget || 100) >= 500) s += 5;
-  s += engagementScore(l.id);
-  return s;
-}
-
-export function getNotifType(d) {
-  if (d <= 50)  return 'hard';
-  if (d <= 150) return 'soft';
-  return 'feed';
-}
-
-export function showSoftBanner(l) {
-  const col = l.color || TC(l.type);
-  let ban = document.getElementById('soft-banner');
-  if (!ban) {
-    ban = document.createElement('div');
-    ban.id = 'soft-banner';
-    ban.style.cssText = 'position:fixed;top:74px;right:13px;width:200px;background:var(--card);border:1px solid var(--bdr);border-radius:14px;padding:10px 12px;box-shadow:0 6px 24px rgba(0,0,0,.15);z-index:849;cursor:pointer;border-left:4px solid #FF5722;transition:opacity .3s';
-    document.body.appendChild(ban);
-  }
-  ban.style.borderLeftColor = col;
-  ban.style.opacity = '1';
-  ban.innerHTML = `
-    <div style="font-size:9px;font-weight:800;color:${col};letter-spacing:1px;margin-bottom:3px">${(l.type||'').toUpperCase()} · ${Math.round(l._dist||0)}m</div>
-    <div style="font-size:12px;font-weight:800;color:var(--deep);line-height:1.3">${(l.title||'').slice(0,40)}</div>
-    <div style="font-size:10px;color:var(--gray);margin-top:2px">${l.price||''}</div>`;
-  ban.onclick = () => {
-    trackEng(l.id, 8);
-    location.href = 'detail.html?id=' + encodeURIComponent(l.id);
-    ban.style.opacity = '0';
-  };
-  clearTimeout(window._banTimer);
-  window._banTimer = setTimeout(() => { if (ban) ban.style.opacity = '0'; }, 5000);
-}
-
-// ════════════════════════════════════════════════════════
-// checkProximity() — THE REWRITTEN ENGINE
-// ════════════════════════════════════════════════════════
-export function checkProximity(showNotifFn, showMarketNotifFn) {
-  const position = loc || LS('lastLoc');
-  if (!position || !listings.length) return;
-  const prefs = getPrefs();
-
-  // 1. HARD LIMITS
-  if (prefs.paused)                         return; // 🚀 Honors Silent Mode
-  if (notifsToday()    >= prefs.maxPerDay)  return;
-  if (notifsThisHour() >= prefs.maxPerHour) return;
-
-  // Market Zone Check
-  const zone = inMarketZone(position);
-  if (zone && zone.name !== lastMarketZone) {
-    lastMarketZone = zone.name;
-    const cnt = listings.filter(l => l.lat && distM(position.lat, position.lng, l.lat, l.lng) < zone.r * 1.2).length;
-    if (cnt >= 3) {
-      showMarketNotifFn(zone, cnt);
-      logNotif();
-      // Lock the engine generally, but high-scoring items can still punch through it
-      SS('last_ping', { time: Date.now(), score: 60, type: 'market' });
-      return;
+// ═══════════════════════════════════════════════════════════════════
+// FIRESTORE WRITE QUEUE (Prevents data loss, handles retries)
+// ═══════════════════════════════════════════════════════════════════
+class FirestoreWriteQueue {
+    constructor() {
+        this.queue = [];
+        this.isProcessing = false;
+        this.flushTimer = null;
+        this.startAutoFlush();
     }
-  }
-  if (!zone) lastMarketZone = null;
 
-  // LAYER 1 — INTELLIGENT GEOFENCE COOLDOWN
-  const states = getGeoStates();
-  const layer1 = listings.filter(l => {
-    if (!l.lat || !l.lng) return false;
-    if (isExpired(l))     return false;
-    
-    // Check if physically inside the radius
-    const d = dist(l);
-    const rad = Math.min(l.radius || 300, 1500);
-    if (d > rad) return false; 
-    
-    // Per-Listing Cooldown: Do not notify about the SAME listing more than once every 1 hour
-    const prev = states[l.id] || { notifiedAt: 0 };
-    const hoursSinceNotif = (Date.now() - (prev.notifiedAt || 0)) / 3600000;
-    
-    return hoursSinceNotif >= 1;
-  });
+    enqueue(operation) {
+        this.queue.push({
+            operation,
+            timestamp: Date.now(),
+            attempts: 0,
+            maxAttempts: 3
+        });
 
-  if (!layer1.length) return;
-
-  // LAYER 2 — RELEVANCE SCORING
-  const layer2 = layer1
-    .map(l => ({ ...l, _dist: dist(l), _score: scoreL(l, dist(l), prefs) }))
-    .filter(l => {
-      if (!prefs.interests.includes(l.type))        return false;
-      if (prefs.mutedCats.includes(l.type))         return false;
-      if (prefs.mutedVendors.includes(l.uid||l.id)) return false;
-      return l._score >= 40;
-    })
-    .sort((a, b) => b._score - a._score);
-  if (!layer2.length) return;
-
-  // LAYER 3 — BUDGET & VENDOR SPAM
-  const layer3 = layer2.filter(l => !vendorCapReached(l) && !budgetThrottled(l));
-  if (!layer3.length) return;
-
-  const final  = applyDensityControl(layer3);
-  if (!final.length) return;
-
-  // WE HAVE A WINNER
-  const winner = final[0];
-  const ntype  = getNotifType(winner._dist);
-
-  // 🚀 THE "SMART OVERRIDE" PACING ENGINE
-  const lastPing = LS('last_ping') || { time: 0, score: 0, type: '' };
-  const timeSincePing = Date.now() - lastPing.time;
-
-  // 🚀 FIX: Reduced to 10 seconds if app is open
-  const lockDuration = document.visibilityState === 'visible' ? 10000 : 120000; 
-
-  if (timeSincePing < lockDuration) {
-    // It is too soon. Let's see if this deal is worth breaking the lock for:
-    const isDifferentCategory = winner.type !== lastPing.type;
-    
-    // 🚀 FIX: Relaxed requirement. Now only needs to be 5 points better instead of 15.
-    const isMuchBetterDeal = winner._score >= (lastPing.score + 5); 
-
-    // If it's the same category AND not significantly better, enforce the lock and stay silent.
-    if (!isDifferentCategory && !isMuchBetterDeal) {
-      return; 
+        // Auto-flush if queue is getting large
+        if (this.queue.length >= RULES.WRITE_QUEUE_BATCH_SIZE) {
+            this.flush();
+        }
     }
-  }
 
-  if (ntype === 'hard') {
-    // 1. Fire the in-app UI update
-    showNotifFn(winner);
-    
-    // 2. Unconditionally trigger the native System Push Notification
-    // It will now show up in the device's system tray/banner exactly like a standard app notification.
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.ready.then(registration => {
-        registration.showNotification(
-          (winner.emoji || '📍') + ' ' + (winner.title || 'New Deal Nearby!'),
-          {
-            body: (winner.price ? winner.price + ' · ' : '') + (winner.desc || 'Tap to view details').slice(0, 40) + '...',
-            icon: '/icons/icon-192.png',
-            badge: '/icons/badge-96.png',
-            vibrate: [500, 250, 500, 250, 1000, 250, 1000], 
-            requireInteraction: true, 
-            data: { url: '/detail.html?id=' + winner.id } 
-          }
-        );
-      });
-    } else {
-      triggerLocalBuzz(
-        (winner.emoji || '📍') + ' ' + (winner.title || 'New Deal Nearby!'),
-        (winner.price ? winner.price + ' · ' : '') + (winner.desc || 'Tap to view details').slice(0, 40) + '...',
-        '/detail.html?id=' + winner.id
-      );
+    startAutoFlush() {
+        this.flushTimer = setInterval(() => {
+            if (this.queue.length > 0) {
+                this.flush();
+            }
+        }, RULES.WRITE_QUEUE_FLUSH_INTERVAL);
     }
-    
-    // Fallback hardware buzz in case system notifications are blocked but vibration is allowed
-    if (navigator.vibrate) navigator.vibrate([500, 250, 1000]);
 
-  } else if (ntype === 'soft') {
-    showSoftBanner(winner);
-    if (navigator.vibrate) navigator.vibrate([250]);
-  }
+    async flush() {
+        if (this.isProcessing || this.queue.length === 0) return;
 
-  // UPDATE ENGINE STATE
-  markGeofenceNotified(winner.id);
-  markVendorCapUsed(winner);
-  markBudgetUsed(winner);
-  logNotif();
-  // Save the state so the engine can compare future deals against this one
-  SS('last_ping', { time: Date.now(), score: winner._score, type: winner.type }); 
+        this.isProcessing = true;
+        const batch = this.queue.splice(0, RULES.WRITE_QUEUE_BATCH_SIZE);
+
+        for (const item of batch) {
+            try {
+                await item.operation();
+                // Success - item removed from queue
+            } catch (error) {
+                console.warn('[WriteQueue] Operation failed:', error);
+                item.attempts++;
+
+                // Retry if under max attempts
+                if (item.attempts < item.maxAttempts) {
+                    this.queue.push(item); // Re-queue for retry
+                } else {
+                    console.error('[WriteQueue] Max retries exceeded, dropping operation');
+                }
+            }
+        }
+
+        this.isProcessing = false;
+
+        // Continue processing if more items in queue
+        if (this.queue.length > 0) {
+            setTimeout(() => this.flush(), 100);
+        }
+    }
+
+    destroy() {
+        if (this.flushTimer) {
+            clearInterval(this.flushTimer);
+        }
+        this.flush(); // Final flush before destruction
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// SMART NOTIFICATION ENGINE (Production-Ready)
+// ═══════════════════════════════════════════════════════════════════
+class SmartNotificationEngine {
+    constructor() {
+        // Linger cache: track deals user is near
+        // Structure: { dealId: { timestamp, qualified, distance, firstSeen } }
+        this.lingerCache = {};
+
+        // Evaluation lock: prevent concurrent evaluations (race condition fix)
+        this._isEvaluating = false;
+
+        // System mute flag
+        this.systemMuted = false;
+
+        // Write queue for Firestore operations
+        this.writeQueue = new FirestoreWriteQueue();
+
+        // Last cleanup timestamp
+        this.lastCleanup = Date.now();
+
+        // ═══ FCM PROPERTIES ═══
+        this.messaging = null;
+        this.fcmToken = null;
+        this.notificationPermission = 'default';
+
+        // Start periodic cleanup
+        this.startCleanup();
+    }
+
+    // ───────────────────────────────────────────────────────────────
+    // FCM INITIALIZATION - Enable push notifications
+    // ───────────────────────────────────────────────────────────────
+    async initializeFCM() {
+        try {
+            console.log('[NotifEngine] Initializing FCM...');
+
+            // Check if notifications supported
+            if (!('Notification' in window)) {
+                console.warn('[NotifEngine] Notifications not supported');
+                return false;
+            }
+
+            // Check current permission
+            this.notificationPermission = Notification.permission;
+
+            if (this.notificationPermission === 'denied') {
+                console.warn('[NotifEngine] Notification permission denied');
+                return false;
+            }
+
+            // Request permission if needed
+            if (this.notificationPermission === 'default') {
+                this.notificationPermission = await Notification.requestPermission();
+                
+                if (this.notificationPermission !== 'granted') {
+                    console.warn('[NotifEngine] Permission not granted');
+                    return false;
+                }
+            }
+
+            // Check service worker support
+            if (!('serviceWorker' in navigator)) {
+                console.warn('[NotifEngine] Service Worker not supported');
+                return false;
+            }
+
+            // Register service worker
+            const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+            console.log('[NotifEngine] Service Worker registered');
+
+            // Initialize Firebase Messaging
+            this.messaging = getMessaging();
+
+            // Get FCM token with VAPID key
+            this.fcmToken = await getToken(this.messaging, {
+                vapidKey: 'BJWz7jdnCy1hb-E8M-7-Q2wanQdNY46Rw7T9I8g_EPr02m-AYAxhGCM7QBm7DpL0WgE-nSnud5mqBK6MWd4w6T0',
+                serviceWorkerRegistration: registration
+            });
+
+            if (this.fcmToken) {
+                console.log('[NotifEngine] FCM Token obtained');
+                await this.saveFCMToken(this.fcmToken);
+                
+                // Listen for foreground messages
+                onMessage(this.messaging, (payload) => {
+                    console.log('[NotifEngine] Foreground message:', payload);
+                    this.handleForegroundMessage(payload);
+                });
+
+                return true;
+            } else {
+                console.warn('[NotifEngine] Failed to get FCM token');
+                return false;
+            }
+
+        } catch (error) {
+            console.error('[NotifEngine] FCM initialization error:', error);
+            return false;
+        }
+    }
+
+    async saveFCMToken(token) {
+        const uid = LS('uid');
+        if (!uid) return;
+
+        try {
+            await updateDoc(doc(db, 'users', uid), {
+                fcmToken: token,
+                fcmTokenUpdated: new Date().toISOString(),
+                platform: this.detectPlatform(),
+                userAgent: navigator.userAgent
+            });
+            console.log('[NotifEngine] FCM token saved to Firestore');
+        } catch (error) {
+            console.error('[NotifEngine] Failed to save FCM token:', error);
+        }
+    }
+
+    detectPlatform() {
+        const ua = navigator.userAgent;
+        if (/iPhone|iPad|iPod/.test(ua)) return 'ios';
+        if (/Android/.test(ua)) return 'android';
+        return 'web';
+    }
+
+    handleForegroundMessage(payload) {
+        console.log('[NotifEngine] Handling foreground message:', payload);
+        
+        const { title, body } = payload.notification || {};
+        const data = payload.data || {};
+
+        // Show browser notification
+        if (Notification.permission === 'granted') {
+            const notification = new Notification(title || 'NearPop', {
+                body: body || 'New deal nearby!',
+                icon: '/icons/icon-192.png',
+                badge: '/icons/badge-72.png',
+                tag: data.dealId || 'nearpop-notification',
+                data: data,
+                requireInteraction: false,
+                vibrate: [200, 100, 200],
+                silent: false
+            });
+
+            notification.onclick = () => {
+                window.focus();
+                if (data.dealId) {
+                    window.location.href = `/detail.html?id=${data.dealId}`;
+                }
+                notification.close();
+            };
+
+            // Auto-close after 10 seconds
+            setTimeout(() => notification.close(), 10000);
+        }
+    }
+
+    // ───────────────────────────────────────────────────────────────
+    // CLEANUP: Remove stale linger entries (prevents memory leaks)
+    // ───────────────────────────────────────────────────────────────
+    startCleanup() {
+        this.cleanupTimer = setInterval(() => {
+            this.cleanupLingerCache();
+        }, RULES.CLEANUP_INTERVAL);
+    }
+
+    cleanupLingerCache() {
+        const now = Date.now();
+        let cleaned = 0;
+
+        // Remove stale entries
+        Object.keys(this.lingerCache).forEach(dealId => {
+            const entry = this.lingerCache[dealId];
+            const age = now - entry.timestamp;
+
+            // Remove if:
+            // 1. Older than stale threshold
+            // 2. Already qualified but still in cache (should have been deleted)
+            if (age > RULES.STALE_THRESHOLD || 
+                (entry.qualified && now - entry.qualifiedAt > 10000)) {
+                delete this.lingerCache[dealId];
+                cleaned++;
+            }
+        });
+
+        // Safety: If cache grows too large, remove oldest entries
+        const cacheSize = Object.keys(this.lingerCache).length;
+        if (cacheSize > RULES.MAX_LINGER_CACHE_SIZE) {
+            const entries = Object.entries(this.lingerCache)
+                .sort((a, b) => a[1].timestamp - b[1].timestamp);
+            
+            const toRemove = cacheSize - RULES.MAX_LINGER_CACHE_SIZE;
+            for (let i = 0; i < toRemove; i++) {
+                delete this.lingerCache[entries[i][0]];
+                cleaned++;
+            }
+        }
+
+        if (cleaned > 0) {
+            console.log(`[NotifEngine] Cleaned ${cleaned} stale linger entries`);
+        }
+
+        this.lastCleanup = now;
+    }
+
+    // ───────────────────────────────────────────────────────────────
+    // HELPER: Safely parse JSON from localStorage
+    // ───────────────────────────────────────────────────────────────
+    getArrayPref(key, defaultVal) {
+        try {
+            const val = localStorage.getItem(key);
+            return val ? JSON.parse(val) : defaultVal;
+        } catch (e) {
+            console.warn(`[NotifEngine] Failed to parse ${key}:`, e);
+            return defaultVal;
+        }
+    }
+
+    // ───────────────────────────────────────────────────────────────
+    // CORE: Evaluate position and trigger notifications
+    // ───────────────────────────────────────────────────────────────
+    async evaluate(position, activeListings, movementContext = {}) {
+        // 🔒 CRITICAL: Prevent concurrent evaluations (race condition fix)
+        if (this._isEvaluating) {
+            console.log('[NotifEngine] Evaluation in progress, skipping');
+            return;
+        }
+
+        this._isEvaluating = true;
+
+        try {
+            await this._evaluateInternal(position, activeListings, movementContext);
+        } catch (error) {
+            console.error('[NotifEngine] Evaluation error:', error);
+        } finally {
+            // 🔓 Always release lock
+            this._isEvaluating = false;
+        }
+    }
+
+    async _evaluateInternal(position, activeListings, movementContext) {
+        // System mute check
+        if (this.systemMuted) return;
+
+        // ─── 1. USER PREFERENCES ───
+        if (localStorage.getItem('pref_paused') === 'true') {
+            console.log('[NotifEngine] Notifications paused by user');
+            return;
+        }
+
+        const prefs = {
+            maxDay: parseInt(localStorage.getItem('pref_maxDay')) || RULES.MAX_NOTIFS_PER_DAY,
+            interests: this.getArrayPref('pref_interests', ['deal', 'rental', 'pg', 'job']),
+            mutedCats: this.getArrayPref('pref_mutedCats', []),
+            mutedVendors: this.getArrayPref('pref_mutedVendors', [])
+        };
+
+        // ─── 2. GPS VALIDATION ───
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+        const accuracy = position.coords.accuracy;
+        const speed = position.coords.speed; // May be null
+
+        if (accuracy > RULES.MIN_GPS_ACCURACY) {
+            console.log(`[NotifEngine] GPS accuracy too low: ${accuracy}m`);
+            return;
+        }
+
+        // ─── 3. GLOBAL COOLDOWN CHECK ───
+        const lastNotifTime = parseInt(LS('np_last_notif_time')) || 0;
+        const timeSinceLastNotif = Date.now() - lastNotifTime;
+        
+        if (timeSinceLastNotif < RULES.GLOBAL_QUEUE_MS) {
+            const remainingSec = Math.ceil((RULES.GLOBAL_QUEUE_MS - timeSinceLastNotif) / 1000);
+            console.log(`[NotifEngine] Global cooldown active: ${remainingSec}s remaining`);
+            return;
+        }
+
+        // ─── 4. DAILY LIMIT CHECK ───
+        const today = new Date().toDateString();
+        let dailyTracker = this.getArrayPref('np_daily_tracker', { date: today, count: 0 });
+        
+        // Reset if new day
+        if (dailyTracker.date !== today) {
+            dailyTracker = { date: today, count: 0 };
+        }
+
+        if (dailyTracker.count >= prefs.maxDay) {
+            console.log(`[NotifEngine] Daily limit reached: ${dailyTracker.count}/${prefs.maxDay}`);
+            return;
+        }
+
+        // ─── 5. MOVEMENT CONTEXT (for adaptive radius) ───
+        const { isStationary = false, densityLevel = 'normal' } = movementContext;
+        
+        // Adaptive trigger radius based on movement and density
+        let triggerRadius = 500; // Default 500m
+        
+        if (isStationary) {
+            triggerRadius = 100; // Tighter radius when stationary
+        } else if (speed && speed > 2.0) {
+            triggerRadius = 300; // Medium radius for fast walkers
+        }
+
+        if (densityLevel === 'high') {
+            triggerRadius = Math.min(triggerRadius, 50); // Max 50m in high density
+        }
+
+        // Additional density check: if too many active listings, tighten radius
+        if (activeListings.length > 20) {
+            triggerRadius = Math.min(triggerRadius, 50);
+        } else if (activeListings.length > 10) {
+            triggerRadius = Math.min(triggerRadius, 200);
+        }
+
+        console.log(`[NotifEngine] Trigger radius: ${triggerRadius}m (stationary: ${isStationary}, listings: ${activeListings.length})`);
+
+        // ─── 6. EVALUATE EACH DEAL ───
+        const qualifiedDeals = [];
+        const now = Date.now();
+
+        for (const deal of activeListings) {
+            // Basic validation
+            if (!deal.id || !deal.lat || !deal.lng) continue;
+
+            // Merchant budget check
+            if (deal.popupsSentToday >= (deal.dailyPopupLimit || 100)) continue;
+
+            // Expiry check
+            if (deal.expiryDate && new Date(deal.expiryDate) < new Date()) continue;
+
+            // User interest check
+            if (!prefs.interests.includes(deal.type)) continue;
+
+            // Muted category check
+            if (prefs.mutedCats.includes(deal.type)) continue;
+
+            // Muted vendor check
+            if (prefs.mutedVendors.includes(deal.uid || deal.id)) continue;
+
+            // 48-hour deal cooldown check
+            const lastSeenDeal = parseInt(LS(`np_seen_${deal.id}`)) || 0;
+            if (now - lastSeenDeal < RULES.DEAL_COOLDOWN_MS) continue;
+
+            // Distance check
+            const distance = distM(lat, lng, parseFloat(deal.lat), parseFloat(deal.lng));
+
+            if (distance <= triggerRadius) {
+                // ✅ FIXED: Enhanced linger mechanism with race-condition protection
+                const cacheEntry = this.lingerCache[deal.id];
+
+                if (!cacheEntry) {
+                    // First time seeing this deal - add to linger cache
+                    this.lingerCache[deal.id] = {
+                        timestamp: now,
+                        firstSeen: now,
+                        qualified: false,
+                        distance: distance,
+                        evaluationCount: 1
+                    };
+                    console.log(`[NotifEngine] New deal in linger: ${deal.title} (${Math.round(distance)}m)`);
+
+                } else if (!cacheEntry.qualified) {
+                    // Existing entry - check if linger time met
+                    const lingerDuration = now - cacheEntry.timestamp;
+                    cacheEntry.evaluationCount++;
+                    cacheEntry.distance = distance;
+
+                    if (lingerDuration >= RULES.LINGER_MS) {
+                        // ✅ CRITICAL FIX: Mark as qualified immediately to prevent duplicates
+                        cacheEntry.qualified = true;
+                        cacheEntry.qualifiedAt = now;
+
+                        // Calculate priority score
+                        deal.score = this.calculatePriorityScore(deal, distance, movementContext);
+                        deal._lingerDuration = lingerDuration;
+                        deal._distance = distance;
+
+                        qualifiedDeals.push(deal);
+                        console.log(`[NotifEngine] Deal qualified: ${deal.title} (score: ${deal.score.toFixed(1)})`);
+                    } else {
+                        const remaining = Math.ceil((RULES.LINGER_MS - lingerDuration) / 1000);
+                        console.log(`[NotifEngine] Lingering: ${deal.title} (${remaining}s remaining)`);
+                    }
+                }
+                // If already qualified, do nothing (wait for deletion after send)
+
+            } else {
+                // Outside trigger radius - remove from cache
+                if (this.lingerCache[deal.id]) {
+                    console.log(`[NotifEngine] Deal left radius: ${deal.title}`);
+                    delete this.lingerCache[deal.id];
+                }
+            }
+        }
+
+        // ─── 7. PROCESS QUALIFIED DEALS ───
+        if (qualifiedDeals.length > 0) {
+            console.log(`[NotifEngine] Processing ${qualifiedDeals.length} qualified deals`);
+            await this.processAndFire(qualifiedDeals, dailyTracker);
+        }
+    }
+
+    // ───────────────────────────────────────────────────────────────
+    // ENHANCED PRIORITY SCORING (Production-grade algorithm)
+    // ───────────────────────────────────────────────────────────────
+    calculatePriorityScore(deal, distance, movementContext = {}) {
+        // Component 1: Distance relevance (exponential decay - closer is much better)
+        const maxDistance = 500;
+        const distanceScore = 100 * Math.exp(-2 * distance / maxDistance);
+
+        // Component 2: Budget influence (reduced weight for fairness)
+        const budgetScore = Math.min(100, (deal.budget || 0) / 10);
+
+        // Component 3: Time-of-day relevance
+        let temporalScore = 50;
+        const hour = new Date().getHours();
+        
+        // Boost for appropriate times
+        const timeBoosts = {
+            'deal': [9, 10, 11, 16, 17, 18, 19], // Shopping hours
+            'rental': [10, 11, 12, 13, 14, 15],  // Business hours
+            'pg': [10, 11, 12, 13, 14, 15],      // Business hours
+            'job': [9, 10, 11, 14, 15, 16]       // Work hours
+        };
+
+        if (timeBoosts[deal.type]?.includes(hour)) {
+            temporalScore += 20;
+        }
+
+        // Component 4: Quality signals
+        let qualityScore = 50;
+        if (deal.imageUrl) qualityScore += 10;
+        if (deal.desc && deal.desc.length > 50) qualityScore += 5;
+        if (deal.price) qualityScore += 5;
+
+        // Component 5: Movement context adjustment
+        let movementMultiplier = 1.0;
+        const { isStationary = false } = movementContext;
+
+        if (isStationary && distance < 100) {
+            movementMultiplier = 1.3; // Boost nearby deals when stationary
+        } else if (isStationary && distance > 200) {
+            movementMultiplier = 0.7; // Penalize distant deals when stationary
+        }
+
+        // Final weighted score
+        const rawScore = 
+            (distanceScore * 0.50) +  // Distance is most important
+            (temporalScore * 0.20) +  // Time relevance
+            (qualityScore * 0.20) +   // Quality signals
+            (budgetScore * 0.10);     // Budget has least weight (fairness)
+
+        const finalScore = rawScore * movementMultiplier;
+
+        return Math.max(0, Math.min(100, finalScore));
+    }
+
+    // ───────────────────────────────────────────────────────────────
+    // PROCESS AND FIRE: Send notification to user
+    // ───────────────────────────────────────────────────────────────
+    async processAndFire(qualifiedDeals, dailyTracker) {
+        // Sort by score (highest first)
+        qualifiedDeals.sort((a, b) => b.score - a.score);
+
+        // ✅ IMPROVED: Fair distribution - limit deals per merchant
+        const MAX_DEALS_PER_MERCHANT = 2;
+        const merchantCounts = {};
+        const fairDeals = [];
+
+        for (const deal of qualifiedDeals) {
+            const count = merchantCounts[deal.uid] || 0;
+            
+            if (count < MAX_DEALS_PER_MERCHANT) {
+                fairDeals.push(deal);
+                merchantCounts[deal.uid] = count + 1;
+            }
+
+            // Stop after collecting top 3 deals
+            if (fairDeals.length >= 3) break;
+        }
+
+        if (fairDeals.length === 0) return;
+
+        // Strategy 1: Single deal (most common)
+        if (fairDeals.length === 1) {
+            const deal = fairDeals[0];
+            await this.sendSingleNotification(deal, dailyTracker);
+            return;
+        }
+
+        // Strategy 2: Multiple deals from same merchant
+        if (fairDeals.length > 1 && fairDeals[0].uid === fairDeals[1].uid) {
+            await this.sendGroupedNotification(fairDeals, dailyTracker);
+            return;
+        }
+
+        // Strategy 3: Multiple merchants - send top deal only
+        const topDeal = fairDeals[0];
+        await this.sendSingleNotification(topDeal, dailyTracker);
+    }
+
+    // ───────────────────────────────────────────────────────────────
+    // SEND SINGLE NOTIFICATION
+    // ───────────────────────────────────────────────────────────────
+    async sendSingleNotification(deal, dailyTracker) {
+        const emoji = deal.emoji || this.getTypeEmoji(deal.type);
+        const title = `${emoji} ${deal.title}`;
+        const distance = Math.round(deal._distance || 0);
+        const body = deal.price 
+            ? `${deal.price} · ${distance}m away`
+            : `${distance}m from you`;
+
+        // Send notification (FCM-enabled)
+        await this.sendNotification(title, body, deal);
+
+        // Update tracking
+        this.updateTrackingData([deal], dailyTracker);
+    }
+
+    // ───────────────────────────────────────────────────────────────
+    // SEND GROUPED NOTIFICATION
+    // ───────────────────────────────────────────────────────────────
+    async sendGroupedNotification(deals, dailyTracker) {
+        const merchant = deals[0].owner || 'A nearby store';
+        const title = `${merchant} has ${deals.length} offers nearby! 🎁`;
+        const body = deals.map(d => `• ${d.title}`).slice(0, 2).join('\n');
+
+        // Send notification (FCM-enabled)
+        await this.sendNotification(title, body, deals[0]);
+
+        // Update tracking
+        this.updateTrackingData(deals, dailyTracker);
+    }
+
+    // ───────────────────────────────────────────────────────────────
+    // SEND NOTIFICATION (FCM-Enabled)
+    // ───────────────────────────────────────────────────────────────
+    async sendNotification(title, body, deal) {
+        const notificationData = {
+            dealId: deal.id,
+            type: deal.type,
+            distance: Math.round(deal._distance || 0)
+        };
+
+        // Method 1: Browser Notification API (foreground)
+        if (Notification.permission === 'granted') {
+            const notification = new Notification(title, {
+                body: body,
+                icon: '/icons/icon-192.png',
+                badge: '/icons/badge-72.png',
+                tag: deal.id,
+                data: notificationData,
+                vibrate: [200, 100, 200],
+                requireInteraction: false,
+                silent: false
+            });
+
+            notification.onclick = () => {
+                window.focus();
+                window.location.href = `/detail.html?id=${deal.id}`;
+                notification.close();
+            };
+
+            setTimeout(() => notification.close(), 10000);
+        }
+
+        // Method 2: Cloud Function (works in background via FCM)
+        if (this.fcmToken) {
+            await this.sendViaCloudFunction(title, body, notificationData);
+        }
+
+        console.log(`[NotifEngine] Notification sent: ${title}`);
+    }
+
+    async sendViaCloudFunction(title, body, data) {
+        const uid = LS('uid');
+        if (!uid) return;
+
+        try {
+            const response = await fetch('https://nearpop-a432d.cloudfunctions.net/sendProximityNotification', {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    userId: uid,
+                    title: title,
+                    body: body,
+                    data: data
+                })
+            });
+
+            if (!response.ok) {
+                console.error('[NotifEngine] Cloud Function failed:', await response.text());
+            }
+        } catch (error) {
+            console.error('[NotifEngine] Cloud Function error:', error);
+        }
+    }
+
+    // ───────────────────────────────────────────────────────────────
+    // UPDATE TRACKING DATA
+    // ───────────────────────────────────────────────────────────────
+    updateTrackingData(deals, dailyTracker) {
+        const now = Date.now();
+
+        // Update global tracking
+        localStorage.setItem('np_last_notif_time', now);
+
+        // Update daily tracker
+        dailyTracker.count += 1;
+        localStorage.setItem('np_daily_tracker', JSON.stringify(dailyTracker));
+
+        // Process each deal
+        deals.forEach(deal => {
+            // Mark as seen (48-hour cooldown)
+            localStorage.setItem(`np_seen_${deal.id}`, now);
+
+            // ✅ CRITICAL FIX: Delete from linger cache immediately
+            delete this.lingerCache[deal.id];
+
+            // ✅ IMPROVED: Queue Firestore writes (prevents data loss)
+            this.writeQueue.enqueue(async () => {
+                try {
+                    await updateDoc(doc(db, 'listings', deal.id), {
+                        popups: increment(1),
+                        popupsSentToday: increment(1),
+                        lastPopupAt: now
+                    });
+                    console.log(`[NotifEngine] Updated listing: ${deal.id}`);
+                } catch (error) {
+                    console.error(`[NotifEngine] Failed to update listing ${deal.id}:`, error);
+                    throw error; // Re-throw for retry mechanism
+                }
+            });
+
+            // Update merchant wallet if applicable
+            if (deal.uid) {
+                this.writeQueue.enqueue(async () => {
+                    try {
+                        await updateDoc(doc(db, 'users', deal.uid), {
+                            wallet: increment(-0.1),
+                            totalSpent: increment(0.1),
+                            lastChargeAt: now
+                        });
+                        console.log(`[NotifEngine] Charged merchant: ${deal.uid} (₹0.10)`);
+                    } catch (error) {
+                        console.error(`[NotifEngine] Failed to charge merchant ${deal.uid}:`, error);
+                        throw error; // Re-throw for retry mechanism
+                    }
+                });
+            }
+        });
+
+        console.log(`[NotifEngine] Updated tracking for ${deals.length} deals`);
+    }
+
+    // ───────────────────────────────────────────────────────────────
+    // TRIGGER UI: Display notification to user
+    // ───────────────────────────────────────────────────────────────
+    // ───────────────────────────────────────────────────────────────
+    // HELPER: Get emoji for deal type
+    // ───────────────────────────────────────────────────────────────
+    getTypeEmoji(type) {
+        const emojis = {
+            'deal': '🏷️',
+            'rental': '🏠',
+            'pg': '🛋️',
+            'job': '💼'
+        };
+        return emojis[type] || '📍';
+    }
+
+    // ───────────────────────────────────────────────────────────────
+    // CLEANUP: Destroy engine and clean up resources
+    // ───────────────────────────────────────────────────────────────
+    destroy() {
+        if (this.cleanupTimer) {
+            clearInterval(this.cleanupTimer);
+        }
+        if (this.writeQueue) {
+            this.writeQueue.destroy();
+        }
+        console.log('[NotifEngine] Engine destroyed');
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// EXPORT SINGLETON INSTANCE
+// ═══════════════════════════════════════════════════════════════════
+export const NotificationEngine = new SmartNotificationEngine();
+
+// ═══════════════════════════════════════════════════════════════════
+// TRACK ENGAGEMENT FUNCTION (Used by detail.html, map.html, etc.)
+// ═══════════════════════════════════════════════════════════════════
+export function trackEng(id, value) {
+    try {
+        // Get UID from localStorage
+        const uid = localStorage.getItem('np_uid');
+        if (!uid || !id) return;
+
+        // Dynamically import required modules to avoid circular dependencies
+        import('./app.js').then(({ db }) => {
+            import('https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js')
+                .then(({ updateDoc, doc, increment }) => {
+                    updateDoc(doc(db, 'users', uid), { 
+                        ['eng_' + id]: increment(value) 
+                    }).catch(() => {
+                        // Silent fail - engagement tracking is non-critical
+                    });
+                })
+                .catch(() => {});
+        }).catch(() => {});
+    } catch (error) {
+        // Silent fail - don't break the app for analytics
+        console.debug('trackEng:', error);
+    }
+}
+
+// Cleanup on page unload
+if (typeof window !== 'undefined') {
+    window.addEventListener('beforeunload', () => {
+        NotificationEngine.destroy();
+    });
 }
