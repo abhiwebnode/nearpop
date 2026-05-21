@@ -360,7 +360,6 @@
   pointer-events: auto; 
 }
 
-/* ✨ UI IMPROVEMENT: Better hover effect */
 @media (hover: hover) {
   .hcd:hover {
     transform: translateY(-4px);
@@ -402,7 +401,6 @@
 .deal-card:nth-child(4n+3) { background: #F5F3FF; border-color: #EDE9FE; } 
 .deal-card:nth-child(4n+4) { background: #F0FDF4; border-color: #D1FAE5; } 
 
-/* ✨ UI IMPROVEMENT: Better hover effect */
 @media (hover: hover) {
   .deal-card:hover {
     transform: translateY(-4px);
@@ -1323,7 +1321,7 @@ const savedLoc = LS('lastLoc');
 let markers = [];
 let listings = [];
 let loc = savedLoc;
-let cat = 'all';  // ✅ FIX: Default to 'all' instead of 'deal'
+let cat = 'all'; 
 let radiusKm = LS('searchRadius') || 1;
 let filteredList = [];
 let welcomeType = 'deal';
@@ -1375,7 +1373,6 @@ let gpsManager = null;
 
 function startWatch() {
   if (!gpsManager) {
-    // Lazy load GPS manager
     import('./js/adaptive-gps-manager.js').then(module => {
       const AdaptiveGPSManager = module.AdaptiveGPSManager;
       
@@ -1391,7 +1388,6 @@ function startWatch() {
             window.userMarker.setLatLng([lat, lng]);
           }
           
-          // Only redraw on significant movement or first update
           if (movementContext.significantMovement || movementContext.firstUpdate) {
             if (!hasLiveCentered) {
               window._map.flyTo([lat, lng], 15, { duration: 0.5 });
@@ -1400,7 +1396,6 @@ function startWatch() {
             redraw();
           }
           
-          // Pass movement context to notification engine
           if (filteredList && filteredList.length > 0) {
             NotificationEngine.evaluate(position, filteredList, movementContext);
           }
@@ -1411,7 +1406,6 @@ function startWatch() {
       gpsManager.start();
     }).catch(err => {
       console.error('GPS Manager load failed:', err);
-      // Fallback to basic GPS
       basicGPSFallback();
     });
   } else {
@@ -1482,23 +1476,23 @@ window.recenterMap = () => {
   }
 };
 
-// ═══ INITIALIZE FCM ═══
-import { NotificationEngine } from './js/notifications.js';
-
-// Initialize FCM when map loads
-(async function initFCM() {
+// ═══ INITIALIZE FCM PUSH NOTIFICATIONS ═══
+(async function initPushNotifications() {
   try {
-    const fcmReady = await NotificationEngine.initializeFCM();
-    if (fcmReady) {
-      console.log('✅ FCM initialized successfully');
+    if (typeof NotificationEngine.initializeFCM === 'function') {
+      const fcmReady = await NotificationEngine.initializeFCM();
+      if (fcmReady) {
+        console.log('✅ Push notifications initialized successfully');
+      } else {
+        console.warn('⚠️ Push notifications not available');
+      }
     } else {
-      console.warn('⚠️ FCM initialization failed');
+      console.warn('⚠️ NotificationEngine.initializeFCM is not defined.');
     }
   } catch (error) {
-    console.error('FCM init error:', error);
+    console.error('FCM initialization error:', error);
   }
 })();
-
 
 async function loadListings() {
   try {
@@ -1615,7 +1609,6 @@ function redraw() {
     const col = l.color || TC(l.type);
     const imgUrl = l.imageUrl || l.image;
     
-    // ✅ SECURE: Sanitize image URL and use <img> instead of CSS background
     const safeImgUrl = imgUrl ? sanitizer.sanitizeUrl(imgUrl) : '';
     const pinInner = safeImgUrl 
       ? `<div style="width:100%;height:100%;border-radius:50%;overflow:hidden;"><img src="${safeImgUrl}" style="width:100%;height:100%;object-fit:cover;"></div>` 
@@ -1672,9 +1665,8 @@ window.previewPin = (l) => {
   const safeLat = parseFloat(l.lat);
   const safeLng = parseFloat(l.lng);
   
-  // ✅ SECURE: Safe image rendering
   const ppIc = document.getElementById('pp-ic');
-  ppIc.innerHTML = ''; // Clear first
+  ppIc.innerHTML = ''; 
   
   if (l.image || l.imageUrl) {
     const imgUrl = l.imageUrl || l.image;
@@ -1689,7 +1681,6 @@ window.previewPin = (l) => {
     ppIc.style.border = `1px solid ${col}40`; 
   }
   
-  // ✅ SECURE: Sanitized text content
   document.getElementById('pp-title').textContent = sanitizer.sanitizeText(l.title || 'Special Offer', { maxLength: 200 });
   document.getElementById('pp-price').textContent = sanitizer.sanitizeText(l.price || 'View Details', { maxLength: 50 });
   
@@ -1702,9 +1693,8 @@ window.previewPin = (l) => {
   document.getElementById('pp-type').style.color = col; 
   document.getElementById('pp-type').style.background = `${col}20`;
   
-  // ✅ SECURE: Safe FOMO badge rendering
   const fomoEl = document.getElementById('pp-fomo');
-  fomoEl.innerHTML = ''; // Clear first
+  fomoEl.innerHTML = ''; 
   
   if (l.expiryDate) {
     const hrs = (new Date(l.expiryDate) - new Date()) / 3600000;
@@ -1730,10 +1720,6 @@ window.closePreview = () => {
   document.getElementById('pin-preview').classList.remove('on'); 
 };
 
-// ⚠️ IMPORTANT: renderCards() uses innerHTML for performance
-// All user content MUST be sanitized before display
-// Images: sanitizer.sanitizeUrl()
-// Text: sanitizer.sanitizeText()
 function renderCards() {
   const total = filteredList.length;
   
@@ -1776,9 +1762,8 @@ function renderCards() {
       </div>
     `;
   } else {
-    // ✅ SECURE: Safe horizontal card rendering
     const hscrEl = document.getElementById('hscr');
-    hscrEl.innerHTML = ''; // Clear first
+    hscrEl.innerHTML = ''; 
     
     filteredList.forEach(l => {
       const card = document.createElement('div');
@@ -1789,7 +1774,6 @@ function renderCards() {
       const topDiv = document.createElement('div');
       topDiv.style.cssText = 'display:flex; gap:10px; margin-bottom:8px; align-items:flex-start;';
       
-      // Thumbnail
       const thumb = document.createElement('div');
       thumb.style.cssText = 'width:44px;height:44px;border-radius:12px;flex-shrink:0;position:relative;';
       
@@ -1802,7 +1786,6 @@ function renderCards() {
         thumb.textContent = l.emoji || TE(l.type);
       }
       
-      // FOMO badge if applicable
       if (l.expiryDate) {
         const hrs = (new Date(l.expiryDate) - new Date()) / 3600000;
         if (hrs > 0 && hrs <= 24) {
@@ -1855,15 +1838,13 @@ function renderCards() {
       hscrEl.appendChild(card);
     });
 
-    // ✅ SECURE: Safe vertical grid rendering
-    vgrid.innerHTML = ''; // Clear first
+    vgrid.innerHTML = ''; 
     
     filteredList.forEach(l => {
       const card = document.createElement('div');
       card.className = 'd-card';
       card.onclick = () => openListing(l.id);
       
-      // Icon/Image
       const iconDiv = document.createElement('div');
       iconDiv.className = 'd-ic';
       
@@ -1874,7 +1855,6 @@ function renderCards() {
         iconDiv.textContent = l.emoji || TE(l.type);
       }
       
-      // Content
       const contentDiv = document.createElement('div');
       contentDiv.className = 'd-cont';
       
@@ -1896,7 +1876,6 @@ function renderCards() {
       distDiv.className = 'd-dist';
       distDiv.textContent = fmtDist(l);
       
-      // FOMO badge
       if (l.expiryDate) {
         const hrs = (new Date(l.expiryDate) - new Date()) / 3600000;
         if (hrs > 0 && hrs <= 24) {
@@ -1949,7 +1928,6 @@ window.toggleListView = () => {
   }
 };
 
-// 🚀 Bind showNotif so the new Engine can trigger it properly
 function showNotif(l) {
   if (!LS('pop_seen_' + l.id)) {
     SS('pop_seen_' + l.id, Date.now()); 
