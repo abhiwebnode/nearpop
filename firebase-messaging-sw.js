@@ -14,7 +14,8 @@ firebase.initializeApp({
   projectId: "nearpop-a432d",
   storageBucket: "nearpop-a432d.firebasestorage.app",
   messagingSenderId: "265333242320",
-  appId: "1:265333242320:web:f2cedec620ef08d4e161d5"
+  appId: "1:265333242320:web:f2cedec620ef08d4e161d5",
+  measurementId: "G-71Y2Y75FLQ"
 });
 
 const messaging = firebase.messaging();
