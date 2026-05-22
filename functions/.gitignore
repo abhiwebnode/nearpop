@@ -1,2 +1,20 @@
+# Dependencies
 node_modules/
-*.local
+package-lock.json
+
+# Environment variables (IMPORTANT - Contains API keys!)
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+npm-debug.log*
+
+# Firebase
+.firebase/
+firebase-debug.log
+
+# OS
+.DS_Store
+Thumbs.db

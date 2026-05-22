@@ -3,7 +3,11 @@
 // ║  PRODUCTION-READY: Server-side image processing & upload          ║
 // ║  ✅ API key hidden, rate limiting, validation, optimization       ║
 // ║  ✅ FIRESTORE VERSION - No Realtime Database needed               ║
+// ║  ✅ ENVIRONMENT VARIABLES - Modern Firebase approach              ║
 // ╚══════════════════════════════════════════════════════════════════╝
+
+// Load environment variables
+require('dotenv').config();
 
 const functions = require('firebase-functions');
 const admin = require('firebase-admin');
@@ -230,8 +234,8 @@ exports.uploadListingImage = functions
     try {
       console.log('[UploadImage] Uploading to ImgBB...');
 
-      // ✅ API KEY SECURE: Stored in Firebase Functions config
-      const imgbbApiKey = functions.config().imgbb?.key;
+      // ✅ API KEY SECURE: Stored in environment variables
+      const imgbbApiKey = process.env.IMGBB_API_KEY;
 
       if (!imgbbApiKey) {
         console.error('[UploadImage] ImgBB API key not configured');
