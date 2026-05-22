@@ -18,7 +18,6 @@
 
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
-
 <script>
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
@@ -84,59 +83,9 @@
     to { opacity: 1; transform: translateY(0); }
   }
   
-  /* ═══════════════════════════════════════════════════════════════ */
-  /* ENHANCED DARK MODE SUPPORT */
-  /* ═══════════════════════════════════════════════════════════════ */
   @media (prefers-color-scheme: dark) {
-    .premium-bg::after { 
-      background: rgba(0, 0, 0, 0.6); 
-    }
-    
-    .card { 
-      background-color: rgba(15, 15, 19, 0.85); 
-      box-shadow: 0 30px 60px rgba(0,0,0,0.8), 
-                  0 0 0 1px rgba(255,255,255,0.08) inset; 
-    }
-    
-    .tagline { 
-      color: rgba(255, 255, 255, 0.7) !important; 
-    }
-    
-    .role-tog { 
-      background: rgba(255, 255, 255, 0.05) !important; 
-      border-color: rgba(255, 255, 255, 0.1) !important; 
-    }
-    
-    .rtb { 
-      color: rgba(255, 255, 255, 0.6) !important; 
-    }
-    
-    .rtb.on { 
-      color: rgba(255, 255, 255, 0.95) !important; 
-    }
-    
-    .sliding-pill {
-      background: rgba(255, 255, 255, 0.1) !important;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.4) !important;
-    }
-    
-    .btn-google { 
-      background: rgba(255, 255, 255, 0.1) !important; 
-      color: rgba(255, 255, 255, 0.95) !important;
-      border-color: rgba(255, 255, 255, 0.2) !important;
-    }
-    
-    .btn-google:active { 
-      background: rgba(255, 255, 255, 0.15) !important; 
-    }
-    
-    .checkbox-wrapper label {
-      color: rgba(255, 255, 255, 0.9) !important;
-    }
-    
-    .checkbox-wrapper label a {
-      color: #FF7043 !important;
-    }
+    .premium-bg::after { background: rgba(0, 0, 0, 0.6); }
+    .card { background-color: rgba(15, 15, 19, 0.75); box-shadow: 0 30px 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.08) inset; }
   }
   
   .brand { display:flex; align-items:center; justify-content:center; gap:10px; margin-bottom:12px; }
@@ -180,79 +129,17 @@
   
   .rtb.on { color:var(--deep); }
 
-  .btn-google { 
-    display:flex; 
-    align-items:center; 
-    justify-content:center; 
-    gap:12px; 
-    width:100%; 
-    padding:14px; 
-    border-radius:12px; 
-    background:var(--bg-app); 
-    color:var(--deep); 
-    font-size:15px; 
-    font-weight:800; 
-    border:2px solid var(--bdr); 
-    cursor:pointer; 
-    transition:all 0.2s; 
-    font-family:inherit; 
-    box-shadow:0 4px 15px rgba(0,0,0,0.06); 
-  }
-  
-  .btn-google:active { 
-    transform:scale(0.97); 
-    background:var(--cream); 
-  }
-  
-  .btn-google img { 
-    width:20px; 
-    height:20px; 
-    transition: opacity 0.2s; 
-  }
+  .btn-google { display:flex; align-items:center; justify-content:center; gap:12px; width:100%; padding:14px; border-radius:12px; background:var(--bg-app); color:var(--deep); font-size:15px; font-weight:800; border:2px solid var(--bdr); cursor:pointer; transition:all 0.2s; font-family:inherit; box-shadow:0 4px 15px rgba(0,0,0,0.06); }
+  .btn-google:active { transform:scale(0.97); background:var(--cream); }
+  .btn-google img { width:20px; height:20px; transition: opacity 0.2s; }
 
-  @keyframes inline-spin { 
-    100% { transform: rotate(360deg); } 
-  }
+  @keyframes inline-spin { 100% { transform: rotate(360deg); } }
 
-  .checkbox-wrapper { 
-    display:flex; 
-    align-items:flex-start; 
-    gap:10px; 
-    margin-bottom:20px; 
-    text-align:left; 
-    padding:0 4px; 
-  }
+  .checkbox-wrapper { display:flex; align-items:flex-start; gap:10px; margin-bottom:20px; text-align:left; padding:0 4px; }
+  .custom-checkbox { width:20px; height:20px; accent-color:#FF5722; cursor:pointer; flex-shrink:0; margin-top:2px; background-color:#ffffff; box-shadow:0 0 0 2px #9CA3AF; border-radius:3px; outline:none; -webkit-appearance:auto; transition: transform 0.2s; }
+  .custom-checkbox:active { transform: scale(0.9); }
   
-  .custom-checkbox { 
-    width:20px; 
-    height:20px; 
-    accent-color:#FF5722; 
-    cursor:pointer; 
-    flex-shrink:0; 
-    margin-top:2px; 
-    background-color:#ffffff; 
-    box-shadow:0 0 0 2px #9CA3AF; 
-    border-radius:3px; 
-    outline:none; 
-    -webkit-appearance:auto; 
-    transition: transform 0.2s; 
-  }
-  
-  .custom-checkbox:active { 
-    transform: scale(0.9); 
-  }
-  
-  .qr-highlight { 
-    color:#FF5722; 
-    font-size:18px; 
-    font-weight:900; 
-  }
-
-  /* Google One Tap Button Container */
-  #google-signin-container {
-    width: 100%;
-    margin-bottom: 16px;
-  }
+  .qr-highlight { color:#FF5722; font-size:18px; font-weight:900; }
 </style>
 </head>
 <body>
@@ -280,11 +167,7 @@
     </label>
   </div>
   
-  <!-- Google One Tap Button Container -->
-  <div id="google-signin-container"></div>
-
-  <!-- Fallback Custom Button (if One Tap doesn't render) -->
-  <button class="btn-google" id="btn-login" onclick="window.triggerGoogleSignIn()">
+  <button class="btn-google" id="btn-login" onclick="window.loginWithGoogle()">
     <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" id="btn-google-icon" alt="Google">
     <svg id="btn-spinner" style="display:none; width:20px; height:20px; animation: inline-spin 1s linear infinite;" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
       <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" stroke-dasharray="32" stroke-linecap="round" stroke-opacity="0.3"></circle>
@@ -322,56 +205,59 @@
 </script>
 
 <script type="module">
-// ═══════════════════════════════════════════════════════════════════
-// FIREBASE CONFIGURATION (POPUP ONLY)
-// ═══════════════════════════════════════════════════════════════════
-
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-app.js';
-import { getAuth, GoogleAuthProvider, signInWithPopup } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js';
-import { getFirestore, doc, getDoc, setDoc, updateDoc, increment } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
+import { db, LS, SS, toast, cacheClear } from './js/app.js';
 import { sanitizer } from './js/sanitizer.js';
+import { getAuth, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js";
+import { doc, getDoc, setDoc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js";
+import { app } from './js/app.js';
 
-const firebaseConfig = {
-  apiKey: "AIzaSyDYUm3VV8iuLHQKJuU9fWgaRaYU0t5Dlzk",
-  authDomain: "nearpop-a432d.firebaseapp.com",
-  projectId: "nearpop-a432d",
-  storageBucket: "nearpop-a432d.firebasestorage.app",
-  messagingSenderId: "265333242320",
-  appId: "1:265333242320:web:f2cedec620ef08d4e161d5",
-  measurementId: "G-71Y2Y75FLQ"
+// If already logged in, redirect smoothly
+if (LS('uid')) { 
+  const savedIntent = sessionStorage.getItem('np_intent');
+  if (savedIntent) {
+    sessionStorage.removeItem('np_intent');
+    window.location.href = savedIntent;
+  } else {
+    window.location.href = LS('role') === 'merchant' ? 'merchant.html' : 'map.html'; 
+  }
+}
+
+const auth = getAuth(app);
+const provider = new GoogleAuthProvider();
+window.loginRole = 'consumer';
+
+window.setRole = (r) => {
+  window.loginRole = r;
+  document.getElementById('rt-con').classList.toggle('on', r === 'consumer');
+  document.getElementById('rt-mer').classList.toggle('on', r === 'merchant');
+  
+  const pill = document.getElementById('role-pill');
+  if(r === 'merchant') {
+    pill.style.transform = 'translateX(100%)';
+  } else {
+    pill.style.transform = 'translateX(0)';
+  }
 };
 
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-
-// ═══════════════════════════════════════════════════════════════════
-// UTILITY FUNCTIONS (🚀 FIXED: Now uses the np_ prefix!)
-// ═══════════════════════════════════════════════════════════════════
-function SS(k, v) { 
-  const key = 'np_' + k;
-  if (v === null || v === undefined) localStorage.removeItem(key);
-  else localStorage.setItem(key, typeof v === 'object' ? JSON.stringify(v) : v);
-}
-
-function LS(k) {
-  const v = localStorage.getItem('np_' + k);
-  try { return JSON.parse(v); } catch(e) { return v; }
-}
-
-function toast(ic, tx) { 
-  document.getElementById('t-ic').textContent = ic;
-  document.getElementById('t-tx').textContent = tx;
-  const t = document.getElementById('toast');
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 3000);
-}
-
-function cacheClear() { 
-  const keep = ['np_uid','np_name','np_role','np_phone','np_mname','np_wallet','np_points','np_liked','np_plan'];
-  Object.keys(localStorage).forEach(k => { 
-    if (k.startsWith('np_') && !keep.includes(k)) localStorage.removeItem(k); 
-  });
+const urlP = new URLSearchParams(window.location.search);
+if (urlP.get('qr') === '1') {
+  // ✅ SECURE: Using textContent instead of innerHTML
+  const tagLine = document.getElementById('tag-line');
+  tagLine.innerHTML = ''; // Clear first
+  
+  const highlight = document.createElement('span');
+  highlight.className = 'qr-highlight';
+  highlight.textContent = 'Store Found! 🏪';
+  
+  const br = document.createElement('br');
+  const msg = document.createTextNode('Sign in to unlock deals and claim visit points.');
+  
+  tagLine.appendChild(highlight);
+  tagLine.appendChild(br);
+  tagLine.appendChild(msg);
+  
+  setRole('consumer');
+  document.getElementById('role-box').style.display = 'none'; 
 }
 
 function showLdr(msg) {
@@ -392,119 +278,99 @@ function resetLdr() {
   btn.style.opacity = '1';
 }
 
-// ═══════════════════════════════════════════════════════════════════
-// ROLE SELECTION & QR DETECTION
-// ═══════════════════════════════════════════════════════════════════
-window.loginRole = 'consumer';
+window.loginWithGoogle = async () => {
+  if (!document.getElementById('agree-check').checked) return toast('⚠️', 'Please agree to the Terms & Privacy Policy.');
 
-window.setRole = (r) => {
-  window.loginRole = r;
-  document.getElementById('rt-con').classList.toggle('on', r === 'consumer');
-  document.getElementById('rt-mer').classList.toggle('on', r === 'merchant');
-  
-  const pill = document.getElementById('role-pill');
-  if(r === 'merchant') {
-    pill.style.transform = 'translateX(100%)';
-  } else {
-    pill.style.transform = 'translateX(0)';
-  }
-};
-
-const urlP = new URLSearchParams(window.location.search);
-if (urlP.get('qr') === '1') {
-  const tagLine = document.getElementById('tag-line');
-  tagLine.innerHTML = ''; 
-  const highlight = document.createElement('span');
-  highlight.className = 'qr-highlight';
-  highlight.textContent = 'Store Found! 🏪';
-  tagLine.appendChild(highlight);
-  tagLine.appendChild(document.createElement('br'));
-  tagLine.appendChild(document.createTextNode('Sign in to unlock deals and claim visit points.'));
-  setRole('consumer');
-  document.getElementById('role-box').style.display = 'none'; 
-}
-
-// ═══════════════════════════════════════════════════════════════════
-// CORE LOGIN PROCESSING
-// ═══════════════════════════════════════════════════════════════════
-window.processUserLogin = async (user) => {
   try {
-    showLdr('Setting up account...');
+    showLdr('Connecting to Google...');
     
+    const result = await signInWithPopup(auth, provider);
+    const user = result.user; 
     const uid = user.uid; 
     const rawName = user.displayName || 'User';
-    const gName = sanitizer && sanitizer.sanitizeText ? sanitizer.sanitizeText(rawName, { maxLength: 100 }) : rawName;
+    const gName = sanitizer.sanitizeText(rawName, { maxLength: 100 });
     
-    SS('uid', uid); 
-    SS('name', gName); 
-    SS('role', window.loginRole);
+    SS('uid', uid); SS('name', gName); SS('role', window.loginRole);
+    
+    showLdr('Signing in...'); 
     
     const userRef = doc(db, 'users', uid);
     const userSnap = await getDoc(userRef);
     const isNewUser = !userSnap.exists(); 
     
-    // Role validation for existing users
     if (!isNewUser) {
       const existingRole = userSnap.data().role || 'consumer';
+      
       if (existingRole !== window.loginRole) {
         await auth.signOut(); 
         resetLdr();
-        return toast('⚠️', `You are registered as a ${existingRole}. You cannot log in as a ${window.loginRole}.`);
+        
+        if (existingRole === 'consumer') {
+          return toast('⚠️', 'This Google account is registered as a Customer. You cannot log in as a Merchant.');
+        } else {
+          return toast('⚠️', 'This Google account is registered as a Merchant. You cannot log in as a Customer.');
+        }
       }
     }
 
-    // Database Setup
     if (window.loginRole === 'merchant') {
       let bname = gName + "'s Business";
       if (isNewUser) {
         const rawBname = prompt('What is your business / shop name?') || bname;
-        bname = sanitizer && sanitizer.sanitizeText ? sanitizer.sanitizeText(rawBname, { maxLength: 100, minLength: 3 }) : rawBname;
-        if (bname.length < 3) bname = gName + "'s Business";
-        
-        SS('mname', bname); 
-        SS('wallet', 500); 
+        // ✅ SECURE: Sanitize business name input
+        bname = sanitizer.sanitizeText(rawBname, { maxLength: 100, minLength: 3 });
+        if (bname.length < 3) {
+          bname = gName + "'s Business";
+        }
+        SS('mname', bname); SS('wallet', 500); 
         await setDoc(userRef, { name: gName, role: 'merchant', mname: bname, wallet: 500, points: 0, liked: [], createdAt: Date.now() });
       } else {
         if (userSnap.data().mname) { 
-          bname = userSnap.data().mname;
+          const existingBname = userSnap.data().mname;
+          bname = sanitizer.sanitizeText(existingBname, { maxLength: 100 });
           SS('mname', bname); 
         } else { 
           const rawBname = prompt('What is your business / shop name?') || bname;
-          bname = sanitizer && sanitizer.sanitizeText ? sanitizer.sanitizeText(rawBname, { maxLength: 100, minLength: 3 }) : rawBname;
-          if (bname.length < 3) bname = gName + "'s Business";
+          bname = sanitizer.sanitizeText(rawBname, { maxLength: 100, minLength: 3 });
+          if (bname.length < 3) {
+            bname = gName + "'s Business";
+          }
           SS('mname', bname); 
           await updateDoc(userRef, { role: 'merchant', mname: bname }); 
         }
         SS('wallet', userSnap.data().wallet !== undefined ? userSnap.data().wallet : 500);
+        if (userSnap.data().plan) SS('plan', userSnap.data().plan);
       }
     } else {
-      // Consumer setup
-      if (isNewUser) {
-        await setDoc(userRef, { name: gName, role: 'consumer', wallet: 0, points: 50, liked: [], createdAt: Date.now() });
-      }
+      if (isNewUser) await setDoc(userRef, { name: gName, role: 'consumer', wallet: 0, points: 50, liked: [], createdAt: Date.now() });
     }
     
     cacheClear();
-    
-    // Handle QR Analytics
     const savedIntent = sessionStorage.getItem('np_intent');
-    const qrMid = urlP.get('mid');
     
-    try {
-      if (qrMid) {
-        await updateDoc(doc(db, 'users', qrMid), { qrScans: increment(1), [isNewUser ? 'qrNew' : 'qrRet']: increment(1) });
+    const qrMid = urlP.get('mid');
+    if (qrMid) {
+      try {
+        if (isNewUser) {
+          await updateDoc(doc(db, 'users', qrMid), { qrNew: increment(1), qrScans: increment(1) });
+        } else {
+          await updateDoc(doc(db, 'users', qrMid), { qrRet: increment(1), qrScans: increment(1) });
+        }
         sessionStorage.setItem('np_qr_logged_' + qrMid, 'true'); 
-      } else if (savedIntent && savedIntent.includes('utm_source=qr_standee')) {
-        const intentUrl = new URL(savedIntent.startsWith('http') ? savedIntent : window.location.origin + '/' + savedIntent);
+      } catch (err) { console.warn("Rules blocked analytics:", err); }
+    } else if (savedIntent && savedIntent.includes('utm_source=qr_standee')) {
+      try {
+        const urlStr = savedIntent.startsWith('http') ? savedIntent : window.location.origin + '/' + savedIntent;
+        const intentUrl = new URL(urlStr);
         const merchantId = intentUrl.searchParams.get('mid');
         if (merchantId) {
-          await updateDoc(doc(db, 'users', merchantId), { qrScans: increment(1), [isNewUser ? 'qrNew' : 'qrRet']: increment(1) });
+          if (isNewUser) await updateDoc(doc(db, 'users', merchantId), { qrNew: increment(1), qrScans: increment(1) });
+          else await updateDoc(doc(db, 'users', merchantId), { qrRet: increment(1), qrScans: increment(1) });
           sessionStorage.setItem('np_qr_logged_' + merchantId, 'true');
         }
-      }
-    } catch (err) { console.warn("Analytics non-fatal error:", err); }
+      } catch (err) { console.warn("Rules blocked fallback analytics:", err); }
+    }
     
-    // REDIRECT (Success)
     if (savedIntent) {
       sessionStorage.removeItem('np_intent');
       window.location.href = savedIntent;
@@ -512,45 +378,46 @@ window.processUserLogin = async (user) => {
       window.location.href = window.loginRole === 'merchant' ? 'merchant.html?v=' + Date.now() : 'map.html?v=' + Date.now();
     }
 
-  } catch (error) {
-    console.error("Database Setup Error:", error);
-    toast('❌', 'Error setting up account. Check console.');
-    resetLdr();
-  }
-};
-
-// ═══════════════════════════════════════════════════════════════════
-// STANDARD GOOGLE POPUP TRIGGER
-// ═══════════════════════════════════════════════════════════════════
-window.triggerGoogleSignIn = async () => {
-  if (!document.getElementById('agree-check').checked) {
-    return toast('⚠️', 'Please agree to the Terms & Privacy Policy.');
-  }
-  
-  try {
-    showLdr('Connecting to Google...');
-    const provider = new GoogleAuthProvider();
-    provider.setCustomParameters({ prompt: 'select_account' });
-    
-    const result = await signInWithPopup(auth, provider);
-    await window.processUserLogin(result.user);
   } catch(e) {
-    console.error("Popup Error:", e);
-    if (e.code !== 'auth/popup-closed-by-user' && e.code !== 'auth/cancelled-popup-request') {
-      toast('❌', 'Login failed. Please try again.');
-    }
+    console.error("Firebase Auth Error:", e);
+    toast('❌', 'Login failed. Please try again.');
     resetLdr();
   }
 };
+// After successful login, request notification permission
+async function requestNotificationPermission() {
+  if ('Notification' in window && Notification.permission === 'default') {
+    // Show custom prompt first
+    const modal = document.createElement('div');
+    modal.className = 'notification-prompt-modal';
+    modal.innerHTML = `
+      <div class="prompt-content">
+        <h3>🔔 Enable Notifications</h3>
+        <p>Get instant alerts when deals pop up near you!</p>
+        <button onclick="acceptNotifications()" class="btn-primary">Enable</button>
+        <button onclick="this.closest('.notification-prompt-modal').remove()" class="btn-secondary">Maybe Later</button>
+      </div>
+    `;
+    document.body.appendChild(modal);
+  }
+}
 
-// Add enter key support for accessibility
-document.getElementById('google-signin-container').addEventListener('keypress', function (e) {
-    if (e.key === 'Enter') {
-      window.triggerGoogleSignIn();
+window.acceptNotifications = async function() {
+  try {
+    const permission = await Notification.requestPermission();
+    if (permission === 'granted') {
+      toast('✅', 'Notifications enabled!');
     }
-});
-</script>
+  } catch (error) {
+    console.error('Permission error:', error);
+  }
+  document.querySelector('.notification-prompt-modal')?.remove();
+};
 
+// Call after login
+// Add this line after: window.location.href = 'map.html';
+requestNotificationPermission();
+</script>
 <div style="text-align: center; padding: 15px; font-size: 12px; z-index: 10; position: relative;">
   <a href="/privacy.html" style="color: rgba(255,255,255,0.8); text-decoration: none; font-weight: 700; text-shadow: 0 1px 3px rgba(0,0,0,0.5);">Privacy Policy</a>
   <span style="color: rgba(255,255,255,0.5); margin: 0 8px;">|</span>
