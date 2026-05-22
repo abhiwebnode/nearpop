@@ -67,7 +67,7 @@ exports.sendProximityNotification = functions.https.onRequest(async (req, res) =
         title: title,
         body: body,
         icon: '/icons/icon-192.png',
-        badge: '/icons/badge-72.png'
+        badge: '/icons/icon-192.png'
       },
       data: {
         dealId: data?.dealId || '',
@@ -108,7 +108,7 @@ exports.sendProximityNotification = functions.https.onRequest(async (req, res) =
       webpush: {
         notification: {
           icon: '/icons/icon-192.png',
-          badge: '/icons/badge-72.png',
+          badge: '/icons/icon-192.png',
           vibrate: [200, 100, 200],
           requireInteraction: false,
           tag: data?.dealId || 'nearpop-notification',
