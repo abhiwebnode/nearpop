@@ -326,7 +326,7 @@ messaging.onBackgroundMessage((payload) => {
       const notificationOptions = {
         body: payload.notification?.body || 'Tap to see details.',
         icon: '/icons/icon-192.png',
-        badge: '/icons/badge-72.png',
+        badge: '/icons/icon-192.png',
         vibrate: [200, 100, 200],
         data: { 
           ...payload.data,
@@ -562,7 +562,7 @@ self.addEventListener('push', (event) => {
       const options = {
         body: data.notification?.body || 'New deal nearby!',
         icon: '/icons/icon-192.png',
-        badge: '/icons/badge-72.png',
+        badge: '/icons/icon-192.png',
         data: data.data || {},
         actions: [
           { action: 'view', title: '👁️ View Deal' },
