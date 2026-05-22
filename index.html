@@ -330,11 +330,11 @@
 // ═══════════════════════════════════════════════════════════════════
 
 // ⚠️ IMPORTANT: ADD YOUR GOOGLE CLIENT ID HERE!
-// Get it from: https://console.cloud.google.com/apis/credentials
 const GOOGLE_CLIENT_ID = '265333242320-2ro113m9pntkqt5ggca1pd0a56885qpc.apps.googleusercontent.com';
 
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-app.js';
-import { getAuth, GoogleAuthProvider, signInWithCredential } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js';
+// 🚀 ADDED: signInWithPopup imported here
+import { getAuth, GoogleAuthProvider, signInWithCredential, signInWithPopup } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js';
 import { getFirestore, doc, getDoc, setDoc, updateDoc, increment } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
 
 const firebaseConfig = {
@@ -437,162 +437,161 @@ function resetLdr() {
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// GOOGLE ONE TAP - MAIN LOGIN HANDLER
+// SHARED LOGIN PROCESSING (Used by both One Tap and Popup)
 // ═══════════════════════════════════════════════════════════════════
-window.handleGoogleCredential = async (response) => {
-  // Check terms agreement
-  if (!document.getElementById('agree-check').checked) {
-    return toast('⚠️', 'Please agree to the Terms & Privacy Policy.');
-  }
-
-  try {
-    showLdr('Signing in...');
+window.processUserLogin = async (user) => {
+  const uid = user.uid; 
+  const rawName = user.displayName || 'User';
+  const gName = sanitizer.sanitizeText(rawName, { maxLength: 100 });
+  
+  SS('uid', uid); 
+  SS('name', gName); 
+  SS('role', window.loginRole);
+  
+  // Check if user exists
+  const userRef = doc(db, 'users', uid);
+  const userSnap = await getDoc(userRef);
+  const isNewUser = !userSnap.exists(); 
+  
+  // Role validation for existing users
+  if (!isNewUser) {
+    const existingRole = userSnap.data().role || 'consumer';
     
-    // Create Firebase credential from Google One Tap response
-    const credential = GoogleAuthProvider.credential(response.credential);
-    
-    // Sign in to Firebase
-    const result = await signInWithCredential(auth, credential);
-    const user = result.user; 
-    const uid = user.uid; 
-    const rawName = user.displayName || 'User';
-    const gName = sanitizer.sanitizeText(rawName, { maxLength: 100 });
-    
-    SS('uid', uid); 
-    SS('name', gName); 
-    SS('role', window.loginRole);
-    
-    // Check if user exists
-    const userRef = doc(db, 'users', uid);
-    const userSnap = await getDoc(userRef);
-    const isNewUser = !userSnap.exists(); 
-    
-    // Role validation for existing users
-    if (!isNewUser) {
-      const existingRole = userSnap.data().role || 'consumer';
+    if (existingRole !== window.loginRole) {
+      await auth.signOut(); 
+      resetLdr();
       
-      if (existingRole !== window.loginRole) {
-        await auth.signOut(); 
-        resetLdr();
-        
-        if (existingRole === 'consumer') {
-          return toast('⚠️', 'This Google account is registered as a Customer. You cannot log in as a Merchant.');
-        } else {
-          return toast('⚠️', 'This Google account is registered as a Merchant. You cannot log in as a Customer.');
-        }
+      if (existingRole === 'consumer') {
+        return toast('⚠️', 'This Google account is registered as a Customer. You cannot log in as a Merchant.');
+      } else {
+        return toast('⚠️', 'This Google account is registered as a Merchant. You cannot log in as a Customer.');
       }
     }
+  }
 
-    // Merchant-specific setup
-    if (window.loginRole === 'merchant') {
-      let bname = gName + "'s Business";
-      if (isNewUser) {
+  // Merchant-specific setup
+  if (window.loginRole === 'merchant') {
+    let bname = gName + "'s Business";
+    if (isNewUser) {
+      const rawBname = prompt('What is your business / shop name?') || bname;
+      bname = sanitizer.sanitizeText(rawBname, { maxLength: 100, minLength: 3 });
+      if (bname.length < 3) {
+        bname = gName + "'s Business";
+      }
+      SS('mname', bname); 
+      SS('wallet', 500); 
+      await setDoc(userRef, { 
+        name: gName, 
+        role: 'merchant', 
+        mname: bname, 
+        wallet: 500, 
+        points: 0, 
+        liked: [], 
+        createdAt: Date.now() 
+      });
+    } else {
+      if (userSnap.data().mname) { 
+        const existingBname = userSnap.data().mname;
+        bname = sanitizer.sanitizeText(existingBname, { maxLength: 100 });
+        SS('mname', bname); 
+      } else { 
         const rawBname = prompt('What is your business / shop name?') || bname;
         bname = sanitizer.sanitizeText(rawBname, { maxLength: 100, minLength: 3 });
         if (bname.length < 3) {
           bname = gName + "'s Business";
         }
         SS('mname', bname); 
-        SS('wallet', 500); 
-        await setDoc(userRef, { 
-          name: gName, 
-          role: 'merchant', 
-          mname: bname, 
-          wallet: 500, 
-          points: 0, 
-          liked: [], 
-          createdAt: Date.now() 
+        await updateDoc(userRef, { role: 'merchant', mname: bname }); 
+      }
+      SS('wallet', userSnap.data().wallet !== undefined ? userSnap.data().wallet : 500);
+      if (userSnap.data().plan) SS('plan', userSnap.data().plan);
+    }
+  } else {
+    // Consumer setup
+    if (isNewUser) {
+      await setDoc(userRef, { 
+        name: gName, 
+        role: 'consumer', 
+        wallet: 0, 
+        points: 50, 
+        liked: [], 
+        createdAt: Date.now() 
+      });
+    }
+  }
+  
+  // Clear cache
+  cacheClear();
+  
+  // Handle QR code analytics
+  const savedIntent = sessionStorage.getItem('np_intent');
+  const qrMid = urlP.get('mid');
+  
+  if (qrMid) {
+    try {
+      if (isNewUser) {
+        await updateDoc(doc(db, 'users', qrMid), { 
+          qrNew: increment(1), 
+          qrScans: increment(1) 
         });
       } else {
-        if (userSnap.data().mname) { 
-          const existingBname = userSnap.data().mname;
-          bname = sanitizer.sanitizeText(existingBname, { maxLength: 100 });
-          SS('mname', bname); 
-        } else { 
-          const rawBname = prompt('What is your business / shop name?') || bname;
-          bname = sanitizer.sanitizeText(rawBname, { maxLength: 100, minLength: 3 });
-          if (bname.length < 3) {
-            bname = gName + "'s Business";
-          }
-          SS('mname', bname); 
-          await updateDoc(userRef, { role: 'merchant', mname: bname }); 
-        }
-        SS('wallet', userSnap.data().wallet !== undefined ? userSnap.data().wallet : 500);
-        if (userSnap.data().plan) SS('plan', userSnap.data().plan);
-      }
-    } else {
-      // Consumer setup
-      if (isNewUser) {
-        await setDoc(userRef, { 
-          name: gName, 
-          role: 'consumer', 
-          wallet: 0, 
-          points: 50, 
-          liked: [], 
-          createdAt: Date.now() 
+        await updateDoc(doc(db, 'users', qrMid), { 
+          qrRet: increment(1), 
+          qrScans: increment(1) 
         });
       }
+      sessionStorage.setItem('np_qr_logged_' + qrMid, 'true'); 
+    } catch (err) { 
+      console.warn("Rules blocked analytics:", err); 
     }
-    
-    // Clear cache
-    cacheClear();
-    
-    // Handle QR code analytics
-    const savedIntent = sessionStorage.getItem('np_intent');
-    const qrMid = urlP.get('mid');
-    
-    if (qrMid) {
-      try {
+  } else if (savedIntent && savedIntent.includes('utm_source=qr_standee')) {
+    try {
+      const urlStr = savedIntent.startsWith('http') ? savedIntent : window.location.origin + '/' + savedIntent;
+      const intentUrl = new URL(urlStr);
+      const merchantId = intentUrl.searchParams.get('mid');
+      if (merchantId) {
         if (isNewUser) {
-          await updateDoc(doc(db, 'users', qrMid), { 
+          await updateDoc(doc(db, 'users', merchantId), { 
             qrNew: increment(1), 
             qrScans: increment(1) 
           });
         } else {
-          await updateDoc(doc(db, 'users', qrMid), { 
+          await updateDoc(doc(db, 'users', merchantId), { 
             qrRet: increment(1), 
             qrScans: increment(1) 
           });
         }
-        sessionStorage.setItem('np_qr_logged_' + qrMid, 'true'); 
-      } catch (err) { 
-        console.warn("Rules blocked analytics:", err); 
+        sessionStorage.setItem('np_qr_logged_' + merchantId, 'true');
       }
-    } else if (savedIntent && savedIntent.includes('utm_source=qr_standee')) {
-      try {
-        const urlStr = savedIntent.startsWith('http') ? savedIntent : window.location.origin + '/' + savedIntent;
-        const intentUrl = new URL(urlStr);
-        const merchantId = intentUrl.searchParams.get('mid');
-        if (merchantId) {
-          if (isNewUser) {
-            await updateDoc(doc(db, 'users', merchantId), { 
-              qrNew: increment(1), 
-              qrScans: increment(1) 
-            });
-          } else {
-            await updateDoc(doc(db, 'users', merchantId), { 
-              qrRet: increment(1), 
-              qrScans: increment(1) 
-            });
-          }
-          sessionStorage.setItem('np_qr_logged_' + merchantId, 'true');
-        }
-      } catch (err) { 
-        console.warn("Rules blocked fallback analytics:", err); 
-      }
+    } catch (err) { 
+      console.warn("Rules blocked fallback analytics:", err); 
     }
-    
-    // Redirect to appropriate page
-    if (savedIntent) {
-      sessionStorage.removeItem('np_intent');
-      window.location.href = savedIntent;
-    } else {
-      // ✅ CORRECT REDIRECT LOGIC
-      window.location.href = window.loginRole === 'merchant' 
-        ? 'merchant.html?v=' + Date.now() 
-        : 'map.html?v=' + Date.now();
-    }
+  }
+  
+  // Redirect to appropriate page
+  if (savedIntent) {
+    sessionStorage.removeItem('np_intent');
+    window.location.href = savedIntent;
+  } else {
+    window.location.href = window.loginRole === 'merchant' 
+      ? 'merchant.html?v=' + Date.now() 
+      : 'map.html?v=' + Date.now();
+  }
+};
 
+// ═══════════════════════════════════════════════════════════════════
+// GOOGLE ONE TAP - INVISIBLE WIDGET HANDLER
+// ═══════════════════════════════════════════════════════════════════
+window.handleGoogleCredential = async (response) => {
+  if (!document.getElementById('agree-check').checked) {
+    return toast('⚠️', 'Please agree to the Terms & Privacy Policy.');
+  }
+
+  try {
+    showLdr('Signing in...');
+    const credential = GoogleAuthProvider.credential(response.credential);
+    const result = await signInWithCredential(auth, credential);
+    await window.processUserLogin(result.user);
   } catch(e) {
     console.error("Google One Tap Error:", e);
     toast('❌', 'Login failed. Please try again.');
@@ -601,18 +600,23 @@ window.handleGoogleCredential = async (response) => {
 };
 
 // ═══════════════════════════════════════════════════════════════════
-// MANUAL TRIGGER (for custom button)
+// MANUAL TRIGGER (For your custom "Continue with Google" button)
 // ═══════════════════════════════════════════════════════════════════
-window.triggerGoogleSignIn = () => {
+window.triggerGoogleSignIn = async () => {
   if (!document.getElementById('agree-check').checked) {
     return toast('⚠️', 'Please agree to the Terms & Privacy Policy.');
   }
   
-  // Trigger Google One Tap prompt
-  if (window.google && window.google.accounts) {
-    google.accounts.id.prompt();
-  } else {
-    toast('⚠️', 'Google Sign-In is loading. Please wait a moment and try again.');
+  try {
+    showLdr('Signing in...');
+    const provider = new GoogleAuthProvider();
+    // 🚀 FIXED: Using signInWithPopup ensures a reliable window opens every time!
+    const result = await signInWithPopup(auth, provider);
+    await window.processUserLogin(result.user);
+  } catch(e) {
+    console.error("Popup Error:", e);
+    toast('❌', 'Login failed or cancelled.');
+    resetLdr();
   }
 };
 
@@ -620,10 +624,8 @@ window.triggerGoogleSignIn = () => {
 // INITIALIZE GOOGLE ONE TAP
 // ═══════════════════════════════════════════════════════════════════
 window.addEventListener('load', () => {
-  // Wait for Google library to load
   const initializeGoogleOneTap = () => {
     if (window.google && window.google.accounts) {
-      // Initialize Google One Tap
       google.accounts.id.initialize({
         client_id: GOOGLE_CLIENT_ID,
         callback: handleGoogleCredential,
@@ -632,7 +634,6 @@ window.addEventListener('load', () => {
         context: 'signin'
       });
       
-      // Render the button
       google.accounts.id.renderButton(
         document.getElementById('google-signin-container'),
         {
@@ -645,13 +646,8 @@ window.addEventListener('load', () => {
           width: 350
         }
       );
-      
-      // Auto-prompt One Tap (appears as overlay)
-      // google.accounts.id.prompt(); // Uncomment if you want auto-prompt
-      
       console.log('✅ Google One Tap initialized');
     } else {
-      // Retry if Google library not loaded yet
       setTimeout(initializeGoogleOneTap, 100);
     }
   };
@@ -659,7 +655,6 @@ window.addEventListener('load', () => {
   initializeGoogleOneTap();
 });
 </script>
-
 <div style="text-align: center; padding: 15px; font-size: 12px; z-index: 10; position: relative;">
   <a href="/privacy.html" style="color: rgba(255,255,255,0.8); text-decoration: none; font-weight: 700; text-shadow: 0 1px 3px rgba(0,0,0,0.5);">Privacy Policy</a>
   <span style="color: rgba(255,255,255,0.5); margin: 0 8px;">|</span>
