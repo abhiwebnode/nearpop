@@ -165,7 +165,7 @@ class SmartNotificationEngine {
             }
 
             // Register service worker
-            const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+            const registration = await navigator.serviceWorker.register('/sw.js');
             console.log('[NotifEngine] Service Worker registered');
 
             // Initialize Firebase Messaging
