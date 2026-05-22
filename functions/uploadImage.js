@@ -2,6 +2,7 @@
 // ║  functions/uploadImage.js - Secure Image Upload Function         ║
 // ║  PRODUCTION-READY: Server-side image processing & upload          ║
 // ║  ✅ API key hidden, rate limiting, validation, optimization       ║
+// ║  ✅ FIRESTORE VERSION - No Realtime Database needed               ║
 // ╚══════════════════════════════════════════════════════════════════╝
 
 const functions = require('firebase-functions');
@@ -44,12 +45,16 @@ exports.uploadListingImage = functions
 
     // ═══════════════════════════════════════════════════════════════
     // STEP 2: RATE LIMITING (5 uploads per hour per user)
+    // ✅ USING FIRESTORE (not Realtime Database)
     // ═══════════════════════════════════════════════════════════════
     try {
-      const db = admin.database();
-      const rateLimitRef = db.ref(`rate_limits/image_upload/${userId}`);
-      const rateLimitSnap = await rateLimitRef.once('value');
-      const uploads = rateLimitSnap.val() || [];
+      const db = admin.firestore();
+      const rateLimitRef = db.collection('rate_limits').doc(userId);
+      const rateLimitSnap = await rateLimitRef.get();
+      
+      // Get existing uploads or empty array
+      const rateLimitData = rateLimitSnap.exists ? rateLimitSnap.data() : {};
+      const uploads = rateLimitData.uploads || [];
 
       // Clean old uploads (older than 1 hour)
       const oneHourAgo = Date.now() - 3600000;
@@ -64,7 +69,12 @@ exports.uploadListingImage = functions
 
       // Add current timestamp
       recentUploads.push(Date.now());
-      await rateLimitRef.set(recentUploads);
+      
+      // Update Firestore
+      await rateLimitRef.set({
+        uploads: recentUploads,
+        lastUpload: admin.firestore.FieldValue.serverTimestamp()
+      }, { merge: true });
 
       console.log('[UploadImage] Rate limit check passed:', recentUploads.length, '/5');
     } catch (error) {
@@ -242,7 +252,7 @@ exports.uploadListingImage = functions
 
       // Upload to ImgBB
       const uploadResponse = await fetch(
-        'https://api.imgbb.com/1/upload?key=4dd5a19986e0ffeabe66a2eb0114d358',
+        `https://api.imgbb.com/1/upload?key=${imgbbApiKey}`,
         {
           method: 'POST',
           body: formData,
@@ -266,7 +276,7 @@ exports.uploadListingImage = functions
       });
 
       // ═══════════════════════════════════════════════════════════
-      // STEP 9: LOG UPLOAD FOR AUDIT TRAIL
+      // STEP 9: LOG UPLOAD FOR AUDIT TRAIL (Using Firestore)
       // ═══════════════════════════════════════════════════════════
       try {
         await admin.firestore().collection('upload_logs').add({
