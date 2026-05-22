@@ -13,16 +13,16 @@ import { getMessaging, getToken, onMessage } from 'https://www.gstatic.com/fireb
 // CONFIGURATION CONSTANTS
 // ═══════════════════════════════════════════════════════════════════
 const RULES = {
-    LINGER_MS: 5000,                      // 5 seconds wait before firing
-    GLOBAL_QUEUE_MS: 3 * 60 * 1000,       // 3 minutes between notifications
-    DEAL_COOLDOWN_MS: 48 * 60 * 60 * 1000, // 48 hours before repeating same deal
-    MAX_NOTIFS_PER_DAY: 5,                // Default daily limit
-    MIN_GPS_ACCURACY: 100,                // Reject poor GPS accuracy
-    CLEANUP_INTERVAL: 30000,              // Clean stale entries every 30s
-    STALE_THRESHOLD: 60000,               // Remove linger entries older than 60s
-    MAX_LINGER_CACHE_SIZE: 100,           // Prevent memory bloat
-    WRITE_QUEUE_BATCH_SIZE: 10,           // Batch Firestore writes
-    WRITE_QUEUE_FLUSH_INTERVAL: 5000      // Flush write queue every 5s
+    LINGER_MS: 5000,                      // 5 seconds wait (keep this so GPS doesn't glitch)
+    GLOBAL_QUEUE_MS: 10 * 1000,           // 🚀 10 SECONDS between any notifications
+    DEAL_COOLDOWN_MS: 60 * 1000,          // 🚀 1 MINUTE before repeating the exact same deal
+    MAX_NOTIFS_PER_DAY: 99999,            // 🚀 Unlimited daily limit
+    MIN_GPS_ACCURACY: 100,                
+    CLEANUP_INTERVAL: 30000,              
+    STALE_THRESHOLD: 60000,               
+    MAX_LINGER_CACHE_SIZE: 100,           
+    WRITE_QUEUE_BATCH_SIZE: 10,           
+    WRITE_QUEUE_FLUSH_INTERVAL: 5000      
 };
 
 // ═══════════════════════════════════════════════════════════════════
@@ -338,22 +338,23 @@ class SmartNotificationEngine {
         }
     }
 
-    async _evaluateInternal(position, activeListings, movementContext) {
+		async _evaluateInternal(position, activeListings, movementContext) {
         // System mute check
         if (this.systemMuted) return;
 
-        // ─── 1. USER PREFERENCES ───
-        if (localStorage.getItem('pref_paused') === 'true') {
+        // ─── 1. USER PREFERENCES (FIXED PAUSE CHECK) ───
+        if (LS('pref_paused') === true) {
             console.log('[NotifEngine] Notifications paused by user');
             return;
         }
 
         const prefs = {
-            maxDay: parseInt(localStorage.getItem('pref_maxDay')) || RULES.MAX_NOTIFS_PER_DAY,
-            interests: this.getArrayPref('pref_interests', ['deal', 'rental', 'pg', 'job']),
-            mutedCats: this.getArrayPref('pref_mutedCats', []),
-            mutedVendors: this.getArrayPref('pref_mutedVendors', [])
+            maxDay: parseInt(LS('pref_maxDay')) || RULES.MAX_NOTIFS_PER_DAY,
+            interests: this.getArrayPref('np_pref_interests', ['deal', 'rental', 'pg', 'job']),
+            mutedCats: this.getArrayPref('np_pref_mutedCats', []),
+            mutedVendors: this.getArrayPref('np_pref_mutedVendors', [])
         };
+        
 
         // ─── 2. GPS VALIDATION ───
         const lat = position.coords.latitude;

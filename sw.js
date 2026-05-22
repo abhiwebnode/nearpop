@@ -34,9 +34,9 @@ class NotificationCooldownManager {
     
     // Cooldown durations (milliseconds)
     this.COOLDOWNS = {
-      listing: 3600000,      // 1 hour per listing
-      merchant: 1800000,     // 30 minutes per merchant
-      global: 180000         // 3 minutes global (any notification)
+      listing: 60 * 1000,    // 🚀 1 minute per listing (was 1 hour)
+      merchant: 0,           // 🚀 No merchant limits (was 30 mins)
+      global: 10 * 1000      // 🚀 10 seconds global gap (was 3 mins)
     };
   }
 

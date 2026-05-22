@@ -447,7 +447,7 @@ window.togglePause = tog => {
   window.haptic(30);
   tog.classList.toggle('on');
   const v = tog.classList.contains('on');
-  LS('pref_paused', v);
+  SS('pref_paused', v); // 🚀 FIXED: Changed LS to SS so it actually saves!
   syncField(uid, 'pref_paused', v);
   toast(v ? '⏸️' : '▶️', v ? 'Notifications paused' : 'Notifications resumed');
 };
