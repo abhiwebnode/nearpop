@@ -1,8 +1,9 @@
 // ╔══════════════════════════════════════════════════════════════════╗
-// ║  sw.js — NearPop Service Worker v2.0                             ║
-// ║  PRODUCTION-READY: IndexedDB cooldowns, multi-level protection   ║
-// ║  ✅ Fixed: Cache eviction, cross-tab sync, unlimited growth      ║
-// ║  ✅ Added: Persistent storage, cleanup, multi-level cooldowns    ║
+// ║  sw.js — NearPop Service Worker v3.0 ULTIMATE                    ║
+// ║  PRODUCTION-READY: All features merged from both service workers ║
+// ║  ✅ IndexedDB cooldowns + Offline caching + Advanced notifications║
+// ║  ✅ Notification actions + Better click handling + Close tracking║
+// ║  ✅ Multi-level protection + Cache strategies + Background sync  ║
 // ╚══════════════════════════════════════════════════════════════════╝
 
 importScripts('https://www.gstatic.com/firebasejs/12.12.0/firebase-app-compat.js');
@@ -325,17 +326,23 @@ messaging.onBackgroundMessage((payload) => {
       const notificationOptions = {
         body: payload.notification?.body || 'Tap to see details.',
         icon: '/icons/icon-192.png',
-        badge: '/icons/badge-96.png',
-        vibrate: [500, 250, 500, 250, 1000, 250, 1000],
+        badge: '/icons/badge-72.png',
+        vibrate: [200, 100, 200],
         data: { 
           ...payload.data,
-          url: payload.fcmOptions?.link || payload.data?.url || '/map.html',
+          dealId: listingId,
+          url: payload.fcmOptions?.link || payload.data?.url || (listingId ? `/detail.html?id=${listingId}` : '/map.html'),
           timestamp: Date.now(),
           listingId,
           merchantId
         },
-        requireInteraction: true,
-        tag: entityId // Prevents duplicate native notifications with same ID
+        requireInteraction: false,
+        silent: false,
+        tag: entityId, // Prevents duplicate native notifications with same ID
+        actions: [
+          { action: 'view', title: '👁️ View Deal', icon: '/icons/view-icon.png' },
+          { action: 'dismiss', title: '✕ Dismiss' }
+        ]
       };
 
       // ✅ Record cooldowns BEFORE showing notification
@@ -353,32 +360,56 @@ messaging.onBackgroundMessage((payload) => {
 });
 
 // ═══════════════════════════════════════════════════════════════════
-// NOTIFICATION CLICK HANDLER
+// NOTIFICATION CLICK HANDLER (Enhanced with actions)
 // ═══════════════════════════════════════════════════════════════════
-self.addEventListener('notificationclick', event => {
-  console.log('[SW] Notification clicked');
+self.addEventListener('notificationclick', (event) => {
+  console.log('[SW] Notification clicked:', event.action);
   
   event.notification.close();
-  
+
+  // Handle dismiss action
+  if (event.action === 'dismiss') {
+    console.log('[SW] Notification dismissed by user');
+    return;
+  }
+
   const targetUrl = event.notification.data?.url || '/map.html';
 
+  // Open or focus the app
   event.waitUntil(
-    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(windowClients => {
-      // Try to focus existing window with matching URL
-      for (let client of windowClients) {
-        if (client.url.includes(targetUrl) && 'focus' in client) {
-          console.log('[SW] Focusing existing window');
-          return client.focus();
+    clients.matchAll({ type: 'window', includeUncontrolled: true })
+      .then((clientList) => {
+        // Check if app is already open
+        for (let i = 0; i < clientList.length; i++) {
+          const client = clientList[i];
+          if (client.url.includes(self.registration.scope) && 'focus' in client) {
+            console.log('[SW] Focusing existing window');
+            // Focus existing window and navigate
+            return client.focus().then(client => {
+              if ('navigate' in client) {
+                return client.navigate(targetUrl);
+              }
+            });
+          }
         }
-      }
-      
-      // Open new window if no matching window found
-      if (clients.openWindow) {
-        console.log('[SW] Opening new window:', targetUrl);
-        return clients.openWindow(targetUrl);
-      }
-    })
+        
+        // No existing window - open new one
+        if (clients.openWindow) {
+          console.log('[SW] Opening new window:', targetUrl);
+          return clients.openWindow(targetUrl);
+        }
+      })
   );
+});
+
+// ═══════════════════════════════════════════════════════════════════
+// NOTIFICATION CLOSE HANDLER (Track dismissals)
+// ═══════════════════════════════════════════════════════════════════
+self.addEventListener('notificationclose', (event) => {
+  console.log('[SW] Notification closed without action:', event.notification.data);
+  
+  // Track notification dismissal (optional analytics)
+  // You can add analytics tracking here if needed
 });
 
 // ═══════════════════════════════════════════════════════════════════
@@ -519,6 +550,36 @@ self.addEventListener('fetch', (event) => {
 });
 
 // ═══════════════════════════════════════════════════════════════════
+// PUSH EVENT HANDLER (Fallback for direct push)
+// ═══════════════════════════════════════════════════════════════════
+self.addEventListener('push', (event) => {
+  console.log('[SW] Push event received (fallback):', event);
+
+  if (event.data) {
+    try {
+      const data = event.data.json();
+      const title = data.notification?.title || 'NearPop';
+      const options = {
+        body: data.notification?.body || 'New deal nearby!',
+        icon: '/icons/icon-192.png',
+        badge: '/icons/badge-72.png',
+        data: data.data || {},
+        actions: [
+          { action: 'view', title: '👁️ View Deal' },
+          { action: 'dismiss', title: '✕ Dismiss' }
+        ]
+      };
+
+      event.waitUntil(
+        self.registration.showNotification(title, options)
+      );
+    } catch (error) {
+      console.error('[SW] Push event error:', error);
+    }
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════════
 // MESSAGE HANDLER (for skip waiting)
 // ═══════════════════════════════════════════════════════════════════
 self.addEventListener('message', (event) => {
@@ -558,4 +619,4 @@ self.addEventListener('periodicsync', (event) => {
   }
 });
 
-console.log('[SW] Service Worker v2.0 loaded');
+console.log('[SW] Service Worker v3.0 ULTIMATE loaded - All features active!');
