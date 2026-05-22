@@ -678,7 +678,7 @@ class SmartNotificationEngine {
         if (!uid) return;
 
         try {
-            const response = await fetch('https://nearpop-a432d.cloudfunctions.net/sendProximityNotification', {
+            const response = await fetch('https://us-central1-nearpop-a432d.cloudfunctions.net/sendProximityNotification', {
                 method: 'POST',
                 headers: { 
                     'Content-Type': 'application/json'
