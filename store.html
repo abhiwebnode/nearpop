@@ -36,21 +36,25 @@
     height: auto !important;
   }
 
+  /* ─── Hero Header Gradient ─── */
+  .hero-header {
+    background: linear-gradient(180deg, #FF5722 0%, #E64A19 100%);
+    padding-bottom: 24px;
+    color: #ffffff;
+  }
+
   /* ─── Top Nav Bar ─── */
   .top-bar {
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 16px 20px;
-    background: #fff;
-    position: sticky;
-    top: 0;
-    z-index: 50;
+    background: transparent;
   }
   .top-btn {
     background: transparent;
     border: none;
-    color: #374151;
+    color: #ffffff;
     cursor: pointer;
     padding: 4px;
     display: flex;
@@ -64,34 +68,34 @@
     left: 50%;
     transform: translateX(-50%);
     height: 38px;
+    filter: brightness(0) invert(1); /* Makes logo white for the orange background */
   }
 
   /* ─── Store Header ─── */
   .store-hdr {
     display: flex;
     align-items: center;
-    padding: 0 20px 20px;
+    padding: 10px 20px 0;
     gap: 14px;
   }
   .s-logo-box {
     width: 64px; 
     height: 64px;
-    border-radius: 12px; /* Changed from circle to rounded rectangle */
+    border-radius: 12px;
     background: #ffffff; 
     display: flex;
     align-items: center;
     justify-content: center;
     overflow: hidden;
     flex-shrink: 0;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-    border: 1px solid #F3F4F6;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     padding: 4px; 
   }
   .s-logo-box img {
     width: 100%;
     height: 100%;
     object-fit: contain; 
-    border-radius: 8px; /* Inner corner rounding */
+    border-radius: 8px;
   }
   .s-info { flex: 1; }
   .s-name {
@@ -99,11 +103,11 @@
     font-weight: 800;
     margin: 0 0 2px 0;
     line-height: 1.2;
-    color: #111827;
+    color: #ffffff;
   }
   .s-partner-tag {
     font-size: 11px;
-    color: #FF5722;
+    color: rgba(255, 255, 255, 0.85);
     font-weight: 800;
     text-transform: uppercase;
     letter-spacing: 0.5px;
@@ -180,14 +184,8 @@
     background: #ffffff;
   }
   
-  /* NearPop Branded Alternating Background Colors (Starts on 1st listing) */
-  .item-row:nth-child(odd) {
-    background: #FFF5F2; 
-  }
-  .item-row:nth-child(even) {
-    background: #ffffff; 
-  }
-  
+  .item-row:nth-child(odd) { background: #FFF5F2; }
+  .item-row:nth-child(even) { background: #ffffff; }
   .item-row:active { background: #F1F5F9; }
   .item-row:last-child { border-bottom: none; }
 
@@ -304,13 +302,6 @@
   }
   @keyframes shimmer { to { background-position: -200% 0; } }
   .zero-box { padding: 40px 20px; text-align: center; }
-  
-  /* Top branded gradient strip */
-  .brand-strip {
-    height: 4px;
-    background: linear-gradient(90deg, #FF5722 0%, #E64A19 100%);
-    flex-shrink: 0;
-  }
 
   /* ═══════════════════════════════════════════════════════════ */
   /* 🌙 DARK MODE */
@@ -319,11 +310,9 @@
     html, body { background: #0B1120 !important; color: #F8FAFC !important; }
     #wrap { background: #0B1120 !important; }
     
-    .top-bar { background: #111827 !important; }
-    .top-btn { color: #D1D5DB !important; }
-    
+    /* Keep Hero Header Vibrant inside Dark Mode */
+    .hero-header { background: linear-gradient(180deg, #E64A19 0%, #C62828 100%); }
     .s-logo-box { background: #1E293B !important; border-color: #334155 !important; }
-    .s-name { color: #F8FAFC !important; }
     
     .tabs { border-bottom-color: #334155 !important; }
     .tab { color: #64748B !important; }
@@ -351,9 +340,7 @@
     .zero-box p { color: #94A3B8 !important; }
     
     #no-results { color: #94A3B8 !important; }
-    
     .skeleton { background: linear-gradient(90deg, #1E293B 25%, #334155 50%, #1E293B 75%) !important; background-size: 200% 100%; }
-    
     .toast { background: #1E293B !important; color: #F8FAFC !important; border: 1px solid #334155 !important; }
   }
 </style>
@@ -361,27 +348,28 @@
 <body>
 
 <div id="wrap">
-  <div class="brand-strip"></div>
   
-  <div class="top-bar">
-    <button class="top-btn" onclick="window.location.href='map.html'" title="Back to Map">
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-    </button>
-    
-    <img src="icons/logo.png" alt="NearPop" class="top-logo-center">
-    
-    <button class="top-btn" onclick="window.shareStore()" style="justify-content: flex-end;">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
-    </button>
-  </div>
-
-  <div class="store-hdr">
-    <div class="s-logo-box">
-      <img src="icons/logo.png" id="s-logo-img" alt="Store Logo">
+  <div class="hero-header">
+    <div class="top-bar">
+      <button class="top-btn" onclick="window.location.href='map.html'" title="Back to Map">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+      </button>
+      
+      <img src="icons/logo.png" alt="NearPop" class="top-logo-center">
+      
+      <button class="top-btn" onclick="window.shareStore()" style="justify-content: flex-end;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
+      </button>
     </div>
-    <div class="s-info">
-      <h1 class="s-name" id="s-name">Loading...</h1>
-      <div class="s-partner-tag">NearPop Local Partner</div>
+
+    <div class="store-hdr">
+      <div class="s-logo-box">
+        <img src="icons/logo.png" id="s-logo-img" alt="Store Logo">
+      </div>
+      <div class="s-info">
+        <h1 class="s-name" id="s-name">Loading...</h1>
+        <div class="s-partner-tag">NearPop Local Partner</div>
+      </div>
     </div>
   </div>
 
@@ -404,9 +392,6 @@
         <div class="skeleton" style="width:90%; height:14px; margin-bottom:12px;"></div>
         <div class="skeleton" style="width:40%; height:20px;"></div>
       </div>
-    </div>
-    <div id="no-results" style="display:none; text-align:center; padding: 30px 20px; color: #6B7280; font-weight: 700; font-size: 15px;">
-      No offers match your search.
     </div>
   </div>
 
@@ -435,43 +420,36 @@
   import { doc, getDoc, collection, query, where, getDocs, updateDoc, increment } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
   import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js';
 
-  // Global variables for search & filtering
   window.isShowingSaved = false;
 
-  async function initStore() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const mid = urlParams.get('mid');
+  // Extract variables early so they can be securely passed through the app
+  const urlParams = new URLSearchParams(window.location.search);
+  const mid = urlParams.get('mid');
+  
+  // Prepare tracking tags for clicked links
+  const trackParams = new URLSearchParams(window.location.search);
+  trackParams.delete('mid');
+  const trackingTags = trackParams.toString() ? `&${trackParams.toString()}` : '';
 
-    urlParams.delete('mid');
-    const trackingTags = urlParams.toString() ? `&${urlParams.toString()}` : '';
-
+  // 🚀 MAIN RENDERING FUNCTION
+  async function renderStore() {
     const content = document.getElementById('content');
     const nameEl = document.getElementById('s-name');
 
     if (!mid) {
       nameEl.textContent = "Oops!";
-      content.innerHTML = `<div class="zero-box"><h3 style="margin-bottom:8px;">Store Not Found</h3><p style="color:#6B7280; font-size:14px;">Please scan a valid NearPop QR code.</p></div>`;
+      content.innerHTML = `<div class="zero-box"><h3 style="margin-bottom:8px; color: #111827;">Store Not Found</h3><p style="color:#6B7280; font-size:14px;">Please scan a valid NearPop QR code.</p></div>`;
       return;
     }
 
-    // 🚀 FULL QR ANALYTICS & ROUTING
+    // 🚀 FULL QR ANALYTICS
     if (!sessionStorage.getItem('np_scanned_' + mid)) {
       updateDoc(doc(db, 'users', mid), { qrScans: increment(1) }).catch(e => console.warn(e));
       sessionStorage.setItem('np_scanned_' + mid, 'true');
     }
 
-    // Force Login / Intent Tracking for New Scans
-    if (!LS('uid')) {
-      sessionStorage.setItem('np_intent', window.location.href);
-      window.location.href = 'index.html?qr=1&mid=' + mid;
-      return; 
-    }
-
-    // Track Returning Users from Physical QR Standees
     if (urlParams.get('utm_source') === 'qr_standee') {
-      if (sessionStorage.getItem('np_qr_logged_' + mid)) {
-        sessionStorage.removeItem('np_qr_logged_' + mid);
-      } else {
+      if (!sessionStorage.getItem('np_qr_logged_' + mid)) {
         updateDoc(doc(db, 'users', mid), { qrRet: increment(1) }).catch(e => console.warn(e));
         sessionStorage.setItem('np_qr_logged_' + mid, 'true'); 
       }
@@ -550,7 +528,28 @@
     }
   }
 
-  // 🚀 Toggle Like/Save Logic
+  // 🚀 FIXED AUTHENTICATION & ROUTING LOGIC
+  if (!mid) {
+    renderStore(); // Show the generic 'Missing Store' UI
+  } else if (!LS('uid')) {
+    // Unauthenticated User - Route exactly to index.html with Intent
+    sessionStorage.setItem('np_intent', window.location.href);
+    window.location.href = `index.html?qr=1&mid=${mid}`;
+  } else {
+    // User is logged in locally. Verify Auth state securely so they don't see a blank screen
+    onAuthStateChanged(getAuth(), (user) => {
+      if (user) {
+        renderStore();
+      } else {
+        // Logged out / Token expired on Firebase side
+        sessionStorage.setItem('np_intent', window.location.href);
+        window.location.href = `index.html?qr=1&mid=${mid}`;
+      }
+    });
+  }
+
+
+  // 🚀 UI Interaction Functions (Likes, Search, Share)
   window.toggleLike = (id, el) => {
     if (navigator.vibrate) navigator.vibrate(30);
     
@@ -570,21 +569,14 @@
     const newLikedArray = [...liked];
     SS('liked', newLikedArray);
     
-    // Attempt cloud sync if available
     try {
       const uid = LS('uid');
-      if (uid && typeof syncField === 'function') {
-        syncField(uid, 'liked', newLikedArray);
-      }
+      if (uid && typeof syncField === 'function') syncField(uid, 'liked', newLikedArray);
     } catch(e) {}
     
-    // If user is currently viewing the "Saved" filter, refresh the list to hide it
-    if (window.isShowingSaved && wasLiked) {
-      window.filterDeals();
-    }
+    if (window.isShowingSaved && wasLiked) window.filterDeals();
   };
 
-  // 🚀 Toggle Search Bar
   window.toggleSearch = () => {
     const searchWrap = document.getElementById('search-container');
     const searchBtn = document.getElementById('nav-search-btn');
@@ -602,7 +594,6 @@
     }
   };
 
-  // 🚀 Live Search & Filter Function
   window.filterDeals = () => {
     const query = document.getElementById('deal-search').value.toLowerCase();
     const cards = document.querySelectorAll('.deal-card');
@@ -635,7 +626,6 @@
     }
   };
 
-  // 🚀 Smart Saved Toggle Function
   window.toggleSaved = () => {
     if (navigator.vibrate) navigator.vibrate(30);
     window.isShowingSaved = !window.isShowingSaved;
@@ -646,18 +636,15 @@
     if (window.isShowingSaved) {
       btn.classList.add('active');
       icon.innerHTML = '❤️';
-      icon.style.transform = 'translateY(1px)'; // Maintain alignment
       toast('❤️', 'Showing your saved offers');
     } else {
       btn.classList.remove('active');
       icon.innerHTML = '🤍';
-      icon.style.transform = 'translateY(1px)'; // Maintain alignment
     }
     
     window.filterDeals();
   };
 
-  // Native Share API
   window.shareStore = async () => {
     const storeName = document.getElementById('s-name').textContent;
     if (navigator.share) {
@@ -667,31 +654,12 @@
           text: `Check out live offers from ${storeName} on NearPop!`,
           url: window.location.href
         });
-      } catch (err) {
-        console.log('Share sheet closed');
-      }
+      } catch (err) { }
     } else {
       navigator.clipboard.writeText(window.location.href);
       toast('🔗', 'Store link copied!');
     }
   };
-
-  // Wait for Firebase Auth before querying Firestore
-  if (LS('uid')) {
-    onAuthStateChanged(getAuth(), (user) => {
-      if (user) {
-        initStore();
-      } else {
-        const mid = new URLSearchParams(window.location.search).get('mid');
-        if (mid) {
-          sessionStorage.setItem('np_intent', window.location.href);
-          window.location.href = 'index.html?qr=1&mid=' + mid;
-        }
-      }
-    });
-  } else {
-    initStore();
-  }
 </script>
 </body>
 </html>
