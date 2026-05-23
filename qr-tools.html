@@ -187,7 +187,7 @@ window.showStoreQR = () => {
   document.getElementById('mod-qr').classList.add('on');
 };
 
-// 2. EXPORT STANDEE AS PDF (Strict 210x297mm A4 bounding box with exact 0.5-inch CSS padding)
+// 2. EXPORT STANDEE AS PDF (Strict 210x297mm A4 bounding box with exactly mirrored header/footer)
 window.exportStandee = async (format) => {
   window.haptic(30);
 
@@ -220,7 +220,7 @@ window.exportStandee = async (format) => {
       const safeLogoUrl = mLogoUrl ? sanitizer.sanitizeUrl(mLogoUrl) : '';
       
       const shopLogoHtml = safeLogoUrl 
-        ? `<img crossorigin="anonymous" src="${safeLogoUrl}" style="max-height: 100px; max-width: 80%; border-radius: 16px; object-fit: contain; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border: 2px solid #E5E7EB;">` 
+        ? `<img crossorigin="anonymous" src="${safeLogoUrl}" style="max-height: 90px; max-width: 80%; border-radius: 16px; object-fit: contain; border: 2px solid #E5E7EB; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 20px;">` 
         : '';
 
       const container = document.createElement('div');
@@ -228,22 +228,21 @@ window.exportStandee = async (format) => {
       container.style.left = '-9999px';
       container.style.top = '0';
       
-      // Strict layout: The outer div acts as the absolute A4 page boundary. The padding creates the exact 0.5in margin.
-      // The inner div acts as the actual visible poster card.
+      // Strict layout exactly matching the Screen version
       container.innerHTML = `
         <div id="pdf-content" style="width: 210mm; height: 297mm; background: #ffffff; padding: 0.5in; box-sizing: border-box; font-family: 'Nunito', sans-serif;">
-           <div style="width: 100%; height: 100%; border: 3px solid #E5E7EB; border-radius: 24px; box-sizing: border-box; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 0 0 1px #F3F4F6;">
+           <div style="width: 100%; height: 100%; border: 2px solid #E5E7EB; border-radius: 24px; box-sizing: border-box; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 0 0 1px #F3F4F6;">
               
-              <div style="background: linear-gradient(135deg, #FF5722, #E64A19); height: 12%; display: flex; align-items: center; justify-content: center;">
-                <img crossorigin="anonymous" src="https://nearpop.in/icons/logo.jpg" style="height: 45px; filter: brightness(0) invert(1);" onerror="this.style.display='none'">
+              <div style="background: linear-gradient(135deg, #FF5722, #E64A19); padding: 30px 20px; text-align: center; flex-shrink: 0;">
+                <img crossorigin="anonymous" src="https://nearpop.in/icons/logo.png" style="height: 50px; filter: brightness(0) invert(1); object-fit: contain;" onerror="this.style.display='none'">
               </div>
               
-              <div style="flex: 1; display: flex; flex-direction: column; justify-content: space-evenly; align-items: center; padding: 10px 40px; text-align: center;">
+              <div style="flex: 1; display: flex; flex-direction: column; justify-content: space-evenly; align-items: center; padding: 20px 40px; text-align: center;">
                 ${shopLogoHtml}
-                <h1 style="font-family: 'Syne', sans-serif; color: #0F0F13; font-size: 40px; font-weight: 800; margin: 0; line-height: 1.2;">Welcome to <br><span style="color:#FF5722">${safeMname}</span></h1>
+                <h1 style="font-family: 'Syne', sans-serif; color: #0F0F13; font-size: 42px; font-weight: 800; margin: 0; line-height: 1.2;">Welcome to <br><span style="color:#FF5722">${safeMname}</span></h1>
                 
-                <div style="background: #fff; padding: 25px; border-radius: 32px; border: 6px solid #F3F4F6; box-shadow: 0 12px 40px rgba(0,0,0,0.06); margin: 10px 0;">
-                   <img src="${qrDataUrl}" style="width: 110mm; height: 110mm; object-fit: contain;">
+                <div style="background: #fff; padding: 25px; border-radius: 28px; border: 6px solid #F3F4F6; box-shadow: 0 10px 30px rgba(0,0,0,0.06); display: inline-block;">
+                   <img src="${qrDataUrl}" style="width: 100mm; height: 100mm; object-fit: contain; display: block;">
                 </div>
                 
                 <div>
@@ -252,17 +251,17 @@ window.exportStandee = async (format) => {
                 </div>
               </div>
               
-              <div style="background: #111827; height: 15%; padding: 0 40px; display: flex; align-items: center; justify-content: space-between;">
+              <div style="background: #111827; padding: 35px 40px; display: flex; justify-content: space-between; align-items: center; gap: 20px; flex-shrink: 0;">
                 
-                <div style="display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 10px; max-width: 65%;">
-                  <div style="color: #ffffff; font-size: 22px; font-weight: 800; margin: 0; line-height: 1.2;">Get the NearPop App</div>
-                  <div style="color: #9CA3AF; font-size: 14px; font-weight: 600; margin: 0;">Discover and save more local deals around you.</div>
-                  <img crossorigin="anonymous" src="https://nearpop.in/icons/Google_Play_Store.png" style="height: 40px; margin-top: 4px;" onerror="this.style.display='none'">
+                <div style="display: flex; flex-direction: column; align-items: flex-start; text-align: left; gap: 10px; flex: 1;">
+                  <h3 style="color: #ffffff; font-size: 22px; font-weight: 800; margin: 0; line-height: 1.2;">Get the NearPop App</h3>
+                  <p style="color: #9CA3AF; font-size: 14px; font-weight: 600; margin: 0;">Discover and save more local deals around you.</p>
+                  <img crossorigin="anonymous" src="https://nearpop.in/icons/Google_Play_Store.png" style="height: 45px; margin-top: 4px; object-fit: contain;" onerror="this.style.display='none'">
                 </div>
                 
-                <div style="display: flex; flex-direction: column; align-items: center; gap: 6px;">
-                  <img crossorigin="anonymous" src="https://nearpop.in/icons/playstore-qr-code.png" style="width: 65px; height: 65px; border-radius: 12px; background: #fff; padding: 6px;">
-                  <div style="color: #fff; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">Scan for App</div>
+                <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+                  <img crossorigin="anonymous" src="https://nearpop.in/icons/playstore-qr-code.png" style="width: 75px; height: 75px; border-radius: 12px; background: #fff; padding: 6px; object-fit: contain;">
+                  <span style="color: #ffffff; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">Scan for App</span>
                 </div>
 
               </div>
@@ -281,7 +280,6 @@ window.exportStandee = async (format) => {
           });
       }
 
-      // Using format 'a4' and margin '0' because the 0.5inch margin is handled identically by the CSS padding inside the 210x297mm bounding box.
       const opt = {
           margin:       0,
           filename:     `NearPop_Standee.pdf`,
