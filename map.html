@@ -966,6 +966,346 @@
   box-shadow: 0 8px 24px rgba(0,0,0,0.15);
 }
 
+/* ═══════════════════════════════════════════════════════════════ */
+/* CONTINUOUS IN-APP POPUP ENHANCEMENTS */
+/* ═══════════════════════════════════════════════════════════════ */
+
+/* 3-second countdown progress bar */
+.popup-progress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #FF5722, #FF7043);
+  width: 100%;
+  animation: popupCountdown 3s linear forwards;
+  border-radius: 0 0 16px 16px;
+  opacity: 0.8;
+}
+
+@keyframes popupCountdown {
+  from { width: 100%; }
+  to { width: 0%; }
+}
+
+/* Pause animation on hover */
+.mnotif:hover .popup-progress {
+  animation-play-state: paused;
+}
+
+/* Auto-dismiss slide out animation */
+@keyframes slideOut {
+  from {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(100%) scale(0.8);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* NOTIFICATION PERMISSION MODAL */
+/* ═══════════════════════════════════════════════════════════════ */
+
+.notification-permission-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  z-index: 10000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.3s ease;
+}
+
+.notification-permission-modal.show {
+  display: flex;
+}
+
+.notif-perm-content {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(30px) saturate(180%);
+  -webkit-backdrop-filter: blur(30px) saturate(180%);
+  border-radius: 24px;
+  padding: 36px 28px;
+  max-width: 90%;
+  width: 380px;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  animation: slideUpBounce 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  border: 1px solid rgba(255,255,255,0.3);
+}
+
+.notif-perm-icon {
+  font-size: 72px;
+  margin-bottom: 20px;
+  animation: bellRing 1s ease infinite;
+  filter: drop-shadow(0 10px 20px rgba(255,87,34,0.3));
+}
+
+.notif-perm-content h3 {
+  font-family: 'Syne', sans-serif;
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--deep);
+  margin: 0 0 12px 0;
+}
+
+.notif-perm-content p {
+  color: var(--gray);
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 0 0 28px 0;
+  font-weight: 600;
+}
+
+.btn-notif-enable, .btn-notif-later {
+  width: 100%;
+  padding: 16px;
+  border-radius: 14px;
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+  font-family: inherit;
+  border: none;
+  transition: all 0.2s;
+}
+
+.btn-notif-enable {
+  background: #FF5722;
+  color: white;
+  margin-bottom: 10px;
+  box-shadow: 0 6px 20px rgba(255,87,34,0.3);
+}
+
+.btn-notif-enable:active {
+  transform: scale(0.97);
+  box-shadow: 0 4px 15px rgba(255,87,34,0.4);
+}
+
+.btn-notif-later {
+  background: var(--cream);
+  color: var(--deep);
+  border: 2px solid var(--bdr);
+}
+
+.btn-notif-later:active {
+  transform: scale(0.97);
+  background: var(--bg-body);
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* APP DOWNLOAD PROMPT (Bottom Sheet) */
+/* ═══════════════════════════════════════════════════════════════ */
+
+.app-download-sheet {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 9999;
+  display: none;
+  animation: slideUpFromBottom 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.app-download-sheet.show {
+  display: block;
+}
+
+.app-download-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: -1;
+  animation: fadeIn 0.3s ease;
+}
+
+.app-download-content {
+  background: var(--bg-app);
+  border-radius: 24px 24px 0 0;
+  padding: 28px 24px 32px;
+  box-shadow: 0 -10px 40px rgba(0,0,0,0.2);
+  border-top: 3px solid #FF5722;
+}
+
+.app-sheet-handle {
+  width: 40px;
+  height: 4px;
+  background: var(--bdr);
+  border-radius: 2px;
+  margin: 0 auto 20px;
+}
+
+.app-download-content .app-icon {
+  font-size: 56px;
+  margin-bottom: 16px;
+  filter: drop-shadow(0 8px 16px rgba(255,87,34,0.2));
+}
+
+.app-download-content h3 {
+  font-family: 'Syne', sans-serif;
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--deep);
+  margin: 0 0 8px 0;
+}
+
+.app-download-content p {
+  color: var(--gray);
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 0 0 24px 0;
+  font-weight: 600;
+}
+
+.app-actions {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.btn-download-app, .btn-continue-web {
+  flex: 1;
+  padding: 15px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+  font-family: inherit;
+  border: none;
+  transition: all 0.2s;
+}
+
+.btn-download-app {
+  background: #FF5722;
+  color: white;
+  box-shadow: 0 4px 15px rgba(255,87,34,0.3);
+}
+
+.btn-download-app:active {
+  transform: scale(0.97);
+}
+
+.btn-continue-web {
+  background: var(--cream);
+  color: var(--deep);
+  border: 2px solid var(--bdr);
+}
+
+.btn-continue-web:active {
+  transform: scale(0.97);
+  background: var(--bg-body);
+}
+
+.dont-show-wrapper {
+  text-align: center;
+  margin-top: 12px;
+}
+
+.dont-show-wrapper label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--gray);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.dont-show-wrapper input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: #FF5722;
+  cursor: pointer;
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* ANIMATIONS */
+/* ═══════════════════════════════════════════════════════════════ */
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUpBounce {
+  from {
+    opacity: 0;
+    transform: translateY(60px) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes slideUpFromBottom {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+@keyframes bellRing {
+  0%, 100% { transform: rotate(0deg); }
+  10%, 30%, 50%, 70%, 90% { transform: rotate(-10deg); }
+  20%, 40%, 60%, 80% { transform: rotate(10deg); }
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* DARK MODE FOR NEW ELEMENTS */
+/* ═══════════════════════════════════════════════════════════════ */
+
+@media (prefers-color-scheme: dark) {
+  .notif-perm-content {
+    background: rgba(31, 41, 55, 0.95);
+    border-color: #374151;
+  }
+  
+  .notif-perm-content h3 {
+    color: #F9FAFB;
+  }
+  
+  .notif-perm-content p {
+    color: #D1D5DB;
+  }
+  
+  .btn-notif-later {
+    background: #1F2937;
+    color: #D1D5DB;
+    border-color: #374151;
+  }
+  
+  .app-download-content {
+    background: #111827;
+    border-top-color: #FF5722;
+  }
+  
+  .app-download-content h3 {
+    color: #F9FAFB;
+  }
+  
+  .app-download-content p {
+    color: #D1D5DB;
+  }
+  
+  .btn-continue-web {
+    background: #1F2937;
+    color: #D1D5DB;
+    border-color: #374151;
+  }
+  
+  .dont-show-wrapper label {
+    color: #9CA3AF;
+  }
+  
+  .app-sheet-handle {
+    background: #374151;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -1138,6 +1478,44 @@
     </div>
     <button class="btn-or" onclick="window.startApp()" data-en="🚀 Find Near Me Now!" data-hi="🚀 अभी मेरे पास खोजें!">🚀 Find Near Me Now!</button>
     <button class="btn-skip" onclick="window.skipWelcome()" data-en="Skip — Browse All" data-hi="छोड़ें — सभी ब्राउज़ करें">Skip — Browse All</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- NOTIFICATION PERMISSION MODAL -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="notification-permission-modal" id="notif-permission-modal">
+  <div class="notif-perm-content">
+    <div class="notif-perm-icon">🔔</div>
+    <h3 data-en="Enable Location Alerts" data-hi="स्थान अलर्ट सक्षम करें">Enable Location Alerts</h3>
+    <p data-en="Get instant notifications when deals pop up near you! Never miss a nearby offer." data-hi="जब आपके पास डील्स आती हैं तो तुरंत नोटिफिकेशन पाएं! पास के किसी ऑफर को मिस न करें।">Get instant notifications when deals pop up near you! Never miss a nearby offer.</p>
+    <button class="btn-notif-enable" id="btn-notif-enable" data-en="Enable Notifications" data-hi="नोटिफिकेशन सक्षम करें">Enable Notifications</button>
+    <button class="btn-notif-later" id="btn-notif-later" data-en="Maybe Later" data-hi="बाद में शायद">Maybe Later</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- APP DOWNLOAD PROMPT (Bottom Sheet) -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="app-download-sheet" id="app-download-sheet">
+  <div class="app-download-overlay" onclick="window.closeAppDownloadSheet()"></div>
+  <div class="app-download-content">
+    <div class="app-sheet-handle"></div>
+    <div style="text-align: center;">
+      <div class="app-icon">📱</div>
+      <h3 data-en="NearPop App Available!" data-hi="NearPop ऐप उपलब्ध है!">NearPop App Available!</h3>
+      <p data-en="Get the full experience with offline maps & faster performance" data-hi="ऑफ़लाइन मैप और तेज़ प्रदर्शन के साथ पूरा अनुभव प्राप्त करें">Get the full experience with offline maps & faster performance</p>
+      <div class="app-actions">
+        <button class="btn-download-app" id="btn-download-app" data-en="Download App" data-hi="ऐप डाउनलोड करें">Download App</button>
+        <button class="btn-continue-web" id="btn-continue-web" data-en="Continue on Web" data-hi="वेब पर जारी रखें">Continue on Web</button>
+      </div>
+      <div class="dont-show-wrapper">
+        <label>
+          <input type="checkbox" id="app-dont-show">
+          <span data-en="Don't show this again" data-hi="इसे दोबारा न दिखाएं">Don't show this again</span>
+        </label>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -1651,13 +2029,8 @@ function redraw() {
 
   renderCards();
   
-  if (!sessionStorage.getItem('welcome_popups_done') && loc && filteredList.length > 0 && !liveSearchQuery) {
-    sessionStorage.setItem('welcome_popups_done', 'true'); 
-    const popupsToShow = Math.min(3, filteredList.length); 
-    for (let i = 0; i < popupsToShow; i++) { 
-      setTimeout(() => { showNotif(filteredList[i]); }, 1200 + (i * 8500)); 
-    }
-  }
+  // ✅ NEW: Continuous in-app popup system
+  checkForNewNearbyListings();
 }
 
 window.previewPin = (l) => {
@@ -2174,6 +2547,272 @@ window.addEventListener('beforeunload', () => {
     gpsManager.stop();
   }
 });
+
+// ═══════════════════════════════════════════════════════════════════
+// CONTINUOUS IN-APP POPUP NOTIFICATION SYSTEM
+// ═══════════════════════════════════════════════════════════════════
+
+const POPUP_COOLDOWN = 10000;        // 10 seconds between popups
+const AUTO_DISMISS_TIME = 3000;      // 3 seconds auto-dismiss
+const PROXIMITY_THRESHOLD = 500;     // 500m radius for high-priority popups
+
+let shownInAppPopups = new Set();
+let lastInAppPopupTime = 0;
+let popupQueue = [];
+let isPopupActive = false;
+let currentPopupElement = null;
+
+// Main function - called when filteredList updates
+window.checkForNewNearbyListings = function() {
+  if (!filteredList || filteredList.length === 0 || !loc) return;
+  
+  // Find listings that haven't been shown yet and are within close proximity
+  const unseenNearby = filteredList.filter(listing => {
+    if (shownInAppPopups.has(listing.id)) return false;
+    
+    const dist = distM(loc.lat, loc.lng, listing.lat, listing.lng);
+    return dist <= PROXIMITY_THRESHOLD;
+  });
+  
+  // Add to queue (avoid duplicates)
+  unseenNearby.forEach(listing => {
+    if (!popupQueue.find(l => l.id === listing.id)) {
+      popupQueue.push(listing);
+    }
+  });
+  
+  // Sort queue by distance (nearest first)
+  popupQueue.sort((a, b) => {
+    const distA = distM(loc.lat, loc.lng, a.lat, a.lng);
+    const distB = distM(loc.lat, loc.lng, b.lat, b.lng);
+    return distA - distB;
+  });
+  
+  // Try to show next popup
+  processPopupQueue();
+};
+
+// Process the popup queue
+function processPopupQueue() {
+  if (isPopupActive || popupQueue.length === 0) return;
+  
+  const now = Date.now();
+  const timeSinceLastPopup = now - lastInAppPopupTime;
+  
+  // Respect 10-second cooldown
+  if (timeSinceLastPopup < POPUP_COOLDOWN) {
+    setTimeout(processPopupQueue, POPUP_COOLDOWN - timeSinceLastPopup);
+    return;
+  }
+  
+  // Get next listing from queue
+  const listing = popupQueue.shift();
+  showInAppPopup(listing);
+  shownInAppPopups.add(listing.id);
+  lastInAppPopupTime = now;
+}
+
+// Show in-app popup with auto-dismiss
+function showInAppPopup(listing) {
+  isPopupActive = true;
+  
+  // Show popup using existing showNotif function
+  showNotif(listing);
+  
+  // Wait a moment for DOM to update, then get the popup element
+  setTimeout(() => {
+    const popups = document.querySelectorAll('.mnotif');
+    currentPopupElement = popups[popups.length - 1]; // Get the last one (newest)
+    
+    if (!currentPopupElement) {
+      isPopupActive = false;
+      processPopupQueue();
+      return;
+    }
+    
+    let autoDismissTimer = null;
+    let userInteracted = false;
+    
+    // Add progress bar
+    const progressBar = document.createElement('div');
+    progressBar.className = 'popup-progress';
+    currentPopupElement.appendChild(progressBar);
+    
+    // Start 3-second auto-dismiss
+    autoDismissTimer = setTimeout(() => {
+      if (!userInteracted && currentPopupElement && currentPopupElement.parentNode) {
+        dismissPopup(currentPopupElement);
+      }
+    }, AUTO_DISMISS_TIME);
+    
+    // Pause on hover (desktop)
+    currentPopupElement.addEventListener('mouseenter', () => {
+      if (autoDismissTimer) clearTimeout(autoDismissTimer);
+      userInteracted = true;
+      if (progressBar) progressBar.style.animationPlayState = 'paused';
+    });
+    
+    // Pause on touch (mobile)
+    currentPopupElement.addEventListener('touchstart', (e) => {
+      if (autoDismissTimer) clearTimeout(autoDismissTimer);
+      userInteracted = true;
+      if (progressBar) progressBar.style.animationPlayState = 'paused';
+    }, { passive: true });
+    
+    // Resume countdown when mouse leaves (if not clicked)
+    currentPopupElement.addEventListener('mouseleave', () => {
+      if (!userInteracted && progressBar) {
+        // Don't resume - once paused by hover, let it stay
+      }
+    });
+    
+    // If user clicks the popup, it will open listing (handled by existing showNotif code)
+    // No need to handle click here
+    
+  }, 100);
+}
+
+// Dismiss popup with animation
+function dismissPopup(popupElement) {
+  if (!popupElement || !popupElement.parentNode) return;
+  
+  popupElement.style.animation = 'slideOut 0.3s ease forwards';
+  
+  setTimeout(() => {
+    if (popupElement && popupElement.parentNode) {
+      popupElement.remove();
+    }
+    isPopupActive = false;
+    currentPopupElement = null;
+    processPopupQueue(); // Show next popup
+  }, 300);
+}
+
+// Clear old shown popups from memory when it gets too large
+function resetPopupMemory() {
+  if (shownInAppPopups.size > 50) {
+    const arr = Array.from(shownInAppPopups);
+    shownInAppPopups = new Set(arr.slice(-50)); // Keep last 50
+  }
+}
+
+// Call reset on significant GPS movement (new area)
+// This is already handled by redraw() which calls checkForNewNearbyListings()
+
+// ═══════════════════════════════════════════════════════════════════
+// NOTIFICATION PERMISSION MODAL
+// ═══════════════════════════════════════════════════════════════════
+
+function showNotificationPermissionModal() {
+  const modal = document.getElementById('notif-permission-modal');
+  if (!modal) return;
+  
+  modal.classList.add('show');
+  
+  // Enable button
+  document.getElementById('btn-notif-enable').onclick = async () => {
+    try {
+      const permission = await Notification.requestPermission();
+      if (permission === 'granted') {
+        toast('✅', window.lang === 'hi' ? 'नोटिफिकेशन सक्षम!' : 'Notifications enabled!');
+        localStorage.setItem('np_notif_enabled', 'true');
+      } else {
+        toast('⚠️', window.lang === 'hi' ? 'आप सेटिंग में नोटिफिकेशन सक्षम कर सकते हैं' : 'You can enable notifications in settings anytime');
+      }
+    } catch (error) {
+      console.error('Notification permission error:', error);
+    }
+    
+    localStorage.setItem('np_notif_asked', Date.now().toString());
+    modal.classList.remove('show');
+  };
+  
+  // Later button
+  document.getElementById('btn-notif-later').onclick = () => {
+    localStorage.setItem('np_notif_asked', Date.now().toString());
+    modal.classList.remove('show');
+  };
+  
+  // Close on overlay click
+  modal.onclick = (e) => {
+    if (e.target === modal) {
+      localStorage.setItem('np_notif_asked', Date.now().toString());
+      modal.classList.remove('show');
+    }
+  };
+}
+
+// Show notification permission modal 2 seconds after page load
+setTimeout(() => {
+  if ('Notification' in window && Notification.permission === 'default') {
+    const lastAsked = localStorage.getItem('np_notif_asked');
+    const now = Date.now();
+    
+    // Don't ask again if asked in last 7 days
+    if (!lastAsked || (now - parseInt(lastAsked)) >= 7 * 24 * 60 * 60 * 1000) {
+      showNotificationPermissionModal();
+    }
+  }
+}, 2000);
+
+// ═══════════════════════════════════════════════════════════════════
+// APP DOWNLOAD PROMPT (Bottom Sheet)
+// ═══════════════════════════════════════════════════════════════════
+
+function showAppDownloadSheet() {
+  const sheet = document.getElementById('app-download-sheet');
+  if (!sheet) return;
+  
+  sheet.classList.add('show');
+  
+  // Download app button
+  document.getElementById('btn-download-app').onclick = () => {
+    // Open Play Store
+    window.open('https://play.google.com/store/apps/details?id=in.nearpop.app', '_blank');
+    
+    // Track that user clicked download
+    localStorage.setItem('np_app_download_clicked', 'true');
+    sheet.classList.remove('show');
+  };
+  
+  // Continue on web button
+  document.getElementById('btn-continue-web').onclick = () => {
+    const dontShowAgain = document.getElementById('app-dont-show').checked;
+    
+    if (dontShowAgain) {
+      localStorage.setItem('np_app_prompt_dismissed', 'true');
+    } else {
+      // Remember for this session only
+      sessionStorage.setItem('np_app_prompt_shown', 'true');
+    }
+    
+    sheet.classList.remove('show');
+  };
+}
+
+window.closeAppDownloadSheet = function() {
+  const sheet = document.getElementById('app-download-sheet');
+  if (sheet) {
+    sheet.classList.remove('show');
+  }
+};
+
+// Show app download prompt 10 seconds after page load
+setTimeout(() => {
+  // Don't show if user already dismissed permanently
+  if (localStorage.getItem('np_app_prompt_dismissed')) return;
+  
+  // Don't show if already shown this session
+  if (sessionStorage.getItem('np_app_prompt_shown')) return;
+  
+  // Don't show if user already clicked download before
+  if (localStorage.getItem('np_app_download_clicked')) return;
+  
+  // Don't show if running as PWA (standalone mode)
+  if (window.matchMedia('(display-mode: standalone)').matches) return;
+  
+  showAppDownloadSheet();
+}, 10000);
 
 </script>
 </body>
