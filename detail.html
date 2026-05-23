@@ -409,20 +409,21 @@ async function generateShareImage(listing, merchantName) {
   try {
     const canvas = document.createElement('canvas');
     canvas.width = 1080;
-    canvas.height = 1920; // Perfect 9:16 portrait ratio
+    canvas.height = 1920; 
     const ctx = canvas.getContext('2d');
 
-    // 1. Sleek Dark Background
+    // 1. Saffron, White, and Green Gradient Background
+    // We use a dark base to ensure the white text remains highly legible
     ctx.fillStyle = '#0F0F13';
     ctx.fillRect(0, 0, 1080, 1920);
 
     const gradient = ctx.createLinearGradient(0, 0, 1080, 1920);
-    gradient.addColorStop(0, '#FF5722');
-    gradient.addColorStop(1, '#0F0F13');
-    ctx.globalAlpha = 0.15;
+    gradient.addColorStop(0, 'rgba(255, 153, 51, 0.4)');  // Saffron
+    gradient.addColorStop(0.5, 'rgba(255, 255, 255, 0.08)'); // White (Subtle)
+    gradient.addColorStop(1, 'rgba(19, 136, 8, 0.4)');    // Green
+    
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, 1080, 1920);
-    ctx.globalAlpha = 1.0;
 
     // 2. Load Top NearPop Logo
     try {
@@ -437,10 +438,10 @@ async function generateShareImage(listing, merchantName) {
       ctx.fillText('NearPop', 540, 160);
     }
 
-    // 3. Draw Listing Image (Centered Square)
-    const imgSize = 860;
-    const imgX = 110;
-    const imgY = 250;
+    // 3. Draw Listing Image (Very Less Padding)
+    const imgSize = 980; // Increased size for less padding
+    const imgX = 50;     // Reduced side padding to 50px
+    const imgY = 230;    // Shifted slightly up
     const imgUrl = listing.imageUrl || listing.image;
 
     if (imgUrl) {
@@ -467,7 +468,7 @@ async function generateShareImage(listing, merchantName) {
         ctx.drawImage(listingImage, drawX, drawY, drawW, drawH);
         ctx.restore();
 
-        ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+        ctx.strokeStyle = 'rgba(255,255,255,0.2)';
         ctx.lineWidth = 4;
         ctx.beginPath();
         roundRect(ctx, imgX, imgY, imgSize, imgSize, 40);
@@ -477,7 +478,7 @@ async function generateShareImage(listing, merchantName) {
         ctx.beginPath();
         roundRect(ctx, imgX, imgY, imgSize, imgSize, 40);
         ctx.fill();
-        ctx.fillStyle = '#FF5722';
+        ctx.fillStyle = '#FF9933';
         ctx.font = '200px sans-serif';
         ctx.textAlign = 'center';
         ctx.fillText(listing.emoji || '🏷️', 540, imgY + 480);
@@ -487,7 +488,7 @@ async function generateShareImage(listing, merchantName) {
        ctx.beginPath();
        roundRect(ctx, imgX, imgY, imgSize, imgSize, 40);
        ctx.fill();
-       ctx.fillStyle = '#FF5722';
+       ctx.fillStyle = '#FF9933';
        ctx.font = '200px sans-serif';
        ctx.textAlign = 'center';
        ctx.fillText(listing.emoji || '🏷️', 540, imgY + 480);
@@ -496,28 +497,28 @@ async function generateShareImage(listing, merchantName) {
     // 4. Text Details (Centered Below Image)
     ctx.textAlign = 'center';
     
-    ctx.fillStyle = '#9CA3AF';
+    ctx.fillStyle = '#D1D5DB';
     ctx.font = 'bold 36px "Nunito", sans-serif';
-    ctx.fillText(merchantName.toUpperCase(), 540, 1190);
+    ctx.fillText(merchantName.toUpperCase(), 540, 1270);
 
     ctx.fillStyle = '#FFFFFF';
     ctx.font = 'bold 64px "Syne", sans-serif';
     const titleLines = wrapText(ctx, listing.title || 'Amazing Local Deal!', 900);
     titleLines.forEach((line, i) => {
-      ctx.fillText(line, 540, 1280 + (i * 80));
+      ctx.fillText(line, 540, 1360 + (i * 80));
     });
 
     if (listing.price) {
       ctx.fillStyle = '#10B981'; // Vibrant Green
       ctx.font = 'bold 76px "Syne", sans-serif';
-      ctx.fillText(listing.price, 540, 1310 + (titleLines.length * 80));
+      ctx.fillText(listing.price, 540, 1400 + (titleLines.length * 80));
     }
 
-    // 5. App Promo Banner & QR Code
-    const bannerY = 1620;
+    // 5. App Promo Banner & QR Code (Widened to match image padding)
+    const bannerY = 1660;
     ctx.fillStyle = 'rgba(255,255,255,0.06)';
     ctx.beginPath();
-    roundRect(ctx, 110, bannerY, 860, 200, 30);
+    roundRect(ctx, 50, bannerY, 980, 200, 30); // Width matched to 980px
     ctx.fill();
     ctx.strokeStyle = 'rgba(255,255,255,0.1)';
     ctx.lineWidth = 2;
@@ -527,19 +528,19 @@ async function generateShareImage(listing, merchantName) {
       const qrCode = await loadImage('icons/playstore-qr-code.png');
       ctx.fillStyle = '#FFFFFF';
       ctx.beginPath();
-      roundRect(ctx, 770, bannerY + 25, 150, 150, 20);
+      roundRect(ctx, 840, bannerY + 25, 150, 150, 20); // Moved QR to the right
       ctx.fill();
-      ctx.drawImage(qrCode, 780, bannerY + 35, 130, 130);
+      ctx.drawImage(qrCode, 850, bannerY + 35, 130, 130);
     } catch (err) {}
 
     ctx.textAlign = 'left';
     ctx.fillStyle = '#FFFFFF';
     ctx.font = 'bold 44px "Nunito", sans-serif';
-    ctx.fillText('Get the NearPop App', 160, bannerY + 90);
+    ctx.fillText('Get the NearPop App', 110, bannerY + 90);
     
-    ctx.fillStyle = '#FF5722';
+    ctx.fillStyle = '#FF9933';
     ctx.font = 'bold 38px "Nunito", sans-serif';
-    ctx.fillText('Scan to Download Now ➔', 160, bannerY + 150);
+    ctx.fillText('Scan to Download Now ➔', 110, bannerY + 150);
 
     // Export as JPG
     return new Promise((resolve) => {
