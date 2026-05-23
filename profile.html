@@ -15,7 +15,7 @@
 <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 <style>
 #wrap{display:flex;flex-direction:column;height:100vh;height:100dvh;background:var(--bg-body)}
-.ptop{background:var(--deep);padding:44px 18px 0;text-align:center;flex-shrink:0;position:relative}
+.ptop{background:#0F172A;padding:44px 18px 0;text-align:center;flex-shrink:0;position:relative}
 
 .pav{width:76px;height:76px;border-radius:22px;display:flex;align-items:center;justify-content:center;font-size:34px;margin:0 auto 10px;box-shadow:0 4px 18px rgba(0,0,0,.3); position:relative; transition:transform 0.2s;}
 .pav:active{transform:scale(0.95);}
@@ -35,9 +35,37 @@
 .stat:last-child{border-right:none}
 .stat-v{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;color:#FF6F61}
 .stat-l{font-size:9px;font-weight:700;color:#D7BE82;letter-spacing:.5px;text-transform:uppercase;margin-top:1px}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* 🌙 DARK MODE */
+/* ═══════════════════════════════════════════════════════════════ */
+@media (prefers-color-scheme: dark) {
+  .pbody { background: var(--bg-body); }
+  
+  .pblk { background: #1E293B !important; border-color: #334155 !important; }
+  
+  .pr { border-bottom-color: #334155 !important; }
+  .pr.tap:active { background: #334155 !important; }
+  
+  .scard { background: #0F172A !important; border-color: #334155 !important; }
+  
+  .chip { background: #1E293B !important; border-color: #334155 !important; color: #94A3B8 !important; }
+  .chip.on { background: var(--or) !important; border-color: var(--or) !important; color: #fff !important; }
+  
+  .tog { background: #334155 !important; }
+  .tog.on { background: var(--or) !important; }
+  
+  .lout { background: rgba(239,68,68,.12) !important; border-color: rgba(239,68,68,.25) !important; }
+  
+  .no-saved { color: #94A3B8 !important; }
+  
+  #mod-scan .msht { background: #0F172A !important; }
+  
+  .toast { background: #1E293B !important; color: #F8FAFC !important; border: 1px solid #334155 !important; }
+}
 .pbody{flex:1;overflow-y:auto;padding:14px 13px 140px}
 .sec-title{font-size:10px;font-weight:800;letter-spacing:1px;color:var(--gray);text-transform:uppercase;margin:18px 4px 8px}
-.pblk{background:var(--card);border-radius:16px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,.06); border: 1px solid var(--bdr);}
+.pblk{background:var(--bg-app);border-radius:16px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,.06); border: 1px solid var(--bdr);}
 .pr{display:flex;align-items:center;gap:12px;padding:14px 15px;border-bottom:1px solid var(--bdr)}
 .pr:last-child{border-bottom:none}
 .pr.tap{cursor:pointer;transition:background .15s}
@@ -454,7 +482,7 @@ window.togglePause = tog => {
 
 window.setMaxDay = (n, btn) => {
   window.haptic(30);
-  LS('pref_maxDay', n);
+  SS('pref_maxDay', n);
   syncField(uid, 'pref_maxDay', n);
   document.getElementById('lbl-day').textContent = n === 999 ? 'No limit' : n;
   document.querySelectorAll('[onclick^="window.setMaxDay"]').forEach(b => b.classList.remove('on'));
@@ -464,7 +492,7 @@ window.setMaxDay = (n, btn) => {
 
 window.setMaxHour = (n, btn) => {
   window.haptic(30);
-  LS('pref_maxHour', n);
+  SS('pref_maxHour', n);
   syncField(uid, 'pref_maxHour', n);
   document.getElementById('lbl-hour').textContent = n === 999 ? 'No limit' : n;
   document.querySelectorAll('[onclick^="window.setMaxHour"]').forEach(b => b.classList.remove('on'));
@@ -483,7 +511,7 @@ window.toggleInterest = (cat, btn) => {
     return; 
   }
   
-  LS('pref_interests', [...interests]);
+  SS('pref_interests', [...interests]);
   syncField(uid, 'pref_interests', [...interests]);
   btn.classList.toggle('on', interests.has(cat));
   toast('🎯', 'Interests saved');
