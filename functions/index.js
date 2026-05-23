@@ -1,14 +1,3 @@
-// ╔══════════════════════════════════════════════════════════════════╗
-// ║  functions/index.js - Firebase Cloud Functions Entry Point       ║
-// ║  Exports all cloud functions for NearPop                         ║
-// ╚══════════════════════════════════════════════════════════════════╝
-
-// Import and export image upload functions
-const { uploadListingImage, deleteListingImage } = require('./uploadImage');
-
-exports.uploadListingImage = uploadListingImage;
-exports.deleteListingImage = deleteListingImage;
-
 const functions = require('firebase-functions');
 const admin = require('firebase-admin');
 
@@ -18,10 +7,8 @@ if (!admin.apps.length) {
 
 // ═══════════════════════════════════════════════════════════════════
 // SEND PROXIMITY NOTIFICATION
-// Triggered by: notifications.js when user is near a deal
 // ═══════════════════════════════════════════════════════════════════
 exports.sendProximityNotification = functions.https.onRequest(async (req, res) => {
-  // CORS headers
   res.set('Access-Control-Allow-Origin', '*');
   res.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.set('Access-Control-Allow-Headers', 'Content-Type');
@@ -37,14 +24,12 @@ exports.sendProximityNotification = functions.https.onRequest(async (req, res) =
   try {
     const { userId, title, body, data } = req.body;
 
-    // Validation
     if (!userId || !title || !body) {
       return res.status(400).json({ 
         error: 'Missing required fields: userId, title, body' 
       });
     }
 
-    // Get user's FCM token from Firestore
     const userDoc = await admin.firestore()
       .collection('users')
       .doc(userId)
@@ -61,7 +46,6 @@ exports.sendProximityNotification = functions.https.onRequest(async (req, res) =
       return res.status(400).json({ error: 'No FCM token for user' });
     }
 
-    // Build notification message
     const message = {
       notification: {
         title: title,
@@ -76,7 +60,6 @@ exports.sendProximityNotification = functions.https.onRequest(async (req, res) =
         timestamp: String(Date.now())
       },
       token: fcmToken,
-      // Android-specific options
       android: {
         priority: 'high',
         notification: {
@@ -89,7 +72,6 @@ exports.sendProximityNotification = functions.https.onRequest(async (req, res) =
           clickAction: 'FLUTTER_NOTIFICATION_CLICK'
         }
       },
-      // iOS-specific options
       apns: {
         payload: {
           aps: {
@@ -104,7 +86,6 @@ exports.sendProximityNotification = functions.https.onRequest(async (req, res) =
           'apns-push-type': 'alert'
         }
       },
-      // Web push options
       webpush: {
         notification: {
           icon: '/icons/icon-192.png',
@@ -122,12 +103,9 @@ exports.sendProximityNotification = functions.https.onRequest(async (req, res) =
       }
     };
 
-    // Send notification via FCM
     const response = await admin.messaging().send(message);
-
     console.log('Notification sent successfully:', response);
 
-    // Update analytics
     await admin.firestore()
       .collection('users')
       .doc(userId)
@@ -145,10 +123,8 @@ exports.sendProximityNotification = functions.https.onRequest(async (req, res) =
   } catch (error) {
     console.error('Error sending notification:', error);
     
-    // Handle specific FCM errors
     if (error.code === 'messaging/invalid-registration-token' || 
         error.code === 'messaging/registration-token-not-registered') {
-      // Token is invalid - remove it from Firestore
       try {
         await admin.firestore()
           .collection('users')
