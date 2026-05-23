@@ -8,6 +8,25 @@
 <meta name="color-scheme" content="light dark"> 
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+<!-- Open Graph Meta Tags for Rich Sharing -->
+<meta property="og:site_name" content="NearPop">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://nearpop.in/detail.html">
+<meta property="og:title" content="NearPop - Discover Local Deals Near You">
+<meta property="og:description" content="Check out amazing deals, rentals, PG accommodations, and jobs near you on NearPop!">
+<meta property="og:image" content="https://nearpop.in/icons/og-banner.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="NearPop - Local Deals Near You">
+
+<!-- Twitter Card Meta Tags -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="NearPop - Discover Local Deals Near You">
+<meta name="twitter:description" content="Check out amazing deals, rentals, PG accommodations, and jobs near you on NearPop!">
+<meta name="twitter:image" content="https://nearpop.in/icons/og-banner.jpg">
+<meta name="twitter:image:alt" content="NearPop - Local Deals Near You">
+
 <title>NearPop — Detail</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -146,6 +165,191 @@
   70% { box-shadow: 0 0 0 6px rgba(239,68,68,0); }
   100% { box-shadow: 0 0 0 0 rgba(239,68,68,0); }
 }
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* DARK MODE - COMPLETE IMPLEMENTATION */
+/* ═══════════════════════════════════════════════════════════════ */
+
+@media (prefers-color-scheme: dark) {
+  /* Page Background */
+  #wrap {
+    background: #0F0F13 !important;
+  }
+  
+  .dbody {
+    background: #0F0F13 !important;
+  }
+  
+  /* Hero Section - only when no image */
+  .hero {
+    background: #111827;
+  }
+  
+  /* Hero buttons already have dark backgrounds - keep them */
+  .hero-back,
+  .hero-like,
+  .hero-share {
+    background: rgba(15, 15, 19, 0.6) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  .hero-badge {
+    background: rgba(255, 87, 34, 0.9) !important;
+  }
+  
+  /* Text Elements */
+  .dtype {
+    color: #9CA3AF !important;
+  }
+  
+  .dtitle {
+    color: #F9FAFB !important;
+  }
+  
+  .dprice {
+    color: #F9FAFB !important;
+  }
+  
+  .dprice span {
+    color: #9CA3AF !important;
+  }
+  
+  .sec {
+    color: #F9FAFB !important;
+  }
+  
+  .desc {
+    color: #D1D5DB !important;
+  }
+  
+  /* Distance Badge */
+  .ddist {
+    background: #1F2937 !important;
+    color: #D1D5DB !important;
+    border: 1px solid #374151;
+  }
+  
+  .ddist:active {
+    background: #374151 !important;
+  }
+  
+  /* Action Grid Items */
+  .ait {
+    background: #1F2937 !important;
+    border: 1px solid #374151;
+  }
+  
+  .ait .at {
+    color: #F9FAFB !important;
+  }
+  
+  /* Owner Card */
+  .ocard {
+    background: #1F2937 !important;
+    border: 1px solid #374151;
+  }
+  
+  .oav {
+    background: #FF5722 !important;
+  }
+  
+  .oname {
+    color: #F9FAFB !important;
+  }
+  
+  .otag {
+    color: #9CA3AF !important;
+  }
+  
+  .ovrf {
+    color: #10B981 !important;
+  }
+  
+  /* Footer */
+  .dfooter {
+    background: #111827 !important;
+    border-top-color: #374151 !important;
+  }
+  
+  .dact.s {
+    background: #1F2937 !important;
+    color: #F9FAFB !important;
+    border: 1px solid #374151;
+  }
+  
+  .dact.p {
+    background: #FF5722 !important;
+    color: #fff !important;
+  }
+  
+  /* Modal */
+  .modal {
+    background: rgba(0, 0, 0, 0.8) !important;
+  }
+  
+  .msht {
+    background: #111827 !important;
+    border: 1px solid #374151;
+  }
+  
+  .mh {
+    background: #374151 !important;
+  }
+  
+  .mt {
+    color: #F9FAFB !important;
+  }
+  
+  #contact-body {
+    background: #1F2937 !important;
+    color: #D1D5DB !important;
+    border: 1px solid #374151;
+  }
+  
+  .btn-or {
+    background: #FF5722 !important;
+    color: #fff !important;
+  }
+  
+  .btn-grn {
+    background: #10B981 !important;
+    color: #fff !important;
+  }
+  
+  /* Skeleton Loaders */
+  .skeleton {
+    background: linear-gradient(
+      90deg,
+      #1F2937 0%,
+      #374151 50%,
+      #1F2937 100%
+    ) !important;
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+  }
+  
+  @keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+  
+  /* Hero Loading */
+  .hero-loading {
+    background: #111827 !important;
+  }
+  
+  .hero-loading-icon {
+    opacity: 0.8;
+  }
+  
+  /* Toast */
+  .toast {
+    background: #1F2937 !important;
+    color: #F9FAFB !important;
+    border: 1px solid #374151;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -217,6 +421,47 @@ const CTAS = { deal: '🛍️ Claim Offer', rental: '📞 Contact Owner', pg: '�
 const params = new URLSearchParams(window.location.search);
 const id = params.get('id');
 let listing = null;
+
+// ═══════════════════════════════════════════════════════════════
+// META TAGS UPDATE FOR RICH SHARING
+// ═══════════════════════════════════════════════════════════════
+
+// Update meta tags for better link preview
+function updateMetaTags() {
+  if (!listing) return;
+  
+  const merchantName = listing.owner || listing.merchant || 'Local Business';
+  const title = `${listing.title} - ${merchantName} | NearPop`;
+  const description = `Check out ${merchantName}'s latest offer on NearPop! ${listing.desc || listing.title}`;
+  
+  // Update Open Graph tags
+  updateMetaTag('og:title', title);
+  updateMetaTag('og:description', description);
+  updateMetaTag('og:url', window.location.href);
+  
+  // Update Twitter tags
+  updateMetaTag('twitter:title', title);
+  updateMetaTag('twitter:description', description);
+}
+
+// Helper to update meta tag
+function updateMetaTag(property, content) {
+  let meta = document.querySelector(`meta[property="${property}"]`) || 
+             document.querySelector(`meta[name="${property}"]`);
+  
+  if (meta) {
+    meta.setAttribute('content', content);
+  } else {
+    meta = document.createElement('meta');
+    if (property.startsWith('og:')) {
+      meta.setAttribute('property', property);
+    } else {
+      meta.setAttribute('name', property);
+    }
+    meta.setAttribute('content', content);
+    document.head.appendChild(meta);
+  }
+}
 
 async function load() {
   if (!id) { showNotFound(); return; }
@@ -377,6 +622,9 @@ function render(l) {
   document.getElementById('dfooter').style.display = 'flex';
 
   document.title = safeTitle || 'NearPop';
+  
+  // Update Open Graph meta tags for rich sharing
+  updateMetaTags();
 
   injectFootfallBanner();
 }
@@ -386,26 +634,210 @@ function showNotFound() {
 }
 
 // 🚀 Native Share API Maintained Safely
+// ═══════════════════════════════════════════════════════════════
+// ENHANCED SHARE FUNCTION WITH RICH PREVIEW
+// ═══════════════════════════════════════════════════════════════
+
 window.shareListing = async () => {
   if (!listing) return;
-  const shareData = {
-    title: listing.title || 'NearPop Deal',
-    text: `Check out "${listing.title}" on NearPop!`,
-    url: window.location.href
-  };
-
-  if (navigator.share) {
-    try {
-      await navigator.share(shareData);
-      trackEng(id, 10); 
-    } catch (err) {
-      console.log('Share sheet closed');
+  
+  // Update Open Graph meta tags dynamically for better sharing
+  updateMetaTags();
+  
+  // Prepare share data
+  const merchantName = listing.owner || listing.merchant || 'Local Business';
+  const shareTitle = `${listing.title} - ${merchantName}`;
+  const shareText = `Check out ${merchantName}'s latest offer on NearPop! ${listing.title}${listing.price ? ' - ' + listing.price : ''}`;
+  const shareUrl = window.location.href;
+  
+  // Try to generate custom share image with Canvas
+  try {
+    const shareImage = await generateShareImage(listing, merchantName);
+    
+    // Try Web Share API with image (works on mobile)
+    if (navigator.share && navigator.canShare) {
+      const files = shareImage ? [shareImage] : [];
+      const shareData = {
+        title: shareTitle,
+        text: shareText,
+        url: shareUrl
+      };
+      
+      // Add image if supported
+      if (files.length > 0 && navigator.canShare({ files })) {
+        shareData.files = files;
+      }
+      
+      try {
+        await navigator.share(shareData);
+        trackEng(id, 10); 
+        toast('✅', 'Shared successfully!');
+      } catch (err) {
+        if (err.name !== 'AbortError') {
+          console.log('Share error:', err);
+          fallbackShare(shareUrl);
+        }
+      }
+    } else {
+      fallbackShare(shareUrl);
     }
-  } else {
-    navigator.clipboard.writeText(window.location.href);
-    toast('🔗', 'Link copied to clipboard!');
+  } catch (err) {
+    console.error('Share image generation error:', err);
+    fallbackShare(shareUrl);
   }
 };
+
+// Fallback: Copy link to clipboard
+function fallbackShare(url) {
+  navigator.clipboard.writeText(url);
+  toast('🔗', 'Link copied to clipboard!');
+}
+
+// Generate custom share image with Canvas
+async function generateShareImage(listing, merchantName) {
+  try {
+    const canvas = document.createElement('canvas');
+    canvas.width = 1200;
+    canvas.height = 630;
+    const ctx = canvas.getContext('2d');
+    
+    // Background gradient
+    const gradient = ctx.createLinearGradient(0, 0, 0, 630);
+    gradient.addColorStop(0, '#FF5722');
+    gradient.addColorStop(1, '#FF7043');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, 1200, 630);
+    
+    // Try to load and draw listing image
+    if (listing.img && listing.img.length > 0) {
+      try {
+        const listingImage = await loadImage(listing.img[0]);
+        // Draw listing image on right side with rounded corners
+        ctx.save();
+        roundRect(ctx, 700, 100, 450, 300, 20);
+        ctx.clip();
+        ctx.drawImage(listingImage, 700, 100, 450, 300);
+        ctx.restore();
+      } catch (err) {
+        console.log('Could not load listing image for share');
+      }
+    }
+    
+    // NearPop branding
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = 'bold 48px Syne, sans-serif';
+    ctx.fillText('🎯 NearPop', 50, 80);
+    
+    // Merchant name
+    ctx.fillStyle = '#FFF5F2';
+    ctx.font = '600 32px Nunito, sans-serif';
+    ctx.fillText(merchantName, 50, 160);
+    
+    // Listing title
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = 'bold 42px Syne, sans-serif';
+    const titleLines = wrapText(ctx, listing.title || 'Amazing Deal!', 600);
+    titleLines.forEach((line, i) => {
+      ctx.fillText(line, 50, 230 + (i * 50));
+    });
+    
+    // Price (if available)
+    if (listing.price) {
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = 'bold 56px Syne, sans-serif';
+      ctx.fillText(listing.price, 50, 380);
+    }
+    
+    // Bottom promotional banner
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+    ctx.fillRect(0, 530, 1200, 100);
+    
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = 'bold 28px Nunito, sans-serif';
+    ctx.fillText('📱 NearPop is available on Play Store', 50, 575);
+    
+    // Try to load and draw QR code
+    try {
+      const qrCode = await loadImage('/icons/playstore-qr-code.png');
+      // Draw QR with white background
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(1050, 540, 90, 90);
+      ctx.drawImage(qrCode, 1055, 545, 80, 80);
+      
+      // "Download" text
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = '600 18px Nunito, sans-serif';
+      ctx.fillText('Scan to', 950, 570);
+      ctx.fillText('Download', 940, 595);
+    } catch (err) {
+      console.log('Could not load QR code for share image');
+    }
+    
+    // Convert canvas to blob
+    return new Promise((resolve) => {
+      canvas.toBlob((blob) => {
+        if (blob) {
+          const file = new File([blob], 'nearpop-share.png', { type: 'image/png' });
+          resolve(file);
+        } else {
+          resolve(null);
+        }
+      }, 'image/png');
+    });
+  } catch (err) {
+    console.error('Error generating share image:', err);
+    return null;
+  }
+}
+
+// Helper: Load image
+function loadImage(src) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = src;
+  });
+}
+
+// Helper: Rounded rectangle
+function roundRect(ctx, x, y, width, height, radius) {
+  ctx.beginPath();
+  ctx.moveTo(x + radius, y);
+  ctx.lineTo(x + width - radius, y);
+  ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+  ctx.lineTo(x + width, y + height - radius);
+  ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+  ctx.lineTo(x + radius, y + height);
+  ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+  ctx.lineTo(x, y + radius);
+  ctx.quadraticCurveTo(x, y, x + radius, y);
+  ctx.closePath();
+}
+
+// Helper: Wrap text to fit width
+function wrapText(ctx, text, maxWidth) {
+  const words = text.split(' ');
+  const lines = [];
+  let currentLine = words[0];
+  
+  for (let i = 1; i < words.length; i++) {
+    const testLine = currentLine + ' ' + words[i];
+    const metrics = ctx.measureText(testLine);
+    
+    if (metrics.width > maxWidth) {
+      lines.push(currentLine);
+      currentLine = words[i];
+    } else {
+      currentLine = testLine;
+    }
+  }
+  lines.push(currentLine);
+  
+  // Return max 2 lines
+  return lines.slice(0, 2);
+}
 
 window.openGoogleMaps = (destLat, destLng) => {
   if (!destLat || !destLng) return toast('⚠️', 'Location coordinates missing.');
