@@ -9,7 +9,6 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
-<!-- Open Graph Meta Tags for Rich Sharing -->
 <meta property="og:site_name" content="NearPop">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://nearpop.in/detail.html">
@@ -19,13 +18,6 @@
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="NearPop - Local Deals Near You">
-
-<!-- Twitter Card Meta Tags -->
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="NearPop - Discover Local Deals Near You">
-<meta name="twitter:description" content="Check out amazing deals, rentals, PG accommodations, and jobs near you on NearPop!">
-<meta name="twitter:image" content="https://nearpop.in/icons/og-banner.jpg">
-<meta name="twitter:image:alt" content="NearPop - Local Deals Near You">
 
 <title>NearPop — Detail</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -37,334 +29,133 @@
 
 #wrap { display: flex; flex-direction: column; height: 100vh; height: 100dvh; background: var(--bg-body); }
 
-.hero { height: 220px; display: flex; align-items: center; justify-content: center; font-size: 70px; position: relative; flex-shrink: 0; }
-.hero-ov { position: absolute; inset: 0; background: linear-gradient(to bottom, transparent 40%, rgba(0,0,0,.3)); }
+.hero { height: 250px; display: flex; align-items: center; justify-content: center; font-size: 70px; position: relative; flex-shrink: 0; }
+.hero-ov { position: absolute; inset: 0; background: linear-gradient(to bottom, transparent 40%, rgba(0,0,0,.6)); }
 
-.hero-back { position: absolute; top: 13px; left: 13px; width: 40px; height: 40px; border-radius: 12px; background: rgba(0,0,0,.38); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); color: #fff; display: flex; align-items: center; justify-content: center; border: none; cursor: pointer; text-decoration: none; font-size: 22px; }
+.hero-back { position: absolute; top: 16px; left: 16px; width: 40px; height: 40px; border-radius: 12px; background: rgba(0,0,0,.38); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); color: #fff; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.1); cursor: pointer; text-decoration: none; font-size: 22px; transition: transform 0.2s;}
+.hero-back:active { transform: scale(0.9); }
 
-.hero-like { position: absolute; top: 13px; right: 13px; width: 40px; height: 40px; border-radius: 12px; background: rgba(0,0,0,.38); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); color: #fff; font-size: 18px; display: flex; align-items: center; justify-content: center; border: none; cursor: pointer; }
+.hero-like { position: absolute; top: 16px; right: 16px; width: 40px; height: 40px; border-radius: 12px; background: rgba(0,0,0,.38); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); color: #fff; font-size: 18px; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.1); cursor: pointer; transition: transform 0.2s;}
+.hero-like:active { transform: scale(0.9); }
 
-/* 🚀 Share Button */
-.hero-share { position: absolute; top: 13px; right: 63px; width: 40px; height: 40px; border-radius: 12px; background: rgba(0,0,0,.38); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); color: #fff; font-size: 18px; display: flex; align-items: center; justify-content: center; border: none; cursor: pointer; z-index: 10; }
+.hero-share { position: absolute; top: 16px; right: 66px; width: 40px; height: 40px; border-radius: 12px; background: rgba(0,0,0,.38); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); color: #fff; font-size: 18px; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.1); cursor: pointer; z-index: 10; transition: transform 0.2s;}
+.hero-share:active { transform: scale(0.9); }
 
-.hero-badge { position: absolute; bottom: 13px; left: 13px; padding: 4px 11px; border-radius: 100px; font-size: 9px; font-weight: 800; letter-spacing: 1px; color: #fff; }
+.hero-badge { position: absolute; bottom: 16px; left: 16px; padding: 6px 14px; border-radius: 100px; font-size: 10px; font-weight: 900; letter-spacing: 1px; color: #fff; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 10; }
 
-.dbody { flex: 1; overflow-y: auto; padding: 18px 16px 90px; }
+.dbody { flex: 1; overflow-y: auto; padding: 24px 16px 90px; }
 
-.dtype { font-size: 10px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 5px; }
-.dtitle { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 800; color: var(--deep); margin-bottom: 7px; line-height: 1.2; }
-.dprice { font-size: 27px; font-weight: 900; color: var(--deep); margin-bottom: 4px; }
-.dprice span { font-size: 14px; font-weight: 500; color: var(--gray); }
+.dtype { font-size: 11px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px; }
+.dtitle { font-family: 'Syne', sans-serif; font-size: 24px; font-weight: 800; color: var(--deep); margin-bottom: 10px; line-height: 1.3; }
+.dprice { font-size: 32px; font-weight: 900; color: var(--deep); margin-bottom: 16px; }
+.dprice span { font-size: 16px; font-weight: 600; color: var(--gray); }
 
-.ddist { display: inline-flex; align-items: center; gap: 4px; background: var(--light); padding: 5px 12px; border-radius: 100px; font-size: 11px; font-weight: 700; color: var(--gray); margin-bottom: 18px; transition: background 0.2s; }
+.ddist { display: inline-flex; align-items: center; gap: 6px; background: var(--light); padding: 8px 16px; border-radius: 100px; font-size: 13px; font-weight: 800; color: var(--gray); margin-bottom: 24px; transition: background 0.2s; border: 1px solid var(--bdr); cursor: pointer;}
 .ddist:active { background: var(--bdr); transform: scale(0.97); }
 
-.agrid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 9px; margin-bottom: 18px; }
-.ait { display: flex; align-items: center; gap: 9px; background: var(--cream); border-radius: 12px; padding: 11px; }
-.ait .ai { font-size: 17px; flex-shrink: 0; }
-.ait .at { font-size: 12px; font-weight: 700; color: var(--deep); }
+.agrid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 24px; }
+.ait { display: flex; align-items: center; gap: 10px; background: var(--cream); border-radius: 14px; padding: 14px; border: 1px solid var(--bdr); }
+.ait .ai { font-size: 20px; flex-shrink: 0; }
+.ait .at { font-size: 13px; font-weight: 800; color: var(--deep); }
 
-.sec { font-size: 13px; font-weight: 800; color: var(--deep); margin-bottom: 8px; }
-.desc { font-size: 14px; color: var(--gray); line-height: 1.75; font-weight: 500; margin-bottom: 18px; }
+.sec { font-size: 15px; font-weight: 900; color: var(--deep); margin-bottom: 12px; }
+.desc { font-size: 15px; color: var(--gray); line-height: 1.7; font-weight: 600; margin-bottom: 24px; white-space: pre-wrap; }
 
-.ocard { display: flex; align-items: center; gap: 12px; background: var(--cream); border-radius: 15px; padding: 14px; margin-bottom: 18px; }
-.oav { width: 48px; height: 48px; border-radius: 13px; background: var(--or); display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
-.oname { font-size: 14px; font-weight: 800; color: var(--deep); margin-bottom: 1px; }
-.otag { font-size: 11px; color: var(--gray); font-weight: 600; }
-.ovrf { font-size: 11px; color: var(--grn); font-weight: 700; margin-top: 2px; }
+.ocard { display: flex; align-items: center; gap: 14px; background: var(--cream); border-radius: 16px; padding: 16px; margin-bottom: 24px; border: 1px solid var(--bdr); box-shadow: 0 4px 15px rgba(0,0,0,0.03); }
+.oav { width: 56px; height: 56px; border-radius: 16px; background: var(--or); display: flex; align-items: center; justify-content: center; font-size: 26px; flex-shrink: 0; }
+.oname { font-size: 16px; font-weight: 900; color: var(--deep); margin-bottom: 2px; }
+.otag { font-size: 13px; color: var(--gray); font-weight: 700; }
+.ovrf { font-size: 12px; color: var(--grn); font-weight: 800; margin-top: 4px; display: flex; align-items: center; gap: 4px; }
 
-.dfooter { padding: 13px 14px; border-top: 1px solid var(--bdr); display: flex; gap: 9px; position: fixed; bottom: 0; left: 0; right: 0; background: var(--bg-app); }
-.dact { flex: 1; padding: 14px; border-radius: 13px; font-size: 14px; font-weight: 800; border: none; cursor: pointer; }
-.dact.p { background: var(--or); color: #fff; box-shadow: 0 4px 14px rgba(255,87,34,.26); }
-.dact.s { background: var(--light); color: var(--deep); }
+.dfooter { padding: 16px; border-top: 1px solid var(--bdr); display: flex; gap: 12px; position: fixed; bottom: 0; left: 0; right: 0; background: var(--bg-app); z-index: 100; box-shadow: 0 -4px 20px rgba(0,0,0,0.05); }
+.dact { flex: 1; padding: 16px; border-radius: 14px; font-size: 15px; font-weight: 900; border: none; cursor: pointer; transition: transform 0.2s; font-family: inherit; }
+.dact:active { transform: scale(0.96); }
+.dact.p { background: #FF5722; color: #fff; box-shadow: 0 4px 15px rgba(255,87,34,.3); }
+.dact.s { background: var(--light); color: var(--deep); border: 2px solid var(--bdr); }
 
-.not-found { text-align: center; padding: 60px 24px; }
-.not-found .em { font-size: 52px; margin-bottom: 13px; }
-.not-found h2 { font-size: 19px; font-weight: 800; margin-bottom: 6px; color: var(--deep); }
-.not-found p { font-size: 14px; color: var(--gray); line-height: 1.5; }
+.not-found { text-align: center; padding: 80px 24px; }
+.not-found .em { font-size: 64px; margin-bottom: 16px; }
+.not-found h2 { font-size: 22px; font-weight: 900; margin-bottom: 8px; color: var(--deep); font-family: 'Syne', sans-serif;}
+.not-found p { font-size: 15px; color: var(--gray); line-height: 1.6; font-weight: 600; }
 
-/* Footfall Engine UI */
-.footfall-bar { background: linear-gradient(135deg, #10B981, #059669); color: #fff; padding: 13px 16px; border-radius: 13px; margin-bottom: 14px; display: none; }
-.footfall-bar.on { display: block; animation: tin .4s ease; }
-@keyframes tin { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
-.ff-title { font-size: 13px; font-weight: 800; margin-bottom: 3px; }
-.ff-sub { font-size: 11px; opacity: .85; margin-bottom: 9px; }
-.ff-progress { background: rgba(255,255,255,.25); border-radius: 4px; height: 6px; margin-bottom: 9px; }
-.ff-bar { background: #fff; border-radius: 4px; height: 6px; transition: width 1s linear; }
-.ff-btn { background: #fff; color: #059669; padding: 8px 16px; border-radius: 100px; font-size: 12px; font-weight: 800; font-family: inherit; cursor: pointer; border: none; }
+.footfall-bar { background: linear-gradient(135deg, #10B981, #059669); color: #fff; padding: 16px; border-radius: 16px; margin-bottom: 20px; display: none; box-shadow: 0 8px 24px rgba(16, 185, 129, 0.2); }
+.footfall-bar.on { display: block; animation: tin .4s cubic-bezier(0.34, 1.56, 0.64, 1); }
+@keyframes tin { from { opacity: 0; transform: translateY(20px) scale(0.95); } to { opacity: 1; transform: none; } }
+.ff-title { font-size: 14px; font-weight: 900; margin-bottom: 4px; }
+.ff-sub { font-size: 12px; opacity: .9; margin-bottom: 12px; font-weight: 600; }
+.ff-progress { background: rgba(255,255,255,.3); border-radius: 6px; height: 8px; margin-bottom: 12px; overflow: hidden; }
+.ff-bar { background: #fff; border-radius: 6px; height: 8px; transition: width 1s linear; }
+.ff-btn { background: #fff; color: #059669; padding: 10px 20px; border-radius: 100px; font-size: 13px; font-weight: 900; font-family: inherit; cursor: pointer; border: none; box-shadow: 0 4px 10px rgba(0,0,0,0.1); transition: transform 0.2s; }
+.ff-btn:active { transform: scale(0.95); }
 
-.exp-badge { display: inline-block; padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; margin-bottom: 12px; }
-.exp-active { background: rgba(16, 185, 129, 0.1); color: var(--grn); }
-.exp-soon { background: rgba(245, 158, 11, 0.1); color: var(--or); }
-.exp-expired { background: rgba(239, 68, 68, 0.1); color: #EF4444; }
-.exp-unlimited { background: rgba(16, 185, 129, 0.1); color: var(--grn); font-weight: 800; }
+.exp-badge { display: inline-block; padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 800; margin-bottom: 16px; }
+.exp-active { background: rgba(16, 185, 129, 0.1); color: var(--grn); border: 1px solid rgba(16, 185, 129, 0.2); }
+.exp-soon { background: rgba(245, 158, 11, 0.1); color: var(--or); border: 1px solid rgba(245, 158, 11, 0.2); }
+.exp-expired { background: rgba(239, 68, 68, 0.1); color: #EF4444; border: 1px solid rgba(239, 68, 68, 0.2); }
+.exp-unlimited { background: rgba(16, 185, 129, 0.1); color: var(--grn); font-weight: 900; border: 1px solid rgba(16, 185, 129, 0.2); }
 
-/* 🚀 Skeletons */
-.skeleton {
-  background: #E5E7EB;
-  background: linear-gradient(90deg, #E5E7EB 25%, #F3F4F6 50%, #E5E7EB 75%);
-  background-size: 200% 100%;
-  animation: shimmer 1.5s infinite linear;
-  border-radius: 8px;
-}
+.skeleton { background: linear-gradient(90deg, #E5E7EB 25%, #F3F4F6 50%, #E5E7EB 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite linear; border-radius: 8px; }
+@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
 
-/* ✨ Hero Loading Placeholder */
-.hero-loading {
-  position: absolute;
-  inset: 0;
-  background: #f9fafb;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 20;
-  transition: opacity 0.4s ease, visibility 0.4s ease;
-}
+.hero-loading { position: absolute; inset: 0; background: #f9fafb; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); display: flex; align-items: center; justify-content: center; z-index: 20; transition: opacity 0.4s ease, visibility 0.4s ease; }
+.hero-loading.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+.hero-loading-icon { width: 80px; height: 80px; object-fit: contain; filter: drop-shadow(0 0 18px rgba(255, 87, 34, 0.28)); animation: pulse 2s ease-in-out infinite; }
+@keyframes pulse { 0%, 100% { opacity: 0.7; transform: scale(0.95); } 50% { opacity: 1; transform: scale(1.05); } }
 
-.hero-loading.hidden {
-  opacity: 0;
-  visibility: hidden;
-  pointer-events: none;
-}
-
-.hero-loading-icon {
-  width: 140px;
-  height: 140px;
-  object-fit: contain;
-  opacity: 1;
-  filter: drop-shadow(0 0 18px rgba(255, 87, 34, 0.28));
-  animation: pulse 2s ease-in-out infinite;
-}
-
-@keyframes pulse {
-  0%, 100% {
-    opacity: 0.7;
-    transform: scale(0.95);
-  }
-  50% {
-    opacity: 1;
-    transform: scale(1.05);
-  }
-}
-@keyframes shimmer { 
-  0% { background-position: 200% 0; } 
-  100% { background-position: -200% 0; } 
-}
-
-/* 🚀 Pulsing FOMO Badge */
-.fomo-badge {
-  position: absolute; top: 10px; left: 10px;
-  background: #EF4444; color: #fff; font-size: 10px; font-weight: 900;
-  padding: 4px 8px; border-radius: 6px; z-index: 5; letter-spacing: 0.5px;
-  box-shadow: 0 4px 10px rgba(239,68,68,0.4);
-  animation: fomo-pulse 1.5s infinite;
-}
-@keyframes fomo-pulse {
-  0% { box-shadow: 0 0 0 0 rgba(239,68,68,0.7); }
-  70% { box-shadow: 0 0 0 6px rgba(239,68,68,0); }
-  100% { box-shadow: 0 0 0 0 rgba(239,68,68,0); }
-}
+.fomo-badge { position: absolute; top: 16px; left: 16px; background: #EF4444; color: #fff; font-size: 11px; font-weight: 900; padding: 6px 12px; border-radius: 8px; z-index: 10; letter-spacing: 0.5px; box-shadow: 0 4px 15px rgba(239,68,68,0.5); animation: fomo-pulse 1.5s infinite; }
+@keyframes fomo-pulse { 0% { box-shadow: 0 0 0 0 rgba(239,68,68,0.7); } 70% { box-shadow: 0 0 0 8px rgba(239,68,68,0); } 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0); } }
 
 /* ═══════════════════════════════════════════════════════════════ */
-/* DARK MODE - COMPLETE IMPLEMENTATION */
+/* 🌙 FLAWLESS DARK MODE OVERRIDES */
 /* ═══════════════════════════════════════════════════════════════ */
-
 @media (prefers-color-scheme: dark) {
-  /* Page Background */
-  #wrap {
-    background: #0F0F13 !important;
+  #wrap, .dbody { background: #0F0F13 !important; }
+  .hero { background: #111827; }
+  
+  .hero-back, .hero-like, .hero-share { 
+    background: rgba(15, 15, 19, 0.6) !important; 
+    border: 1px solid rgba(255, 255, 255, 0.1); 
   }
   
-  .dbody {
-    background: #0F0F13 !important;
-  }
+  .dtitle, .dprice, .sec, .oname, .not-found h2 { color: #F9FAFB !important; }
+  .dtype { color: #9CA3AF !important; }
+  .desc, .dprice span, .otag, .not-found p { color: #D1D5DB !important; }
   
-  /* Hero Section - only when no image */
-  .hero {
-    background: #111827;
-  }
+  .ddist { background: #1F2937 !important; color: #D1D5DB !important; border-color: #374151 !important; }
+  .ddist:active { background: #374151 !important; }
   
-  /* Hero buttons already have dark backgrounds - keep them */
-  .hero-back,
-  .hero-like,
-  .hero-share {
-    background: rgba(15, 15, 19, 0.6) !important;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-  }
+  .ait { background: #1F2937 !important; border-color: #374151 !important; }
+  .ait .at { color: #F9FAFB !important; }
   
-  .hero-badge {
-    background: rgba(255, 87, 34, 0.9) !important;
-  }
+  .ocard { background: #1F2937 !important; border-color: #374151 !important; box-shadow: 0 4px 20px rgba(0,0,0,0.4) !important;}
+  .ovrf { color: #10B981 !important; }
   
-  /* Text Elements */
-  .dtype {
-    color: #9CA3AF !important;
-  }
+  .dfooter { background: #111827 !important; border-top-color: #374151 !important; box-shadow: 0 -4px 30px rgba(0,0,0,0.5) !important;}
+  .dact.s { background: #1F2937 !important; color: #F9FAFB !important; border-color: #374151 !important; }
   
-  .dtitle {
-    color: #F9FAFB !important;
-  }
+  .modal .msht { background: #111827 !important; border: 1px solid #374151 !important; }
+  .modal .mh { background: #374151 !important; }
+  .modal .mt { color: #F9FAFB !important; }
+  #contact-body { background: #1F2937 !important; color: #D1D5DB !important; border: 1px solid #374151 !important;}
   
-  .dprice {
-    color: #F9FAFB !important;
-  }
-  
-  .dprice span {
-    color: #9CA3AF !important;
-  }
-  
-  .sec {
-    color: #F9FAFB !important;
-  }
-  
-  .desc {
-    color: #D1D5DB !important;
-  }
-  
-  /* Distance Badge */
-  .ddist {
-    background: #1F2937 !important;
-    color: #D1D5DB !important;
-    border: 1px solid #374151;
-  }
-  
-  .ddist:active {
-    background: #374151 !important;
-  }
-  
-  /* Action Grid Items */
-  .ait {
-    background: #1F2937 !important;
-    border: 1px solid #374151;
-  }
-  
-  .ait .at {
-    color: #F9FAFB !important;
-  }
-  
-  /* Owner Card */
-  .ocard {
-    background: #1F2937 !important;
-    border: 1px solid #374151;
-  }
-  
-  .oav {
-    background: #FF5722 !important;
-  }
-  
-  .oname {
-    color: #F9FAFB !important;
-  }
-  
-  .otag {
-    color: #9CA3AF !important;
-  }
-  
-  .ovrf {
-    color: #10B981 !important;
-  }
-  
-  /* Footer */
-  .dfooter {
-    background: #111827 !important;
-    border-top-color: #374151 !important;
-  }
-  
-  .dact.s {
-    background: #1F2937 !important;
-    color: #F9FAFB !important;
-    border: 1px solid #374151;
-  }
-  
-  .dact.p {
-    background: #FF5722 !important;
-    color: #fff !important;
-  }
-  
-  /* Modal */
-  .modal {
-    background: rgba(0, 0, 0, 0.8) !important;
-  }
-  
-  .msht {
-    background: #111827 !important;
-    border: 1px solid #374151;
-  }
-  
-  .mh {
-    background: #374151 !important;
-  }
-  
-  .mt {
-    color: #F9FAFB !important;
-  }
-  
-  #contact-body {
-    background: #1F2937 !important;
-    color: #D1D5DB !important;
-    border: 1px solid #374151;
-  }
-  
-  .btn-or {
-    background: #FF5722 !important;
-    color: #fff !important;
-  }
-  
-  .btn-grn {
-    background: #10B981 !important;
-    color: #fff !important;
-  }
-  
-  /* Skeleton Loaders */
-  .skeleton {
-    background: linear-gradient(
-      90deg,
-      #1F2937 0%,
-      #374151 50%,
-      #1F2937 100%
-    ) !important;
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
-  }
-  
-  @keyframes shimmer {
-    0% { background-position: 200% 0; }
-    100% { background-position: -200% 0; }
-  }
-  
-  /* Hero Loading */
-  .hero-loading {
-    background: #111827 !important;
-  }
-  
-  .hero-loading-icon {
-    opacity: 0.8;
-  }
-  
-  /* Toast */
-  .toast {
-    background: #1F2937 !important;
-    color: #F9FAFB !important;
-    border: 1px solid #374151;
-  }
+  .skeleton { background: linear-gradient(90deg, #1F2937 25%, #374151 50%, #1F2937 75%) !important; background-size: 200% 100%; }
+  .hero-loading { background: #111827 !important; }
+  .toast { background: #1F2937 !important; color: #F9FAFB !important; border: 1px solid #374151 !important; }
 }
-
 </style>
 </head>
 <body>
 <div id="app-shell"><div id="wrap">
   <div class="hero" id="hero">
     <div class="hero-ov"></div>
-    <span id="d-em" style="position:relative;z-index:1">🏠</span>
-    <button class="hero-back" onclick="window.location.href='map.html'" aria-label="Go home">🏠</button>
-    <button class="hero-share" id="d-share" onclick="shareListing()" aria-label="Share listing">🔗</button>
+    <span id="d-em" style="position:relative; z-index:1; display:none;">🏠</span>
+    <button class="hero-back" onclick="window.location.href='map.html'" aria-label="Go home">←</button>
+    <button class="hero-share" id="d-share" onclick="shareListing()" aria-label="Share listing">📤</button>
     <button class="hero-like" id="d-like" onclick="toggleLike()" aria-label="Save listing">🤍</button>
-    <div class="hero-badge" id="d-badge">RENTAL</div>
+    <div class="hero-badge" id="d-badge">LOADING</div>
     
-    <!-- ✨ Loading Placeholder -->
     <div class="hero-loading" id="hero-loading">
-      <img src="/icons/icon-512.png" alt="Loading..." class="hero-loading-icon">
+      <img src="icons/icon-192.png" alt="Loading..." class="hero-loading-icon">
     </div>
   </div>
 
@@ -373,10 +164,10 @@
       <div class="skeleton" style="width:80px; height:20px; border-radius:100px; margin-bottom:14px;"></div>
       <div class="skeleton" style="width:95%; height:32px; margin-bottom:8px;"></div>
       <div class="skeleton" style="width:60%; height:32px; margin-bottom:20px;"></div>
-      <div class="skeleton" style="width:140px; height:24px; border-radius:100px; margin-bottom:24px;"></div>
+      <div class="skeleton" style="width:140px; height:36px; border-radius:100px; margin-bottom:24px;"></div>
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:24px;">
-        <div class="skeleton" style="height:44px; border-radius:12px;"></div>
-        <div class="skeleton" style="height:44px; border-radius:12px;"></div>
+        <div class="skeleton" style="height:56px; border-radius:14px;"></div>
+        <div class="skeleton" style="height:56px; border-radius:14px;"></div>
       </div>
       <div class="skeleton" style="width:120px; height:20px; margin-bottom:12px;"></div>
       <div class="skeleton" style="width:100%; height:16px; margin-bottom:8px;"></div>
@@ -394,22 +185,21 @@
 <div class="modal" id="mod-contact" onclick="if(event.target===this)this.classList.remove('on')">
   <div class="msht">
     <div class="mh"></div>
-    <div class="mt">💬 Contact</div>
-    <div id="contact-body" style="background:var(--cream);border-radius:12px;padding:14px;margin-bottom:16px;font-size:14px;font-weight:600;line-height:1.7;color:var(--deep)"></div>
-    <button class="btn-or" id="btn-call">📞 Call Now</button>
-    <button class="btn-grn" id="btn-wa" style="width:100%;padding:14px;border-radius:14px;background:#10B981;color:#fff;font-size:15px;font-weight:800;border:none;cursor:pointer;font-family:inherit;margin-top:10px;">💚 WhatsApp</button>
+    <div class="mt">💬 Contact Merchant</div>
+    <div id="contact-body" style="background:var(--cream); border-radius:16px; padding:18px; margin-bottom:20px; font-size:15px; font-weight:700; line-height:1.7; color:var(--deep); border: 1px solid var(--bdr);"></div>
+    <button class="btn-or" id="btn-call" style="width:100%; padding:16px; border-radius:14px; font-size:16px; margin-bottom:12px;">📞 Call Now</button>
+    <button id="btn-wa" style="width:100%; padding:16px; border-radius:14px; background:#10B981; color:#fff; font-size:16px; font-weight:900; border:none; cursor:pointer; font-family:inherit; box-shadow: 0 4px 15px rgba(16,185,129,0.3); transition: transform 0.2s;" onmousedown="this.style.transform='scale(0.96)'" onmouseup="this.style.transform='none'">💚 WhatsApp</button>
   </div>
 </div>
 <div class="toast" id="toast"><span id="t-ic">✅</span><span id="t-tx"></span></div>
 </div>
 
 <script type="module">
-// ✅ FIXED: Added sanitizer import
 import { db, LS, SS, TC, TE, distM, fmtDist, isExpired, toast, addPts } from './js/app.js';
 import { sanitizer } from './js/sanitizer.js';
 import { trackEng } from './js/notifications.js';
 import { syncField } from './js/userSync.js';
-import { getDocs, query, collection, orderBy, doc, getDoc, updateDoc, increment } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
+import { getDoc, doc, updateDoc, increment } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js';
 
 if (!LS('uid')) { 
@@ -422,42 +212,25 @@ const params = new URLSearchParams(window.location.search);
 const id = params.get('id');
 let listing = null;
 
-// ═══════════════════════════════════════════════════════════════
-// META TAGS UPDATE FOR RICH SHARING
-// ═══════════════════════════════════════════════════════════════
-
-// Update meta tags for better link preview
 function updateMetaTags() {
   if (!listing) return;
-  
   const merchantName = listing.owner || listing.merchant || 'Local Business';
   const title = `${listing.title} - ${merchantName} | NearPop`;
-  const description = `Check out ${merchantName}'s latest offer on NearPop! ${listing.desc || listing.title}`;
+  const description = `Check out our ${merchantName} latest offer on nearpop! ${listing.desc || listing.title}`;
   
-  // Update Open Graph tags
   updateMetaTag('og:title', title);
   updateMetaTag('og:description', description);
   updateMetaTag('og:url', window.location.href);
-  
-  // Update Twitter tags
   updateMetaTag('twitter:title', title);
   updateMetaTag('twitter:description', description);
 }
 
-// Helper to update meta tag
 function updateMetaTag(property, content) {
-  let meta = document.querySelector(`meta[property="${property}"]`) || 
-             document.querySelector(`meta[name="${property}"]`);
-  
-  if (meta) {
-    meta.setAttribute('content', content);
-  } else {
+  let meta = document.querySelector(`meta[property="${property}"]`) || document.querySelector(`meta[name="${property}"]`);
+  if (meta) { meta.setAttribute('content', content); } 
+  else {
     meta = document.createElement('meta');
-    if (property.startsWith('og:')) {
-      meta.setAttribute('property', property);
-    } else {
-      meta.setAttribute('name', property);
-    }
+    property.startsWith('og:') ? meta.setAttribute('property', property) : meta.setAttribute('name', property);
     meta.setAttribute('content', content);
     document.head.appendChild(meta);
   }
@@ -471,75 +244,40 @@ async function load() {
       listing = { id: snap.id, ...snap.data() };
       render(listing);
       
-      // QR Standee Analytics
       const urlParams = new URLSearchParams(window.location.search);
       if (urlParams.get('utm_source') === 'qr_standee' && listing.uid) {
-        updateDoc(doc(db, 'users', listing.uid), { qrOpens: increment(1) }).catch(e => console.warn("Analytics Error:", e));
+        updateDoc(doc(db, 'users', listing.uid), { qrOpens: increment(1) }).catch(e => console.warn(e));
       }
     } else {
       showNotFound();
     }
-  } catch(e) {
-    showNotFound();
-  }
+  } catch(e) { showNotFound(); }
 }
 
 function render(l) {
   const imgUrl = l.imageUrl || l.image;
   const heroLoading = document.getElementById('hero-loading');
   
-  // ✅ SECURE: Sanitize image URL before using
   if (imgUrl) {
     const safeImgUrl = sanitizer.sanitizeUrl(imgUrl);
     if (safeImgUrl) {
-      // Show loading placeholder
       heroLoading.classList.remove('hidden');
-      
-      // Preload image
       const img = new Image();
       img.onload = () => {
-        // Image loaded successfully
-        document.getElementById('hero').style.background = `#f9fafb url('${safeImgUrl}') center/contain no-repeat`;
+        document.getElementById('hero').style.background = `#f9fafb url('${safeImgUrl}') center/cover no-repeat`;
         document.getElementById('d-em').style.display = 'none';
-        
-        // Hide loading placeholder with smooth transition
-        setTimeout(() => {
-          heroLoading.classList.add('hidden');
-        }, 100);
+        setTimeout(() => { heroLoading.classList.add('hidden'); }, 100);
       };
-      
       img.onerror = () => {
-        // Image failed to load - use gradient fallback
         document.getElementById('hero').style.background = l.bg || 'linear-gradient(135deg,#667eea,#764ba2)';
         document.getElementById('d-em').textContent = sanitizer.sanitizeText(l.emoji || TE(l.type), { maxLength: 10 });
         document.getElementById('d-em').style.display = 'inline';
         heroLoading.classList.add('hidden');
       };
-      
-      // Start loading
       img.src = safeImgUrl;
-      
-      // Timeout fallback (if image takes too long)
-      setTimeout(() => {
-        if (!heroLoading.classList.contains('hidden')) {
-          heroLoading.classList.add('hidden');
-        }
-      }, 3000); // 3 second timeout
-      
-    } else {
-      // URL rejected by sanitizer - use gradient fallback
-      document.getElementById('hero').style.background = l.bg || 'linear-gradient(135deg,#667eea,#764ba2)';
-      document.getElementById('d-em').textContent = sanitizer.sanitizeText(l.emoji || TE(l.type), { maxLength: 10 });
-      document.getElementById('d-em').style.display = 'inline';
-      heroLoading.classList.add('hidden');
-    }
-  } else {
-    // No image - use gradient/emoji
-    document.getElementById('hero').style.background = l.bg || 'linear-gradient(135deg,#667eea,#764ba2)';
-    document.getElementById('d-em').textContent = sanitizer.sanitizeText(l.emoji || TE(l.type), { maxLength: 10 });
-    document.getElementById('d-em').style.display = 'inline';
-    heroLoading.classList.add('hidden');
-  }
+      setTimeout(() => { if (!heroLoading.classList.contains('hidden')) heroLoading.classList.add('hidden'); }, 3000);
+    } else { fallbackHero(l, heroLoading); }
+  } else { fallbackHero(l, heroLoading); }
 
   document.getElementById('d-badge').textContent = sanitizer.sanitizeText((l.type || '').toUpperCase(), { maxLength: 20 });
   document.getElementById('d-badge').style.background = l.color || TC(l.type);
@@ -554,254 +292,269 @@ function render(l) {
     distTxt = d < 1000 ? Math.round(d) + 'm' : (d / 1000).toFixed(1) + 'km';
   }
 
-  // ✅ SECURE: Sanitize amenities
   const amens = (l.amenities || []).map(a => {
     const ic = typeof a === 'object' ? a.ic : a[0];
     const lb = typeof a === 'object' ? a.lb : a[1];
-    const safeIc = sanitizer.sanitizeText(ic || '⭐', { maxLength: 10 });
-    const safeLb = sanitizer.sanitizeText(lb || '', { maxLength: 50 });
-    return `<div class="ait"><span class="ai">${safeIc}</span><span class="at">${safeLb}</span></div>`;
+    return `<div class="ait"><span class="ai">${sanitizer.sanitizeText(ic || '⭐', {maxLength:10})}</span><span class="at">${sanitizer.sanitizeText(lb || '', {maxLength:50})}</span></div>`;
   }).join('');
 
-  // 🚀 FOMO Expiry Logic Maintained
   let expiryHTML = '';
   if (!l.expiryDate) {
     expiryHTML = `<div class="exp-badge exp-unlimited">♾️ Unlimited Premium Deal</div>`;
   } else {
     const exp = new Date(l.expiryDate);
-    const now = new Date();
-    const hrsLeft = (exp - now) / 3600000;
+    const hrsLeft = (exp - new Date()) / 3600000;
     const daysLeft = Math.ceil(hrsLeft / 24);
     
-    if (hrsLeft < 0) {
-      expiryHTML = `<div class="exp-badge exp-expired">❌ Expired</div>`;
-    } else if (hrsLeft <= 24) {
-      expiryHTML = `<div class="fomo-badge" style="position:relative; top:0; left:0; display:inline-block; margin-bottom:12px;">🔥 Ends in ${Math.ceil(hrsLeft)} hours!</div>`;
-    } else if (daysLeft <= 7) {
-      expiryHTML = `<div class="exp-badge exp-soon">⏰ Expires in ${daysLeft} day${daysLeft === 1 ? '' : 's'}</div>`;
-    } else {
-      expiryHTML = `<div class="exp-badge exp-active">✅ Valid until ${exp.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</div>`;
-    }
+    if (hrsLeft < 0) expiryHTML = `<div class="exp-badge exp-expired">❌ Expired</div>`;
+    else if (hrsLeft <= 24) expiryHTML = `<div class="fomo-badge" style="position:relative; top:0; left:0; display:inline-block; margin-bottom:16px;">🔥 Ends in ${Math.ceil(hrsLeft)} hours!</div>`;
+    else if (daysLeft <= 7) expiryHTML = `<div class="exp-badge exp-soon">⏰ Expires in ${daysLeft} day${daysLeft === 1 ? '' : 's'}</div>`;
+    else expiryHTML = `<div class="exp-badge exp-active">✅ Valid until ${exp.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</div>`;
   }
 
-  // ✅ SECURE: Sanitize all text data
   const safeTitle = sanitizer.sanitizeText(l.title || '', { maxLength: 200 });
-  const safePrice = sanitizer.sanitizeText(l.price || '', { maxLength: 50 });
-  const safePriceLabel = sanitizer.sanitizeText(l.priceLabel || '', { maxLength: 50 });
-  const safeDesc = sanitizer.sanitizeText(l.desc || '', { maxLength: 1000 });
-  const safeOwner = sanitizer.sanitizeText(l.owner || '', { maxLength: 100 });
-  const safeOwnerTag = sanitizer.sanitizeText(l.ownerTag || '', { maxLength: 100 });
-  const safeOwnerEmoji = sanitizer.sanitizeText(l.ownerEmoji || '🏪', { maxLength: 10 });
-  const safeType = sanitizer.sanitizeText((l.type || '').toUpperCase(), { maxLength: 20 });
+  const safeOwner = sanitizer.sanitizeText(l.owner || l.merchant || 'Local Partner', { maxLength: 100 });
 
   document.getElementById('dbody').innerHTML = `
     ${expiryHTML}
-    <div class="dtype" style="color:${l.color || TC(l.type)}">${safeType}</div>
+    <div class="dtype" style="color:${l.color || TC(l.type)}">${sanitizer.sanitizeText((l.type || '').toUpperCase(), { maxLength: 20 })}</div>
     <div class="dtitle">${safeTitle}</div>
-    <div class="dprice">${safePrice} <span>${safePriceLabel}</span></div>
+    <div class="dprice">${sanitizer.sanitizeText(l.price || '', { maxLength: 50 })} <span>${sanitizer.sanitizeText(l.priceLabel || '', { maxLength: 50 })}</span></div>
     
-    <div class="ddist" style="cursor:pointer;" onclick="openGoogleMaps(${l.lat}, ${l.lng})">
-      📍 ${distTxt} from you <span style="color:var(--blue); margin-left:3px">↗</span>
+    <div class="ddist" onclick="openGoogleMaps(${l.lat}, ${l.lng})">
+      📍 ${distTxt} from you <span style="color:var(--blue); font-size:16px; margin-left:2px; font-weight:900;">↗</span>
     </div>
 
     ${amens ? `<div class="agrid">${amens}</div>` : ''}
-    <div class="sec">About this listing</div>
-    <div class="desc">${safeDesc}</div>
-    <div class="sec">Posted by</div>
+    <div class="sec">📝 About this listing</div>
+    <div class="desc">${sanitizer.sanitizeText(l.desc || '', { maxLength: 1000 })}</div>
+    <div class="sec">🏪 Posted by</div>
     <div class="ocard">
-      <div class="oav">${safeOwnerEmoji}</div>
+      <div class="oav">${sanitizer.sanitizeText(l.ownerEmoji || '🏪', { maxLength: 10 })}</div>
       <div>
         <div class="oname">${safeOwner}</div>
-        <div class="otag">${safeOwnerTag}</div>
-        ${l.verified !== false ? '<div class="ovrf">✅ Verified on NearPop</div>' : ''}
+        <div class="otag">${sanitizer.sanitizeText(l.ownerTag || 'Verified Local Business', { maxLength: 100 })}</div>
+        ${l.verified !== false ? '<div class="ovrf">✅ NearPop Verified Partner</div>' : ''}
       </div>
     </div>
   `;
 
   document.getElementById('d-cta').textContent = CTAS[l.type] || '📅 Contact';
   document.getElementById('dfooter').style.display = 'flex';
-
   document.title = safeTitle || 'NearPop';
   
-  // Update Open Graph meta tags for rich sharing
   updateMetaTags();
-
   injectFootfallBanner();
 }
 
-function showNotFound() {
-  document.getElementById('dbody').innerHTML = `<div class="not-found"><div class="em">🔍</div><h2>Listing not found</h2><button onclick="window.location.href='map.html'" style="margin-top:18px;padding:13px 24px;background:#FF5722;color:#fff;border-radius:12px;font-size:14px;font-weight:800;border:none;cursor:pointer;font-family:inherit">Go to Map</button></div>`;
+function fallbackHero(l, loader) {
+  document.getElementById('hero').style.background = l.bg || 'linear-gradient(135deg,#667eea,#764ba2)';
+  document.getElementById('d-em').textContent = sanitizer.sanitizeText(l.emoji || TE(l.type), { maxLength: 10 });
+  document.getElementById('d-em').style.display = 'inline';
+  loader.classList.add('hidden');
 }
 
-// 🚀 Native Share API Maintained Safely
-// ═══════════════════════════════════════════════════════════════
-// ENHANCED SHARE FUNCTION WITH RICH PREVIEW
-// ═══════════════════════════════════════════════════════════════
+function showNotFound() {
+  document.getElementById('dbody').innerHTML = `<div class="not-found"><div class="em">🔍</div><h2>Listing not found</h2><p>This deal might have expired or been removed.</p><button onclick="window.location.href='map.html'" style="margin-top:24px;padding:16px 32px;background:#FF5722;color:#fff;border-radius:14px;font-size:15px;font-weight:900;border:none;cursor:pointer;font-family:inherit;box-shadow:0 4px 15px rgba(255,87,34,0.3);">Go to Map</button></div>`;
+}
 
+// ═══════════════════════════════════════════════════════════════
+// 🚀 PROFESSIONAL CANVAS RICH SHARE ENGINE
+// ═══════════════════════════════════════════════════════════════
 window.shareListing = async () => {
   if (!listing) return;
   
-  // Update Open Graph meta tags dynamically for better sharing
+  const btn = document.getElementById('d-share');
+  btn.textContent = '⏳';
+  btn.style.pointerEvents = 'none';
+  
   updateMetaTags();
   
-  // Prepare share data
   const merchantName = listing.owner || listing.merchant || 'Local Business';
-  const shareTitle = `${listing.title} - ${merchantName}`;
-  const shareText = `Check out ${merchantName}'s latest offer on NearPop! ${listing.title}${listing.price ? ' - ' + listing.price : ''}`;
   const shareUrl = window.location.href;
+  const shareTitle = `${listing.title} - ${merchantName}`;
+  const shareText = `Check out our ${merchantName} latest offer on nearpop!\n\n${listing.title}${listing.price ? ' for ' + listing.price : ''}\n\n📍 View details here: ${shareUrl}`;
   
-  // Try to generate custom share image with Canvas
   try {
-    const shareImage = await generateShareImage(listing, merchantName);
+    const shareImageFile = await generateShareImage(listing, merchantName);
     
-    // Try Web Share API with image (works on mobile)
     if (navigator.share && navigator.canShare) {
-      const files = shareImage ? [shareImage] : [];
-      const shareData = {
-        title: shareTitle,
-        text: shareText,
-        url: shareUrl
-      };
-      
-      // Add image if supported
-      if (files.length > 0 && navigator.canShare({ files })) {
-        shareData.files = files;
+      const shareData = { title: shareTitle, text: shareText, url: shareUrl };
+      if (shareImageFile && navigator.canShare({ files: [shareImageFile] })) {
+        shareData.files = [shareImageFile];
       }
-      
       try {
         await navigator.share(shareData);
         trackEng(id, 10); 
         toast('✅', 'Shared successfully!');
       } catch (err) {
-        if (err.name !== 'AbortError') {
-          console.log('Share error:', err);
-          fallbackShare(shareUrl);
-        }
+        if (err.name !== 'AbortError') fallbackShare(shareUrl);
       }
     } else {
       fallbackShare(shareUrl);
     }
   } catch (err) {
-    console.error('Share image generation error:', err);
+    console.error(err);
     fallbackShare(shareUrl);
   }
+  
+  btn.textContent = '📤';
+  btn.style.pointerEvents = 'auto';
 };
 
-// Fallback: Copy link to clipboard
 function fallbackShare(url) {
   navigator.clipboard.writeText(url);
   toast('🔗', 'Link copied to clipboard!');
 }
 
-// Generate custom share image with Canvas
 async function generateShareImage(listing, merchantName) {
   try {
     const canvas = document.createElement('canvas');
     canvas.width = 1200;
     canvas.height = 630;
     const ctx = canvas.getContext('2d');
-    
-    // Background gradient
-    const gradient = ctx.createLinearGradient(0, 0, 0, 630);
+
+    // 1. Sleek Dark Background
+    ctx.fillStyle = '#0F0F13';
+    ctx.fillRect(0, 0, 1200, 630);
+
+    // 2. Vibrant Orange Gradient Accent
+    const gradient = ctx.createLinearGradient(0, 0, 1200, 630);
     gradient.addColorStop(0, '#FF5722');
-    gradient.addColorStop(1, '#FF7043');
+    gradient.addColorStop(1, '#0F0F13');
+    ctx.globalAlpha = 0.15;
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, 1200, 630);
-    
-    // Try to load and draw listing image
-    if (listing.img && listing.img.length > 0) {
+    ctx.globalAlpha = 1.0;
+
+    // 3. Draw Listing Image (Right Side)
+    const imgUrl = listing.imageUrl || listing.image;
+    if (imgUrl) {
       try {
-        const listingImage = await loadImage(listing.img[0]);
-        // Draw listing image on right side with rounded corners
+        const listingImage = await loadImage(imgUrl);
         ctx.save();
-        roundRect(ctx, 700, 100, 450, 300, 20);
+        roundRect(ctx, 620, 65, 520, 500, 28);
         ctx.clip();
-        ctx.drawImage(listingImage, 700, 100, 450, 300);
+        
+        // Perfect object-fit: cover logic for Canvas
+        const imgRatio = listingImage.width / listingImage.height;
+        const canvasRatio = 520 / 500;
+        let drawW, drawH, drawX, drawY;
+        
+        if (imgRatio > canvasRatio) {
+            drawH = 500;
+            drawW = listingImage.width * (500 / listingImage.height);
+            drawX = 620 - (drawW - 520) / 2;
+            drawY = 65;
+        } else {
+            drawW = 520;
+            drawH = listingImage.height * (520 / listingImage.width);
+            drawX = 620;
+            drawY = 65 - (drawH - 500) / 2;
+        }
+        ctx.drawImage(listingImage, drawX, drawY, drawW, drawH);
         ctx.restore();
+
+        // Elegant Image Border
+        ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+        ctx.lineWidth = 3;
+        ctx.stroke();
       } catch (err) {
-        console.log('Could not load listing image for share');
+        // Fallback Box if image CORS blocks it
+        ctx.fillStyle = '#1F2937';
+        roundRect(ctx, 620, 65, 520, 500, 28);
+        ctx.fill();
+        ctx.fillStyle = '#FF5722';
+        ctx.font = '140px sans-serif';
+        ctx.fillText(listing.emoji || '🏷️', 800, 360);
       }
+    } else {
+       // Emoji Box if no image exists
+       ctx.fillStyle = '#1F2937';
+       roundRect(ctx, 620, 65, 520, 500, 28);
+       ctx.fill();
+       ctx.fillStyle = '#FF5722';
+       ctx.font = '140px sans-serif';
+       ctx.fillText(listing.emoji || '🏷️', 800, 360);
     }
-    
-    // NearPop branding
+
+    // 4. Branding & Text (Left Side)
+    ctx.fillStyle = '#FF5722';
+    ctx.font = 'bold 36px "Nunito", sans-serif';
+    ctx.fillText('🎯 NearPop', 60, 95);
+
+    ctx.fillStyle = '#9CA3AF';
+    ctx.font = 'bold 28px "Nunito", sans-serif';
+    ctx.fillText(merchantName.toUpperCase(), 60, 165);
+
     ctx.fillStyle = '#FFFFFF';
-    ctx.font = 'bold 48px Syne, sans-serif';
-    ctx.fillText('🎯 NearPop', 50, 80);
-    
-    // Merchant name
-    ctx.fillStyle = '#FFF5F2';
-    ctx.font = '600 32px Nunito, sans-serif';
-    ctx.fillText(merchantName, 50, 160);
-    
-    // Listing title
-    ctx.fillStyle = '#FFFFFF';
-    ctx.font = 'bold 42px Syne, sans-serif';
-    const titleLines = wrapText(ctx, listing.title || 'Amazing Deal!', 600);
+    ctx.font = 'bold 56px "Syne", sans-serif';
+    const titleLines = wrapText(ctx, listing.title || 'Amazing Local Deal!', 500);
     titleLines.forEach((line, i) => {
-      ctx.fillText(line, 50, 230 + (i * 50));
+      ctx.fillText(line, 60, 240 + (i * 70));
     });
-    
-    // Price (if available)
+
     if (listing.price) {
-      ctx.fillStyle = '#FFFFFF';
-      ctx.font = 'bold 56px Syne, sans-serif';
-      ctx.fillText(listing.price, 50, 380);
+      ctx.fillStyle = '#10B981'; // Vibrant Green
+      ctx.font = 'bold 68px "Syne", sans-serif';
+      ctx.fillText(listing.price, 60, 280 + (titleLines.length * 70));
     }
-    
-    // Bottom promotional banner
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
-    ctx.fillRect(0, 530, 1200, 100);
-    
+
+    // 5. Promotional App Banner & QR Code
+    ctx.fillStyle = 'rgba(255,255,255,0.06)';
+    roundRect(ctx, 60, 445, 520, 120, 20);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
     ctx.fillStyle = '#FFFFFF';
-    ctx.font = 'bold 28px Nunito, sans-serif';
-    ctx.fillText('📱 NearPop is available on Play Store', 50, 575);
-    
-    // Try to load and draw QR code
+    ctx.font = 'bold 24px "Nunito", sans-serif';
+    ctx.fillText('NearPop is available on Play Store', 170, 495);
+    ctx.fillStyle = '#9CA3AF';
+    ctx.font = '20px "Nunito", sans-serif';
+    ctx.fillText('Scan to download the app', 170, 535);
+
     try {
       const qrCode = await loadImage('/icons/playstore-qr-code.png');
-      // Draw QR with white background
       ctx.fillStyle = '#FFFFFF';
-      ctx.fillRect(1050, 540, 90, 90);
-      ctx.drawImage(qrCode, 1055, 545, 80, 80);
-      
-      // "Download" text
-      ctx.fillStyle = '#FFFFFF';
-      ctx.font = '600 18px Nunito, sans-serif';
-      ctx.fillText('Scan to', 950, 570);
-      ctx.fillText('Download', 940, 595);
+      roundRect(ctx, 75, 460, 80, 80, 12);
+      ctx.fill();
+      ctx.drawImage(qrCode, 80, 465, 70, 70);
     } catch (err) {
-      console.log('Could not load QR code for share image');
+      // Ignore if QR fails to load
     }
-    
-    // Convert canvas to blob
+
+    // Export as JPG File
     return new Promise((resolve) => {
       canvas.toBlob((blob) => {
-        if (blob) {
-          const file = new File([blob], 'nearpop-share.png', { type: 'image/png' });
-          resolve(file);
-        } else {
-          resolve(null);
-        }
-      }, 'image/png');
+        if (blob) resolve(new File([blob], 'nearpop-offer.jpg', { type: 'image/jpeg' }));
+        else resolve(null);
+      }, 'image/jpeg', 0.9);
     });
   } catch (err) {
-    console.error('Error generating share image:', err);
+    console.error('Share generation failed', err);
     return null;
   }
 }
 
-// Helper: Load image
+// Canvas Helpers
 function loadImage(src) {
   return new Promise((resolve, reject) => {
     const img = new Image();
-    img.crossOrigin = 'anonymous';
+    img.crossOrigin = 'anonymous'; // Enforce CORS for Canvas compatibility
     img.onload = () => resolve(img);
-    img.onerror = reject;
+    img.onerror = () => {
+       // Fallback without CORS if the server rejects anonymous
+       const img2 = new Image();
+       img2.onload = () => resolve(img2);
+       img2.onerror = reject;
+       img2.src = src;
+    };
     img.src = src;
   });
 }
 
-// Helper: Rounded rectangle
 function roundRect(ctx, x, y, width, height, radius) {
   ctx.beginPath();
   ctx.moveTo(x + radius, y);
@@ -816,16 +569,13 @@ function roundRect(ctx, x, y, width, height, radius) {
   ctx.closePath();
 }
 
-// Helper: Wrap text to fit width
 function wrapText(ctx, text, maxWidth) {
   const words = text.split(' ');
   const lines = [];
   let currentLine = words[0];
-  
   for (let i = 1; i < words.length; i++) {
     const testLine = currentLine + ' ' + words[i];
     const metrics = ctx.measureText(testLine);
-    
     if (metrics.width > maxWidth) {
       lines.push(currentLine);
       currentLine = words[i];
@@ -834,9 +584,7 @@ function wrapText(ctx, text, maxWidth) {
     }
   }
   lines.push(currentLine);
-  
-  // Return max 2 lines
-  return lines.slice(0, 2);
+  return lines.slice(0, 3); // Max 3 lines
 }
 
 window.openGoogleMaps = (destLat, destLng) => {
@@ -866,15 +614,13 @@ window.openContact = () => {
   
   updateDoc(doc(db, 'listings', id), { visits: increment(1) }).catch(e => console.warn(e));
   
-  // ✅ SECURE: Sanitize contact info
-  const safeOwner = sanitizer.sanitizeText(listing.owner || '', { maxLength: 100 });
-  const safeOwnerTag = sanitizer.sanitizeText(listing.ownerTag || '', { maxLength: 100 });
+  const safeOwner = sanitizer.sanitizeText(listing.owner || 'Local Business', { maxLength: 100 });
+  const safeOwnerTag = sanitizer.sanitizeText(listing.ownerTag || 'Verified Partner', { maxLength: 100 });
   const safeContact = sanitizer.sanitizeText(listing.contact || 'Contact via NearPop', { maxLength: 20 });
   
-  document.getElementById('contact-body').innerHTML = `<strong style="color:var(--deep)">${safeOwner}</strong><br><span style="color:var(--gray)">${safeOwnerTag}</span><br><br>📞 <strong style="color:var(--deep)">${safeContact}</strong>`;
+  document.getElementById('contact-body').innerHTML = `<strong style="color:var(--deep); font-size:18px;">${safeOwner}</strong><br><span style="color:var(--gray)">${safeOwnerTag}</span><br><br>📞 <strong style="color:var(--or); font-size:18px;">${safeContact}</strong>`;
   document.getElementById('btn-call').onclick = () => { if (listing.contact) window.open('tel:' + listing.contact); trackEng(id, 5); };
   
-  // 🚀 NEW: Dynamic WhatsApp Pre-filled Message (with sanitized title)
   document.getElementById('btn-wa').onclick = () => { 
     if (listing.contact) {
       const safeTitle = sanitizer.sanitizeText(listing.title || 'your shop', { maxLength: 100 });
@@ -891,19 +637,18 @@ window.openContact = () => {
 
 document.getElementById('d-cta').onclick = window.openContact;
 
-// 🚀 FOOTFALL VERIFICATION ENGINE MAINTAINED SAFELY
+// 🚀 FOOTFALL VERIFICATION ENGINE
 let ffTimer = null;
 let ffSeconds = 0;
 const FF_REQUIRED = 5; 
 
 function startFootfallTracking() {
-  if (!LS('uid')) return; 
-  if (!listing || !listing.lat) return;
+  if (!LS('uid') || !listing || !listing.lat) return;
   const loc = LS('lastLoc');
   if (!loc) return;
   
   const d = distM(loc.lat, loc.lng, listing.lat, listing.lng);
-  if (d > 50) return; // Must be within 50 meters
+  if (d > 50) return; 
   
   const bar = document.getElementById('ff-bar');
   const ffBanner = document.getElementById('ff-banner');
@@ -932,7 +677,6 @@ function startFootfallTracking() {
 function confirmFootfall() {
   const ffBanner = document.getElementById('ff-banner');
   if (ffBanner) {
-    // ✅ SECURE: Sanitize merchant name
     const safeOwner = sanitizer.sanitizeText(listing.owner || 'this location', { maxLength: 100 });
     ffBanner.innerHTML = `<div class="ff-title">✅ Visit Confirmed!</div><div class="ff-sub">You've been verified at ${safeOwner}. Reward points added!</div><button class="ff-btn" onclick="claimVisitReward()">🎁 Claim +50 Points</button>`;
   }
@@ -972,12 +716,11 @@ if (navigator.geolocation) {
   navigator.geolocation.getCurrentPosition(p => {
     SS('lastLoc', { lat: p.coords.latitude, lng: p.coords.longitude });
     if (listing) {
-      document.querySelector('.ddist').innerHTML = `📍 ${Math.round(distM(p.coords.latitude, p.coords.longitude, listing.lat, listing.lng))}m from you <span style="color:var(--blue); margin-left:3px">↗</span>`;
+      document.querySelector('.ddist').innerHTML = `📍 ${Math.round(distM(p.coords.latitude, p.coords.longitude, listing.lat, listing.lng))}m from you <span style="color:var(--blue); margin-left:3px; font-weight:900;">↗</span>`;
     }
     startFootfallTracking();
   });
 }
-
 </script>
 </body>
 </html>
