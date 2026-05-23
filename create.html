@@ -213,44 +213,40 @@ function validateForm() {
   </div>
 </div></div>
 
-<div class="modal" id="mod-photo-choice">
-  <div class="md-inner" style="max-width:320px; padding:22px;">
-    <div style="font-size:18px; font-weight:900; color:var(--deep); margin-bottom:18px; text-align:center;">Add Photo</div>
-    <div style="display:flex; flex-direction:column; gap:10px;">
-      <label for="cam-input" class="btn-lt" style="margin:0; cursor:pointer; text-align:center; display:block;">📷 Take Photo</label>
-      <input type="file" id="cam-input" accept="image/*" capture="environment" style="display:none;" onchange="handlePhoto(this.files[0])">
-      
-      <label for="gal-input" class="btn-lt" style="margin:0; cursor:pointer; text-align:center; display:block;">🖼️ Choose from Gallery</label>
-      <input type="file" id="gal-input" accept="image/*" style="display:none;" onchange="handlePhoto(this.files[0])">
-      
-      <button class="btn-dk" onclick="document.getElementById('mod-photo-choice').classList.remove('on')">Cancel</button>
+<div class="modal" id="mod-photo-choice" onclick="if(event.target===this)this.classList.remove('on')">
+  <div class="msht" style="padding-bottom: 30px;">
+    <div class="mh"></div>
+    <div style="text-align: center; margin-bottom: 10px; font-weight: 800; font-size: 16px; color: var(--deep);">Upload Photo</div>
+    
+    <div style="background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 12px; padding: 12px; margin-bottom: 16px; text-align: center;">
+      <div style="font-size: 11px; font-weight: 700; color: var(--or); margin-bottom: 4px;">⚠️ Note / ध्यान दें:</div>
+      <div style="font-size: 10px; color: var(--deep); line-height: 1.4;">If the camera restarts your app, please take the photo first and choose "Gallery".<br><span style="color: var(--gray);">यदि कैमरा ऐप को रीस्टार्ट करता है, तो कृपया पहले फोटो लें और "Gallery" चुनें।</span></div>
     </div>
+    
+    <button class="btn-or" onclick="document.getElementById('img-camera').click(); document.getElementById('mod-photo-choice').classList.remove('on');" style="width: 100%; margin-bottom: 12px; font-size: 15px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+      <span style="font-size: 20px;">📸</span> Take Live Photo
+    </button>
+    
+    <button class="btn-lt" onclick="document.getElementById('img-gallery').click(); document.getElementById('mod-photo-choice').classList.remove('on');" style="width: 100%; font-size: 15px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+      <span style="font-size: 20px;">🖼️</span> Choose from Gallery
+    </button>
+    <input type="file" id="img-camera" accept="image/*" capture="environment" style="display:none;" onchange="handlePhoto(this.files[0])">
+    <input type="file" id="img-gallery" accept="image/*" style="display:none;" onchange="handlePhoto(this.files[0])">
   </div>
 </div>
 
-<div id="loader" class="loader"><div class="l-spin"></div><div class="l-txt" id="l-txt">Loading…</div></div>
+<div id="loader" class="loader"><div class="spin"></div><p id="l-txt">Loading…</p></div>
+<div class="toast" id="toast"><span id="t-ic">✅</span><span id="t-tx"></span></div>
 
 <script type="module">
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-app.js';
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js';
-import { getFirestore, collection, addDoc, query, where, getDocs, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
+import { collection, addDoc, query, where, getDocs, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
 import { getFunctions, httpsCallable } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-functions.js';
-import { LS, SS, toast } from './js/app.js';
+import { app, db, LS, SS, toast } from './js/app.js';
 import { encode as ghEncode } from './js/geohash.js';
 import { sanitizer } from './js/sanitizer.js';
 
-const firebaseConfig = {
-  apiKey: "AIzaSyDYUm3VV8iuLHQKJuU9fWgaRaYU0t5Dlzk",
-  authDomain: "nearpop-a432d.firebaseapp.com",
-  projectId: "nearpop-a432d",
-  storageBucket: "nearpop-a432d.firebasestorage.app",
-  messagingSenderId: "265333242320",
-  appId: "1:265333242320:web:f2cedec620ef08d4e161d5"
-};
-
-const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
-const db = getFirestore(app);
 const functions = getFunctions(app, 'asia-south1');
 
 let secureUser = null;
@@ -289,7 +285,7 @@ let pickMap, pickMarker;
 let finalLat = 28.4089, finalLng = 77.3178;
 
 setTimeout(() => {
-  const lastLoc = JSON.parse(LS('lastLoc') || '{"lat":28.4089,"lng":77.3178}');
+  const lastLoc = LS('lastLoc') || {lat: 28.4089, lng: 77.3178};
   finalLat = lastLoc.lat;
   finalLng = lastLoc.lng;
 
@@ -441,11 +437,14 @@ window.doCreate = async () => {
     allowNewlines: false 
   });
   
-  // Sanitize phone number
-  const contact = sanitizer.sanitizePhone(rawContact);
-  if (!contact) {
-    toast('⚠️', 'Invalid phone number. Use 10 digits for India numbers.');
-    return;
+  // Sanitize phone number (optional field)
+  let contact = '';
+  if (rawContact.trim()) {
+    contact = sanitizer.sanitizePhone(rawContact);
+    if (!contact) {
+      toast('⚠️', 'Invalid phone number. Use 10 digits for India numbers.');
+      return;
+    }
   }
   
   // Sanitize coordinates
@@ -549,7 +548,7 @@ window.doCreate = async () => {
       emoji: ext.emoji, 
       bg: ext.bg, 
       color: ext.color, 
-      amenities: ext.amenities,
+      amenities: Array.from(document.querySelectorAll('#amenity-btns .bb.on')).map(b => b.textContent.trim()),
       owner: LS('mname') || 'Business Owner',
       ownerEmoji: '🏪', 
       ownerTag: 'NearPop Merchant', 
