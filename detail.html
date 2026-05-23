@@ -78,7 +78,7 @@
 .not-found h2 { font-size: 22px; font-weight: 900; margin-bottom: 8px; color: var(--deep); font-family: 'Syne', sans-serif;}
 .not-found p { font-size: 15px; color: var(--gray); line-height: 1.6; font-weight: 600; }
 
-.footfall-bar { background: linear-gradient(135deg, #10B981, #059669); color: #fff; padding: 16px; border-radius: 16px; margin-bottom: 20px; display: none; box-shadow: 0 8px 24px rgba(16, 185, 129, 0.2); }
+.footfall-bar { color: #fff; padding: 16px; border-radius: 16px; margin-bottom: 20px; display: none; box-shadow: 0 8px 24px rgba(16, 185, 129, 0.2); }
 .footfall-bar.on { display: block; animation: tin .4s cubic-bezier(0.34, 1.56, 0.64, 1); }
 @keyframes tin { from { opacity: 0; transform: translateY(20px) scale(0.95); } to { opacity: 1; transform: none; } }
 .ff-title { font-size: 14px; font-weight: 900; margin-bottom: 4px; }
@@ -112,10 +112,7 @@
   #wrap, .dbody { background: #0F0F13 !important; }
   .hero { background: #111827; }
   
-  .hero-back, .hero-like, .hero-share { 
-    background: rgba(15, 15, 19, 0.6) !important; 
-    border: 1px solid rgba(255, 255, 255, 0.1); 
-  }
+  .hero-back, .hero-like, .hero-share { background: rgba(15, 15, 19, 0.6) !important; border: 1px solid rgba(255, 255, 255, 0.1); }
   
   .dtitle, .dprice, .sec, .oname, .not-found h2 { color: #F9FAFB !important; }
   .dtype { color: #9CA3AF !important; }
@@ -216,7 +213,7 @@ function updateMetaTags() {
   if (!listing) return;
   const merchantName = listing.owner || listing.merchant || 'Local Business';
   const title = `${listing.title} - ${merchantName} | NearPop`;
-  const description = `Check out our ${merchantName} latest offer on nearpop! ${listing.desc || listing.title}`;
+  const description = `Check out our ${merchantName} latest offer on NearPop! ${listing.desc || listing.title}`;
   
   updateMetaTag('og:title', title);
   updateMetaTag('og:description', description);
@@ -359,7 +356,7 @@ function showNotFound() {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// 🚀 PROFESSIONAL CANVAS RICH SHARE ENGINE
+// 🚀 PROFESSIONAL PORTRAIT SHARE ENGINE (1080x1920)
 // ═══════════════════════════════════════════════════════════════
 window.shareListing = async () => {
   if (!listing) return;
@@ -373,7 +370,8 @@ window.shareListing = async () => {
   const merchantName = listing.owner || listing.merchant || 'Local Business';
   const shareUrl = window.location.href;
   const shareTitle = `${listing.title} - ${merchantName}`;
-  const shareText = `Check out our ${merchantName} latest offer on nearpop!\n\n${listing.title}${listing.price ? ' for ' + listing.price : ''}\n\n📍 View details here: ${shareUrl}`;
+  // Removed URL here to prevent duplication during native sharing
+  const shareText = `Check out our ${merchantName} latest offer on NearPop!\n\n${listing.title}${listing.price ? ' for ' + listing.price : ''}`;
   
   try {
     const shareImageFile = await generateShareImage(listing, merchantName);
@@ -410,122 +408,140 @@ function fallbackShare(url) {
 async function generateShareImage(listing, merchantName) {
   try {
     const canvas = document.createElement('canvas');
-    canvas.width = 1200;
-    canvas.height = 630;
+    canvas.width = 1080;
+    canvas.height = 1920; // Perfect 9:16 portrait ratio
     const ctx = canvas.getContext('2d');
 
     // 1. Sleek Dark Background
     ctx.fillStyle = '#0F0F13';
-    ctx.fillRect(0, 0, 1200, 630);
+    ctx.fillRect(0, 0, 1080, 1920);
 
-    // 2. Vibrant Orange Gradient Accent
-    const gradient = ctx.createLinearGradient(0, 0, 1200, 630);
+    const gradient = ctx.createLinearGradient(0, 0, 1080, 1920);
     gradient.addColorStop(0, '#FF5722');
     gradient.addColorStop(1, '#0F0F13');
     ctx.globalAlpha = 0.15;
     ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, 1200, 630);
+    ctx.fillRect(0, 0, 1080, 1920);
     ctx.globalAlpha = 1.0;
 
-    // 3. Draw Listing Image (Right Side)
+    // 2. Load Top NearPop Logo
+    try {
+      const logoImg = await loadImage('icons/logo.png');
+      const logoH = 80;
+      const logoW = logoImg.width * (logoH / logoImg.height);
+      ctx.drawImage(logoImg, 540 - (logoW / 2), 100, logoW, logoH);
+    } catch (err) {
+      ctx.fillStyle = '#FF5722';
+      ctx.font = 'bold 70px "Nunito", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('NearPop', 540, 160);
+    }
+
+    // 3. Draw Listing Image (Centered Square)
+    const imgSize = 860;
+    const imgX = 110;
+    const imgY = 250;
     const imgUrl = listing.imageUrl || listing.image;
+
     if (imgUrl) {
       try {
         const listingImage = await loadImage(imgUrl);
         ctx.save();
-        roundRect(ctx, 620, 65, 520, 500, 28);
+        roundRect(ctx, imgX, imgY, imgSize, imgSize, 40);
         ctx.clip();
         
-        // Perfect object-fit: cover logic for Canvas
         const imgRatio = listingImage.width / listingImage.height;
-        const canvasRatio = 520 / 500;
         let drawW, drawH, drawX, drawY;
         
-        if (imgRatio > canvasRatio) {
-            drawH = 500;
-            drawW = listingImage.width * (500 / listingImage.height);
-            drawX = 620 - (drawW - 520) / 2;
-            drawY = 65;
+        if (imgRatio > 1) {
+            drawH = imgSize;
+            drawW = listingImage.width * (imgSize / listingImage.height);
+            drawX = imgX - (drawW - imgSize) / 2;
+            drawY = imgY;
         } else {
-            drawW = 520;
-            drawH = listingImage.height * (520 / listingImage.width);
-            drawX = 620;
-            drawY = 65 - (drawH - 500) / 2;
+            drawW = imgSize;
+            drawH = listingImage.height * (imgSize / listingImage.width);
+            drawX = imgX;
+            drawY = imgY - (drawH - imgSize) / 2;
         }
         ctx.drawImage(listingImage, drawX, drawY, drawW, drawH);
         ctx.restore();
 
-        // Elegant Image Border
         ctx.strokeStyle = 'rgba(255,255,255,0.15)';
-        ctx.lineWidth = 3;
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        roundRect(ctx, imgX, imgY, imgSize, imgSize, 40);
         ctx.stroke();
       } catch (err) {
-        // Fallback Box if image CORS blocks it
         ctx.fillStyle = '#1F2937';
-        roundRect(ctx, 620, 65, 520, 500, 28);
+        ctx.beginPath();
+        roundRect(ctx, imgX, imgY, imgSize, imgSize, 40);
         ctx.fill();
         ctx.fillStyle = '#FF5722';
-        ctx.font = '140px sans-serif';
-        ctx.fillText(listing.emoji || '🏷️', 800, 360);
+        ctx.font = '200px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(listing.emoji || '🏷️', 540, imgY + 480);
       }
     } else {
-       // Emoji Box if no image exists
        ctx.fillStyle = '#1F2937';
-       roundRect(ctx, 620, 65, 520, 500, 28);
+       ctx.beginPath();
+       roundRect(ctx, imgX, imgY, imgSize, imgSize, 40);
        ctx.fill();
        ctx.fillStyle = '#FF5722';
-       ctx.font = '140px sans-serif';
-       ctx.fillText(listing.emoji || '🏷️', 800, 360);
+       ctx.font = '200px sans-serif';
+       ctx.textAlign = 'center';
+       ctx.fillText(listing.emoji || '🏷️', 540, imgY + 480);
     }
 
-    // 4. Branding & Text (Left Side)
-    ctx.fillStyle = '#FF5722';
-    ctx.font = 'bold 36px "Nunito", sans-serif';
-    ctx.fillText('🎯 NearPop', 60, 95);
-
+    // 4. Text Details (Centered Below Image)
+    ctx.textAlign = 'center';
+    
     ctx.fillStyle = '#9CA3AF';
-    ctx.font = 'bold 28px "Nunito", sans-serif';
-    ctx.fillText(merchantName.toUpperCase(), 60, 165);
+    ctx.font = 'bold 36px "Nunito", sans-serif';
+    ctx.fillText(merchantName.toUpperCase(), 540, 1190);
 
     ctx.fillStyle = '#FFFFFF';
-    ctx.font = 'bold 56px "Syne", sans-serif';
-    const titleLines = wrapText(ctx, listing.title || 'Amazing Local Deal!', 500);
+    ctx.font = 'bold 64px "Syne", sans-serif';
+    const titleLines = wrapText(ctx, listing.title || 'Amazing Local Deal!', 900);
     titleLines.forEach((line, i) => {
-      ctx.fillText(line, 60, 240 + (i * 70));
+      ctx.fillText(line, 540, 1280 + (i * 80));
     });
 
     if (listing.price) {
       ctx.fillStyle = '#10B981'; // Vibrant Green
-      ctx.font = 'bold 68px "Syne", sans-serif';
-      ctx.fillText(listing.price, 60, 280 + (titleLines.length * 70));
+      ctx.font = 'bold 76px "Syne", sans-serif';
+      ctx.fillText(listing.price, 540, 1310 + (titleLines.length * 80));
     }
 
-    // 5. Promotional App Banner & QR Code
+    // 5. App Promo Banner & QR Code
+    const bannerY = 1620;
     ctx.fillStyle = 'rgba(255,255,255,0.06)';
-    roundRect(ctx, 60, 445, 520, 120, 20);
+    ctx.beginPath();
+    roundRect(ctx, 110, bannerY, 860, 200, 30);
     ctx.fill();
     ctx.strokeStyle = 'rgba(255,255,255,0.1)';
-    ctx.lineWidth = 1;
+    ctx.lineWidth = 2;
     ctx.stroke();
 
-    ctx.fillStyle = '#FFFFFF';
-    ctx.font = 'bold 24px "Nunito", sans-serif';
-    ctx.fillText('NearPop is available on Play Store', 170, 495);
-    ctx.fillStyle = '#9CA3AF';
-    ctx.font = '20px "Nunito", sans-serif';
-    ctx.fillText('Scan to download the app', 170, 535);
-
     try {
-      const qrCode = await loadImage('/icons/playstore-qr-code.png');
+      const qrCode = await loadImage('icons/playstore-qr-code.png');
       ctx.fillStyle = '#FFFFFF';
-      roundRect(ctx, 75, 460, 80, 80, 12);
+      ctx.beginPath();
+      roundRect(ctx, 770, bannerY + 25, 150, 150, 20);
       ctx.fill();
-      ctx.drawImage(qrCode, 80, 465, 70, 70);
-    } catch (err) {
-      // Ignore if QR fails to load
-    }
+      ctx.drawImage(qrCode, 780, bannerY + 35, 130, 130);
+    } catch (err) {}
 
-    // Export as JPG File
+    ctx.textAlign = 'left';
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = 'bold 44px "Nunito", sans-serif';
+    ctx.fillText('Get the NearPop App', 160, bannerY + 90);
+    
+    ctx.fillStyle = '#FF5722';
+    ctx.font = 'bold 38px "Nunito", sans-serif';
+    ctx.fillText('Scan to Download Now ➔', 160, bannerY + 150);
+
+    // Export as JPG
     return new Promise((resolve) => {
       canvas.toBlob((blob) => {
         if (blob) resolve(new File([blob], 'nearpop-offer.jpg', { type: 'image/jpeg' }));
@@ -542,10 +558,9 @@ async function generateShareImage(listing, merchantName) {
 function loadImage(src) {
   return new Promise((resolve, reject) => {
     const img = new Image();
-    img.crossOrigin = 'anonymous'; // Enforce CORS for Canvas compatibility
+    img.crossOrigin = 'anonymous'; 
     img.onload = () => resolve(img);
     img.onerror = () => {
-       // Fallback without CORS if the server rejects anonymous
        const img2 = new Image();
        img2.onload = () => resolve(img2);
        img2.onerror = reject;
@@ -556,7 +571,6 @@ function loadImage(src) {
 }
 
 function roundRect(ctx, x, y, width, height, radius) {
-  ctx.beginPath();
   ctx.moveTo(x + radius, y);
   ctx.lineTo(x + width - radius, y);
   ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
@@ -566,7 +580,6 @@ function roundRect(ctx, x, y, width, height, radius) {
   ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
   ctx.lineTo(x, y + radius);
   ctx.quadraticCurveTo(x, y, x + radius, y);
-  ctx.closePath();
 }
 
 function wrapText(ctx, text, maxWidth) {
@@ -701,7 +714,7 @@ function injectFootfallBanner() {
   const div = document.createElement('div');
   div.id = 'ff-banner';
   div.className = 'footfall-bar';
-  div.innerHTML = `<div class="ff-title">📍 You're nearby — verifying your visit</div><div class="ff-sub" id="ff-time">Stay within 50m for 5 Seconds to earn rewards</div><div class="ff-progress"><div class="ff-bar" id="ff-bar" style="width:0%"></div></div><button class="ff-btn" onclick="document.getElementById('ff-banner').classList.remove('on');clearInterval(ffTimer)">Not visiting now</button>`;
+  div.innerHTML = `<div class="ff-title">📍 You're nearby — verifying your visit</div><div class="ff-sub" id="ff-time">Stay within 50m for 5 Seconds to earn rewards</div><div class="ff-progress"><div class="ff-bar" id="ff-bar" style="width:0%"></div></div><button class="ff-btn" onclick="document.getElementById('ff-banner').classList.remove('on');clearInterval(ffTimer)\">Not visiting now</button>`;
   
   dbody.insertBefore(div, dbody.firstChild);
   setTimeout(startFootfallTracking, 3000);
