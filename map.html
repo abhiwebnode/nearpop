@@ -2758,17 +2758,10 @@ function showAppDownloadSheet() {
     sheet.classList.remove('show');
   };
   
-  // Continue on web button
+// Continue on web button
   document.getElementById('btn-continue-web').onclick = () => {
-    const dontShowAgain = document.getElementById('app-dont-show').checked;
-    
-    if (dontShowAgain) {
-      localStorage.setItem('np_app_prompt_dismissed', 'true');
-    } else {
-      // Remember for this session only
-      sessionStorage.setItem('np_app_prompt_shown', 'true');
-    }
-    
+    // Strictly save to localStorage so it never asks again across any tabs/sessions
+    localStorage.setItem('np_app_prompt_shown', 'true');
     sheet.classList.remove('show');
   };
 }
@@ -2782,17 +2775,14 @@ window.closeAppDownloadSheet = function() {
 
 // Show app download prompt 10 seconds after page load
 setTimeout(() => {
-  // Don't show if user already dismissed permanently
+  // Check localStorage for ANY interaction to ensure strict one-time display
+  if (localStorage.getItem('np_app_prompt_shown')) return;
   if (localStorage.getItem('np_app_prompt_dismissed')) return;
-  
-  // Don't show if already shown this session
-  if (sessionStorage.getItem('np_app_prompt_shown')) return;
-  
-  // Don't show if user already clicked download before
   if (localStorage.getItem('np_app_download_clicked')) return;
-  
-  // Don't show if running as PWA (standalone mode)
   if (window.matchMedia('(display-mode: standalone)').matches) return;
+  
+  // Flag it as shown IMMEDIATELY so it never fires again, even if they reload the page while it's open
+  localStorage.setItem('np_app_prompt_shown', 'true');
   
   showAppDownloadSheet();
 }, 10000);
