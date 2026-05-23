@@ -573,122 +573,171 @@ window.deleteListing = async (id) => {
   }
 };
 
-// Advanced WhatsApp Status Generator (Ported perfectly from old_merchant.html)
+// Share to WhatsApp Status — Pure Canvas (same as detail.html)
 window.exportStatus = async (id) => {
   window.haptic(30);
   const l = currentListings.find(x => x.id === id);
   if (!l) return;
   
-  toast('⏳', 'Generating Status Image...');
+  toast('⏳', 'Generating share image...');
 
-  if (!window.html2canvas) {
-      await new Promise((resolve) => {
-          const script = document.createElement('script');
-          script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
-          script.onload = resolve;
-          document.head.appendChild(script);
-      });
+  const merchantName = l.owner || LS('mname') || 'Our Store';
+  const shareText = `Check out our ${merchantName} latest offer on NearPop!\n\n${l.title}${l.price ? ' for ' + l.price : ''}`;
+
+  try {
+    const canvas = document.createElement('canvas');
+    canvas.width = 1080;
+    canvas.height = 1920;
+    const ctx = canvas.getContext('2d');
+
+    // 1. Background — saffron/white/green gradient
+    ctx.fillStyle = '#0F0F13';
+    ctx.fillRect(0, 0, 1080, 1920);
+    const gradient = ctx.createLinearGradient(0, 0, 1080, 1920);
+    gradient.addColorStop(0, 'rgba(255, 153, 51, 0.4)');
+    gradient.addColorStop(0.5, 'rgba(255, 255, 255, 0.08)');
+    gradient.addColorStop(1, 'rgba(19, 136, 8, 0.4)');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, 1080, 1920);
+
+    // 2. NearPop Logo
+    try {
+      const logoImg = await _loadImg('icons/logo.png');
+      const logoH = 80;
+      const logoW = logoImg.width * (logoH / logoImg.height);
+      ctx.drawImage(logoImg, 540 - (logoW / 2), 100, logoW, logoH);
+    } catch (err) {
+      ctx.fillStyle = '#FF5722';
+      ctx.font = 'bold 70px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('NearPop', 540, 160);
+    }
+
+    // 3. Listing Image
+    const imgSize = 980, imgX = 50, imgY = 230;
+    const imgUrl = l.imageUrl || l.image;
+
+    if (imgUrl) {
+      try {
+        const listingImage = await _loadImg(imgUrl);
+        ctx.save();
+        _roundRect(ctx, imgX, imgY, imgSize, imgSize, 40);
+        ctx.clip();
+        const imgRatio = listingImage.width / listingImage.height;
+        let drawW, drawH, drawX, drawY;
+        if (imgRatio > 1) {
+          drawH = imgSize; drawW = listingImage.width * (imgSize / listingImage.height);
+          drawX = imgX - (drawW - imgSize) / 2; drawY = imgY;
+        } else {
+          drawW = imgSize; drawH = listingImage.height * (imgSize / listingImage.width);
+          drawX = imgX; drawY = imgY - (drawH - imgSize) / 2;
+        }
+        ctx.drawImage(listingImage, drawX, drawY, drawW, drawH);
+        ctx.restore();
+        ctx.strokeStyle = 'rgba(255,255,255,0.2)'; ctx.lineWidth = 4;
+        ctx.beginPath(); _roundRect(ctx, imgX, imgY, imgSize, imgSize, 40); ctx.stroke();
+      } catch (err) {
+        _drawPlaceholder(ctx, imgX, imgY, imgSize, l.emoji);
+      }
+    } else {
+      _drawPlaceholder(ctx, imgX, imgY, imgSize, l.emoji);
+    }
+
+    // 4. Text — merchant, title, price
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#D1D5DB';
+    ctx.font = 'bold 36px sans-serif';
+    ctx.fillText(merchantName.toUpperCase(), 540, 1270);
+
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = 'bold 64px sans-serif';
+    const titleLines = _wrapText(ctx, l.title || 'Amazing Deal!', 900);
+    titleLines.forEach((line, i) => ctx.fillText(line, 540, 1360 + (i * 80)));
+
+    if (l.price) {
+      ctx.fillStyle = '#10B981';
+      ctx.font = 'bold 76px sans-serif';
+      ctx.fillText(l.price, 540, 1400 + (titleLines.length * 80));
+    }
+
+    // 5. Promo banner + QR code
+    const bannerY = 1660;
+    ctx.fillStyle = 'rgba(255,255,255,0.06)';
+    ctx.beginPath(); _roundRect(ctx, 50, bannerY, 980, 200, 30); ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.1)'; ctx.lineWidth = 2; ctx.stroke();
+
+    try {
+      const qrCode = await _loadImg('icons/playstore-qr-code.png');
+      ctx.fillStyle = '#FFFFFF';
+      ctx.beginPath(); _roundRect(ctx, 840, bannerY + 25, 150, 150, 20); ctx.fill();
+      ctx.drawImage(qrCode, 850, bannerY + 35, 130, 130);
+    } catch (err) {}
+
+    ctx.textAlign = 'left';
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = 'bold 44px sans-serif';
+    ctx.fillText('Get the NearPop App', 110, bannerY + 90);
+    ctx.fillStyle = '#FF9933';
+    ctx.font = 'bold 38px sans-serif';
+    ctx.fillText('Scan to Download Now ➔', 110, bannerY + 150);
+
+    // 6. Share
+    canvas.toBlob(async (blob) => {
+      if (!blob) { toast('❌', 'Failed to generate image.'); return; }
+      const file = new File([blob], `NearPop_Status_${Date.now()}.jpg`, { type: 'image/jpeg' });
+
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        try {
+          await navigator.share({ files: [file], title: l.title, text: shareText });
+          toast('✅', 'Shared successfully!');
+        } catch (e) {
+          if (e.name !== 'AbortError') toast('ℹ️', 'Share cancelled');
+        }
+      } else {
+        const link = document.createElement('a');
+        link.download = file.name;
+        link.href = URL.createObjectURL(blob);
+        link.click();
+        URL.revokeObjectURL(link.href);
+        toast('✅', 'Image saved! Open WhatsApp to share it.');
+      }
+    }, 'image/jpeg', 0.9);
+
+  } catch (err) {
+    console.error(err);
+    toast('❌', 'Failed to generate image.');
   }
-
-  const container = document.createElement('div');
-  container.style.position = 'absolute';
-  container.style.left = '-9999px';
-  container.style.top = '0';
-  
-  const col = l.color || '#FF5722';
-  
-  const imgUrl = l.imageUrl || l.image;
-  const imgHtml = imgUrl 
-    ? `<img src="${imgUrl}" crossorigin="anonymous" style="width:100%; max-height:650px; object-fit:cover; border-radius:30px; margin-bottom:30px; box-shadow: 0 15px 40px rgba(0,0,0,0.2); flex-shrink:0;">` 
-    : `<div style="width:100%; height:500px; max-height:650px; background:${col}20; border-radius:30px; display:flex; align-items:center; justify-content:center; font-size:250px; margin-bottom:30px; box-shadow: 0 15px 40px rgba(0,0,0,0.1); border: 4px solid ${col}40; flex-shrink:0;">${l.emoji || '🏷️'}</div>`;
-
-  const currMerchantLogo = LS('logoUrl') || null;
-  const mLogoHtml = currMerchantLogo 
-    ? `<img src="${currMerchantLogo}" crossorigin="anonymous" style="width: 110px; height: 110px; border-radius: 25px; object-fit: contain; background: #fff; border: 3px solid rgba(255,255,255,0.2); box-shadow: 0 10px 20px rgba(0,0,0,0.2);">` 
-    : `<div style="width: 110px; height: 110px; border-radius: 25px; background: rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; font-size: 55px; border: 3px solid rgba(255,255,255,0.2); box-shadow: 0 10px 20px rgba(0,0,0,0.2);">🏪</div>`;
-
-  container.innerHTML = `
-    <div id="status-export-wrap" style="width: 1080px; height: 1920px; background-color: #111827; background-image: radial-gradient(circle at 10% 10%, #FF572240 0%, transparent 40%), radial-gradient(circle at 90% 90%, ${col}40 0%, #111827 50%); display: flex; align-items: center; justify-content: center; box-sizing: border-box; font-family: 'Nunito', sans-serif; position:relative; overflow:hidden;">
-       
-       <div style="width: 86%; height: 88%; display: flex; flex-direction: column; position: relative; z-index: 2;">
-          
-          <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom: 35px; flex-shrink: 0;">
-            <div style="display:flex; flex-direction: column; gap: 15px;">
-              ${mLogoHtml}
-              <div style="background:rgba(255,255,255,0.1); padding:10px 20px; border-radius:100px; font-size:24px; font-weight:900; color:#fff; text-transform:uppercase; letter-spacing:2px; border:2px solid rgba(255,255,255,0.2); display: inline-block; align-self: flex-start;">${(l.type || 'Offer')}</div>
-            </div>
-            <img src="https://nearpop.in/icons/logo.png" style="height: 60px; filter: brightness(0) invert(1);">
-          </div>
-
-          ${imgHtml}
-          
-          <div style="flex:1; display:flex; flex-direction:column; justify-content:center; text-align:center; margin-bottom: 25px;">
-            <h1 style="font-family: 'Syne', sans-serif; color: #fff; font-size: 65px; font-weight: 800; line-height: 1.2; margin: 0 0 20px 0; text-shadow: 0 4px 15px rgba(0,0,0,0.5); word-break: break-word; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">${l.title}</h1>
-            <div style="font-size: 85px; font-weight: 900; color: #FF5722; text-shadow: 0 4px 15px rgba(0,0,0,0.5); margin-bottom: 30px;">${l.price}</div>
-            <div style="font-size: 28px; color: #9CA3AF; font-weight: 700; background: rgba(0,0,0,0.3); padding: 20px 40px; border-radius: 24px; display:inline-block; margin: 0 auto; word-break: break-word; overflow-wrap: anywhere; max-width: 95%;">📍 Available at <strong style="color:#fff;">${l.owner || 'Our Store'}</strong></div>
-          </div>
-
-          <div style="margin-top: auto; background: rgba(255,255,255,0.1); padding: 30px 35px; border-radius: 30px; display: flex; align-items: center; justify-content: space-between; border: 2px solid rgba(255,255,255,0.2); flex-shrink: 0;">
-            <div>
-              <div style="color:#fff; font-size: 34px; font-weight:900; margin-bottom:6px;">Find us on NearPop</div>
-              <div style="color:#9CA3AF; font-size: 22px; font-weight:600;">Download the app & search around you!</div>
-            </div>
-            
-            <div style="background:#000; padding: 12px 20px; border-radius:15px; display:flex; align-items:center; justify-content:center; box-shadow:0 8px 20px rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1);">
-              <svg width="50" height="50" viewBox="0 0 24 24" fill="#fff" xmlns="http://www.w3.org/2000/svg"><path d="M3.609 1.814L13.792 12 3.61 22.186a1.981 1.981 0 0 1-.36-.088A1.91 1.91 0 0 1 2 20.316V3.684a1.91 1.91 0 0 1 1.25-1.782c.115-.043.235-.073.359-.088zM14.85 13.06l3.418 3.417-6.07 3.504-4.59-4.591 7.242-2.33zM21.576 9.176l-3.308-1.91-3.418 3.418 3.418 3.418 3.308-1.91a1.915 1.915 0 0 0 0-3.016zM18.268 7.266L14.85 10.684 7.608 8.354l6.07-3.504 4.59 4.591H18.268z"/></svg>
-              <div style="margin-left: 12px; text-align: left;">
-                <div style="font-size: 10px; color: #fff; text-transform: uppercase; letter-spacing: 0.5px;">Get it on</div>
-                <div style="font-size: 16px; font-weight: 700; color: #fff; line-height: 1.1;">Google Play</div>
-              </div>
-            </div>
-          </div>
-          
-       </div>
-    </div>
-  `;
-  document.body.appendChild(container);
-
-  setTimeout(async () => {
-     try {
-        const canvas = await html2canvas(document.getElementById('status-export-wrap'), {
-           scale: 1, 
-           useCORS: true,
-           backgroundColor: null
-        });
-        
-        canvas.toBlob(async (blob) => {
-            const fileName = `NearPop_Status_${Date.now()}.jpg`;
-            const file = new File([blob], fileName, { type: 'image/jpeg' });
-            
-            if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                try {
-                    await navigator.share({
-                        files: [file],
-                        title: 'My Store Status',
-                        text: 'Check out our latest deal on NearPop!'
-                    });
-                    toast('✅', 'Opening WhatsApp...');
-                } catch (shareError) {
-                    console.log('Share canceled or failed', shareError);
-                }
-            } else {
-                const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
-                const link = document.createElement('a');
-                link.download = fileName;
-                link.href = dataUrl;
-                link.click();
-                toast('✅', 'Image saved! Open WhatsApp to share it.');
-            }
-            document.body.removeChild(container);
-        }, 'image/jpeg', 0.85);
-
-     } catch(err) {
-        console.error(err);
-        toast('❌', 'Failed to generate image.');
-        if(container.parentNode) document.body.removeChild(container);
-     }
-  }, 1000);
 };
+
+// Canvas helpers
+function _loadImg(src) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => resolve(img);
+    img.onerror = () => { const i2 = new Image(); i2.onload = () => resolve(i2); i2.onerror = reject; i2.src = src; };
+    img.src = src;
+  });
+}
+function _roundRect(ctx, x, y, w, h, r) {
+  ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y); ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+  ctx.lineTo(x+w,y+h-r); ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+  ctx.lineTo(x+r,y+h); ctx.quadraticCurveTo(x,y+h,x,y+h-r);
+  ctx.lineTo(x,y+r); ctx.quadraticCurveTo(x,y,x+r,y);
+}
+function _wrapText(ctx, text, maxW) {
+  const words = text.split(' '), lines = []; let cur = words[0];
+  for (let i = 1; i < words.length; i++) {
+    const test = cur + ' ' + words[i];
+    if (ctx.measureText(test).width > maxW) { lines.push(cur); cur = words[i]; } else cur = test;
+  }
+  lines.push(cur); return lines.slice(0, 2);
+}
+function _drawPlaceholder(ctx, x, y, size, emoji) {
+  ctx.fillStyle = '#1F2937'; ctx.beginPath(); _roundRect(ctx, x, y, size, size, 40); ctx.fill();
+  ctx.fillStyle = '#FF9933'; ctx.font = '200px sans-serif'; ctx.textAlign = 'center';
+  ctx.fillText(emoji || '🏷️', 540, y + 480);
+}
 
 window.checkPremium = () => {
   window.haptic(30);
