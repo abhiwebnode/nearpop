@@ -384,39 +384,10 @@ window.loginWithGoogle = async () => {
     resetLdr();
   }
 };
-// After successful login, request notification permission
-async function requestNotificationPermission() {
-  if ('Notification' in window && Notification.permission === 'default') {
-    // Show custom prompt first
-    const modal = document.createElement('div');
-    modal.className = 'notification-prompt-modal';
-    modal.innerHTML = `
-      <div class="prompt-content">
-        <h3>🔔 Enable Notifications</h3>
-        <p>Get instant alerts when deals pop up near you!</p>
-        <button onclick="acceptNotifications()" class="btn-primary">Enable</button>
-        <button onclick="this.closest('.notification-prompt-modal').remove()" class="btn-secondary">Maybe Later</button>
-      </div>
-    `;
-    document.body.appendChild(modal);
-  }
-}
 
-window.acceptNotifications = async function() {
-  try {
-    const permission = await Notification.requestPermission();
-    if (permission === 'granted') {
-      toast('✅', 'Notifications enabled!');
-    }
-  } catch (error) {
-    console.error('Permission error:', error);
-  }
-  document.querySelector('.notification-prompt-modal')?.remove();
-};
+// ✅ Notification permission request moved to map.html for better UX
+// Users will be prompted 2 seconds after map loads (less overwhelming)
 
-// Call after login
-// Add this line after: window.location.href = 'map.html';
-requestNotificationPermission();
 </script>
 <div style="text-align: center; padding: 15px; font-size: 12px; z-index: 10; position: relative;">
   <a href="/privacy.html" style="color: rgba(255,255,255,0.8); text-decoration: none; font-weight: 700; text-shadow: 0 1px 3px rgba(0,0,0,0.5);">Privacy Policy</a>
