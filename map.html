@@ -1496,9 +1496,6 @@
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════════════════════════ -->
-<!-- NOTIFICATION PERMISSION MODAL -->
-<!-- ═══════════════════════════════════════════════════════════════ -->
 <div class="notification-permission-modal" id="notif-permission-modal">
   <div class="notif-perm-content">
     <div class="notif-perm-icon">🔔</div>
@@ -1509,9 +1506,6 @@
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════════════════════════ -->
-<!-- APP DOWNLOAD PROMPT (Bottom Sheet) -->
-<!-- ═══════════════════════════════════════════════════════════════ -->
 <div class="app-download-sheet" id="app-download-sheet">
   <div class="app-download-overlay" onclick="window.closeAppDownloadSheet()"></div>
   <div class="app-download-content">
@@ -2523,9 +2517,6 @@ setTimeout(() => {
       window.askForNotifs(); 
     }
   }
-  
-  // ✅ Old Play Store popup call removed
-  // Now using new app download sheet (shows at 10 seconds)
 }, 3000);
 
 window.dismissGeoBlock = () => {
@@ -2619,16 +2610,18 @@ function showInAppPopup(listing) {
   // Show popup using existing showNotif function
   showNotif(listing);
   
-  // Wait a moment for DOM to update, then get the popup element
   setTimeout(() => {
-    const popups = document.querySelectorAll('.mnotif');
-    currentPopupElement = popups[popups.length - 1]; // Get the last one (newest)
+    // FIX: Grab the singleton directly by ID
+    currentPopupElement = document.getElementById('notif'); 
     
     if (!currentPopupElement) {
       isPopupActive = false;
       processPopupQueue();
       return;
     }
+    
+    // FIX: Clear any old progress bars before adding a new one
+    currentPopupElement.querySelectorAll('.popup-progress').forEach(el => el.remove());
     
     let autoDismissTimer = null;
     let userInteracted = false;
@@ -2640,7 +2633,7 @@ function showInAppPopup(listing) {
     
     // Start 3-second auto-dismiss
     autoDismissTimer = setTimeout(() => {
-      if (!userInteracted && currentPopupElement && currentPopupElement.parentNode) {
+      if (!userInteracted && currentPopupElement) {
         dismissPopup(currentPopupElement);
       }
     }, AUTO_DISMISS_TIME);
@@ -2659,29 +2652,23 @@ function showInAppPopup(listing) {
       if (progressBar) progressBar.style.animationPlayState = 'paused';
     }, { passive: true });
     
-    // Resume countdown when mouse leaves (if not clicked)
-    currentPopupElement.addEventListener('mouseleave', () => {
-      if (!userInteracted && progressBar) {
-        // Don't resume - once paused by hover, let it stay
-      }
-    });
-    
-    // If user clicks the popup, it will open listing (handled by existing showNotif code)
-    // No need to handle click here
-    
   }, 100);
 }
 
 // Dismiss popup with animation
 function dismissPopup(popupElement) {
-  if (!popupElement || !popupElement.parentNode) return;
+  if (!popupElement) return;
   
   popupElement.style.animation = 'slideOut 0.3s ease forwards';
   
   setTimeout(() => {
-    if (popupElement && popupElement.parentNode) {
-      popupElement.remove();
-    }
+    // FIX: Do not use .remove() on the singleton! Just hide it and clean up.
+    popupElement.classList.remove('on');
+    popupElement.style.animation = '';
+    
+    const pb = popupElement.querySelector('.popup-progress');
+    if (pb) pb.remove();
+    
     isPopupActive = false;
     currentPopupElement = null;
     processPopupQueue(); // Show next popup
@@ -2709,22 +2696,11 @@ function showNotificationPermissionModal() {
   
   modal.classList.add('show');
   
-  // Enable button
+  // FIX: Wire directly to your existing FCM logic
   document.getElementById('btn-notif-enable').onclick = async () => {
-    try {
-      const permission = await Notification.requestPermission();
-      if (permission === 'granted') {
-        toast('✅', window.lang === 'hi' ? 'नोटिफिकेशन सक्षम!' : 'Notifications enabled!');
-        localStorage.setItem('np_notif_enabled', 'true');
-      } else {
-        toast('⚠️', window.lang === 'hi' ? 'आप सेटिंग में नोटिफिकेशन सक्षम कर सकते हैं' : 'You can enable notifications in settings anytime');
-      }
-    } catch (error) {
-      console.error('Notification permission error:', error);
-    }
-    
-    localStorage.setItem('np_notif_asked', Date.now().toString());
     modal.classList.remove('show');
+    localStorage.setItem('np_notif_asked', Date.now().toString());
+    await window.askForNotifs(); 
   };
   
   // Later button
@@ -2760,6 +2736,13 @@ setTimeout(() => {
 // ═══════════════════════════════════════════════════════════════════
 
 function showAppDownloadSheet() {
+  // FIX: Don't show if the notification permission modal is currently on screen
+  const notifModal = document.getElementById('notif-permission-modal');
+  if (notifModal && notifModal.classList.contains('show')) {
+    setTimeout(showAppDownloadSheet, 5000); // Check again in 5 seconds
+    return;
+  }
+
   const sheet = document.getElementById('app-download-sheet');
   if (!sheet) return;
   
