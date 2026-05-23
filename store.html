@@ -40,6 +40,7 @@
     background: linear-gradient(180deg, #FF5722 0%, #E64A19 100%);
     padding-bottom: 24px;
     color: #ffffff;
+    position: relative; /* Added for absolute positioning of login button */
   }
 
   /* ─── Top Nav Bar ─── */
@@ -68,6 +69,27 @@
     transform: translateX(-50%);
     height: 38px;
     filter: brightness(0) invert(1);
+  }
+
+  /* ─── Floating Login Button ─── */
+  #top-auth-btn {
+    position: absolute;
+    top: 60px;
+    right: 20px;
+    font-size: 12px;
+    font-weight: 800;
+    background: rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+    padding: 6px 14px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    cursor: pointer;
+    display: none;
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    z-index: 10;
+    font-family: inherit;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
   }
 
   /* ─── Store Header ─── */
@@ -103,6 +125,7 @@
     margin: 0 0 2px 0;
     line-height: 1.2;
     color: #ffffff;
+    padding-right: 60px; /* Leave space for the login button */
   }
   .s-partner-tag {
     font-size: 11px;
@@ -316,6 +339,7 @@
     html, body { background: #0B1120 !important; color: #F8FAFC !important; }
     #wrap { background: #0B1120 !important; }
     .hero-header { background: linear-gradient(180deg, #E64A19 0%, #C62828 100%); }
+    #top-auth-btn { background: rgba(0, 0, 0, 0.3); border-color: rgba(255, 255, 255, 0.05); }
     .s-logo-box { background: #1E293B !important; border-color: #334155 !important; }
     .tabs { border-bottom-color: #334155 !important; }
     .tab { color: #64748B !important; }
@@ -354,13 +378,12 @@
       
       <img src="icons/logo.png" alt="NearPop" class="top-logo-center">
       
-      <div style="display: flex; gap: 8px; align-items: center;">
-        <button id="top-auth-btn" class="top-btn" onclick="window.handleTopAuth()" style="font-size: 12px; font-weight: 800; background: rgba(255,255,255,0.2); padding: 4px 12px; border-radius: 8px; width: auto; display: none;">Login</button>
-        <button class="top-btn" onclick="window.shareStore()">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
-        </button>
-      </div>
+      <button class="top-btn" onclick="window.shareStore()" style="justify-content: flex-end;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
+      </button>
     </div>
+
+    <button id="top-auth-btn" onclick="window.handleTopAuth()">Login</button>
 
     <div class="store-hdr">
       <div class="s-logo-box">
@@ -464,7 +487,6 @@
       nameEl.textContent = mname;
       document.getElementById('s-logo-img').src = mlogo;
       
-      // Inject Merchant Address
       if (maddress) {
         addressEl.textContent = maddress;
         addressEl.style.display = 'block';
@@ -530,10 +552,8 @@
     }
   }
 
-  // 🚀 REMOVED LOGIN RESTRICTION - EXECUTE DIRECTLY
   renderStore();
 
-  // Show login button only if user is NOT logged in
   if (!LS('uid')) {
     document.getElementById('top-auth-btn').style.display = 'block';
   }
@@ -639,14 +659,13 @@
     window.filterDeals();
   };
 
-  // 🚀 ADVANCED SCREENSHOT SHARE
+  // 🚀 ADVANCED SCREENSHOT SHARE (MODIFIED TO ONLY CAPTURE IMMEDIATE VIEW)
   window.shareStore = async () => {
     const storeName = document.getElementById('s-name').textContent;
     const shareText = `Check out live offers from ${storeName} on NearPop!\n${window.location.href}`;
     
     toast('⏳', 'Preparing image for sharing...');
 
-    // Function to run fallback sharing if screenshot fails
     const runTextShare = async () => {
       if (navigator.share) {
         try { await navigator.share({ title: storeName, text: shareText }); } catch(err) {}
@@ -657,7 +676,6 @@
     };
     
     try {
-      // Dynamically load html2canvas to save initial page load weight
       if (!window.html2canvas) {
         await new Promise((resolve) => {
             const script = document.createElement('script');
@@ -671,12 +689,22 @@
       const btmNav = document.querySelector('.btm-nav');
       if(btmNav) btmNav.style.visibility = 'hidden';
 
+      // Record current scroll and temporarily snap to top
+      const originalScroll = window.scrollY || document.documentElement.scrollTop;
+      window.scrollTo(0, 0);
+
+      // Force screenshot height to be window height (captures header + approx 3-4 listings)
       const canvas = await html2canvas(document.getElementById('wrap'), {
         useCORS: true,
         scale: 2,
-        backgroundColor: '#ffffff'
+        backgroundColor: '#ffffff',
+        y: 0,
+        height: window.innerHeight, 
+        windowHeight: window.innerHeight
       });
 
+      // Restore elements and scroll position
+      window.scrollTo(0, originalScroll);
       if(btmNav) btmNav.style.visibility = 'visible';
 
       canvas.toBlob(async (blob) => {
@@ -691,9 +719,7 @@
               text: shareText,
               files: [file]
             });
-          } catch(e) {
-            // If user dismissed or errored, silently fallback or ignore
-          }
+          } catch(e) { }
         } else {
           runTextShare();
         }
