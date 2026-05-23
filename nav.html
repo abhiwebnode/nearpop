@@ -1,7 +1,98 @@
+<style>
+.bnav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: stretch;
+  background: var(--bg-app, #FFFFFF);
+  border-top: 1px solid var(--bdr, #E5E7EB);
+  padding: 6px 8px 8px;
+  padding-bottom: max(8px, env(safe-area-inset-bottom));
+  z-index: 999;
+  box-shadow: 0 -4px 20px rgba(0,0,0,0.05);
+}
+
+.nt {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 8px 4px 4px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  border-radius: 12px;
+  transition: all 0.2s;
+  position: relative;
+  -webkit-tap-highlight-color: transparent;
+  font-family: inherit;
+}
+
+.nt:active {
+  transform: scale(0.9);
+}
+
+.ni {
+  font-size: 22px;
+  line-height: 1;
+  transition: transform 0.2s;
+}
+
+.nl {
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--gray, #9CA3AF);
+  transition: color 0.2s;
+  letter-spacing: 0.3px;
+}
+
+.nt.on .ni {
+  transform: scale(1.15);
+}
+
+.nt.on .nl {
+  color: #FF5722;
+}
+
+.nt.on::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 20px;
+  height: 3px;
+  border-radius: 0 0 3px 3px;
+  background: #FF5722;
+}
+
+@media (prefers-color-scheme: dark) {
+  .bnav {
+    background: #111827 !important;
+    border-top-color: #374151 !important;
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.4);
+  }
+  .nl { color: #6B7280; }
+  .nt.on .nl { color: #FF5722; }
+}
+</style>
+
 <nav class="bnav">
   <button class="nt" id="nav-map" onclick="window.go('map.html')"><span class="ni">🗺️</span><span class="nl">Map</span></button>
-  
   <button class="nt" id="nav-home" onclick="window.go('home.html')"><span class="ni">📋</span><span class="nl">Nearby</span></button>
   <button class="nt" id="nav-profile" onclick="window.go('profile.html')"><span class="ni">👤</span><span class="nl">Profile</span></button>
   <button class="nt" id="nav-merchant" style="display:none;" onclick="window.go('merchant.html')"><span class="ni">🏪</span><span class="nl">Panel</span></button>
 </nav>
+
+<script>
+(function() {
+  var page = location.pathname.split('/').pop() || 'map.html';
+  var map = { 'map.html':'nav-map', 'home.html':'nav-home', 'profile.html':'nav-profile', 'merchant.html':'nav-merchant' };
+  var id = map[page];
+  if (id) { var el = document.getElementById(id); if (el) el.classList.add('on'); }
+})();
+</script>
