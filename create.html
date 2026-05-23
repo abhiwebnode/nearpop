@@ -10,22 +10,6 @@
 <title>NearPop — Post</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="anonymous"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin="anonymous"></script>
-<script>
-function validateForm() {
-  const title  = document.querySelector('[name=title]')?.value?.trim();
-  const type   = document.querySelector('.tb.on')?.dataset?.type;
-  const lat    = parseFloat(document.getElementById('c-lat')?.value || '');
-  const lng    = parseFloat(document.getElementById('c-lng')?.value || '');
-
-  if (!type) { window.toast('⚠️', 'Please select a listing type'); return false; }
-  if (!title || title.length < 3) { window.toast('⚠️', 'Title must be at least 3 characters'); return false; }
-  if (isNaN(lat) || isNaN(lng)) { window.toast('📍', 'Please pick a location on the map'); return false; }
-  if (lat < 8.4 || lat > 37.6 || lng < 68.7 || lng > 97.4) {
-    window.toast('📍', 'Location must be within India'); return false;
-  }
-  return true;
-}
-</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800;900&family=Syne:wght@700;800&display=swap">
@@ -144,22 +128,22 @@ function validateForm() {
 
     <div class="fg" id="tour-title">
       <label class="fl">Title *</label>
-      <input class="fc" id="c-title" placeholder="e.g. 30% Off Today! or 2BHK Flat ₹12,000/mo">
+      <input class="fc" id="c-title" placeholder="e.g. 30% Off Today! or 2BHK Flat ₹12,000/mo" maxlength="200">
     </div>
 
     <div class="fg">
       <label class="fl">Description *</label>
-      <textarea class="fc" id="c-desc" placeholder="Tell people what makes this special. Be specific — it gets more customers."></textarea>
+      <textarea class="fc" id="c-desc" placeholder="Tell people what makes this special. Be specific — it gets more customers." maxlength="5000"></textarea>
     </div>
 
     <div class="fg">
       <label class="fl">Price / Offer *</label>
-      <input class="fc" id="c-price" placeholder="e.g. ₹12,000 or 30% OFF or FREE with combo">
+      <input class="fc" id="c-price" placeholder="e.g. ₹12,000 or 30% OFF or FREE with combo" maxlength="50">
     </div>
 
     <div class="fg">
       <label class="fl">Contact Number</label>
-      <input class="fc" id="c-contact" type="tel" placeholder="+91 98765 43210">
+      <input class="fc" id="c-contact" type="tel" placeholder="+91 98765 43210" maxlength="15">
     </div>
 
     <div class="fg">
@@ -253,6 +237,7 @@ function validateForm() {
 <script type="module">
 import { db, LS, SS, TC, TE, toast, distM, app } from './js/app.js';
 import { ghEncode } from './js/geohash.js';
+import { sanitizer } from './js/sanitizer.js'; // ✅ Injecting Sanitizer
 import { getDocs, addDoc, collection, query, where, doc, serverTimestamp, updateDoc } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js';
 import { getFunctions, httpsCallable } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-functions.js';
@@ -378,6 +363,11 @@ const handleImageSelection = (e) => {
   const file = e.target.files[0];
   if (!file) return;
 
+  // ✅ Client-side pre-validation
+  if (file.size > 10 * 1024 * 1024) return toast('⚠️', 'Image too large (Max 10MB).');
+  const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+  if (!validTypes.includes(file.type)) return toast('⚠️', 'Invalid format. Use JPG, PNG, or WebP.');
+
   toast('⏳', 'Processing photo...');
 
   const reader = new FileReader();
@@ -420,41 +410,57 @@ document.getElementById('img-camera').addEventListener('change', handleImageSele
 document.getElementById('img-gallery').addEventListener('change', handleImageSelection);
 
 window.doCreate = async () => {
-  const title    = document.getElementById('c-title').value.trim();
-  const desc     = document.getElementById('c-desc').value.trim();
-  const price    = document.getElementById('c-price').value.trim();
-  const contact  = document.getElementById('c-contact').value.trim();
-  const radius   = parseInt(document.getElementById('c-radius').value);
-  const budget   = parseInt(document.getElementById('c-budget').value);
-  const startDate  = document.getElementById('c-start').value;
-  let expiryDate = document.getElementById('c-expiry').value;
-
-  if (!title)      { toast('⚠️','Please enter a title'); return; }
-  if (!desc)       { toast('⚠️','Please enter a description'); return; }
-  if (!price)      { toast('⚠️','Please enter the price or offer'); return; }
   
-  if (!budget || budget < 25 || budget % 25 !== 0) {
-    toast('⚠️', 'Daily budget must be a multiple of 25 (e.g., 25, 50)');
-    return;
+  // ✅ 1. Get raw inputs safely
+  const rawTitle    = document.getElementById('c-title').value.trim();
+  const rawDesc     = document.getElementById('c-desc').value.trim();
+  const rawPrice    = document.getElementById('c-price').value.trim();
+  const rawContact  = document.getElementById('c-contact').value.trim();
+  const rawRadius   = document.getElementById('c-radius').value;
+  const rawBudget   = document.getElementById('c-budget').value;
+  const rawStart    = document.getElementById('c-start').value;
+  const rawLat      = parseFloat(document.getElementById('c-lat').value);
+  const rawLng      = parseFloat(document.getElementById('c-lng').value);
+
+  // ✅ 2. XSS Threat Detection
+  if (sanitizer.containsXSS(rawTitle) || sanitizer.containsXSS(rawDesc) || sanitizer.containsXSS(rawPrice)) {
+    return toast('⚠️', 'Invalid or prohibited characters detected in your input.');
   }
 
-  const finalLat = parseFloat(document.getElementById('c-lat').value);
-  const finalLng = parseFloat(document.getElementById('c-lng').value);
-  if (isNaN(finalLat) || isNaN(finalLng)) {
-    toast('📍', 'Invalid map coordinates');
-    return;
+  // ✅ 3. Sanitize inputs natively
+  const title = sanitizer.sanitizeText(rawTitle, { maxLength: 200, minLength: 3, allowNewlines: false });
+  const desc  = sanitizer.sanitizeText(rawDesc, { maxLength: 5000, allowNewlines: true });
+  const price = sanitizer.sanitizeText(rawPrice, { maxLength: 50, allowNewlines: false });
+  
+  let contact = '';
+  if (rawContact) {
+    contact = sanitizer.sanitizePhone(rawContact);
+    if (!contact) return toast('⚠️', 'Invalid phone number format.');
   }
+
+  const budget = sanitizer.sanitizeInteger(rawBudget, { min: 25, max: 10000 });
+  const radius = sanitizer.sanitizeInteger(rawRadius, { min: 50, max: 2000 });
+
+  // ✅ 4. Validation Checks
+  if (!title)      return toast('⚠️', 'Please enter a valid title (min 3 chars).');
+  if (!desc)       return toast('⚠️', 'Please enter a description.');
+  if (!price)      return toast('⚠️', 'Please enter the price or offer.');
+  if (budget % 25 !== 0) return toast('⚠️', 'Daily budget must be a multiple of 25 (e.g., 25, 50).');
+
+  const coords = sanitizer.sanitizeCoordinates(rawLat, rawLng);
+  if (!coords) return toast('📍', 'Invalid location. Please pick a location within India.');
+  const finalLat = coords.lat;
+  const finalLng = coords.lng;
 
   const isUnlimited = document.getElementById('c-expiry').disabled;
+  let expiryDate = document.getElementById('c-expiry').value;
+  
   if (isUnlimited) {
-    if (LS('plan') !== 'premium') {
-      toast('👑', 'Unlimited listings are for Premium merchants only!');
-      return;
-    }
+    if (LS('plan') !== 'premium') return toast('👑', 'Unlimited listings are for Premium merchants only!');
     expiryDate = null; 
   } else {
-    if (!expiryDate) { toast('⚠️','Please set an expiry date'); return; }
-    if(new Date(expiryDate)<new Date()){ toast('⚠️','Expiry date must be in the future'); return; }
+    if (!expiryDate) return toast('⚠️', 'Please set an expiry date.');
+    if (new Date(expiryDate) < new Date()) return toast('⚠️', 'Expiry date must be in the future.');
   }
 
   showLdr('Verifying secure session...');
@@ -488,8 +494,7 @@ window.doCreate = async () => {
       
       if(!isPremiumMerchant && d<300){
         hideLdr();
-        toast('⚠️', 'Free accounts are limited to one active listing per 300m. Upgrade to Premium!');
-        return;
+        return toast('⚠️', 'Free accounts are limited to one active listing per 300m. Upgrade to Premium!');
       }
     }
   } catch(e){ /* allow on error */ }
@@ -497,25 +502,27 @@ window.doCreate = async () => {
   showLdr('Saving listing…');
   try {
     let imageUrl = '';
+    
+    // ✅ 5. SECURE IMAGE UPLOAD VIA FIREBASE CLOUD FUNCTION
     if (compressedImageB64) {
       showLdr('Uploading photo securely...');
       try {
         const uploadImage = httpsCallable(functions, 'uploadListingImage');
+        // Sending exact base64 data URL generated by canvas, which uploadImage.js strips internally
         const result = await uploadImage({ imageBase64: compressedImageB64 });
         
-        if (result.data.success) {
+        if (result.data && result.data.success) {
           imageUrl = result.data.imageUrl;
         } else {
-          throw new Error('Upload failed');
+          throw new Error('Server returned false for image upload success');
         }
         showLdr('Finalizing listing...');
       } catch(err) {
         hideLdr();
-        if (err.code === 'unauthenticated') {
-          return toast('⚠️', 'Please log in to upload images');
-        } else if (err.code === 'resource-exhausted') {
-          return toast('⏰', err.message || 'Upload limit reached. Try again in 1 hour.');
-        }
+        console.error("[Upload] Error executing Cloud Function:", err);
+        if (err.code === 'unauthenticated') return toast('⚠️', 'Please log in to upload images');
+        if (err.code === 'resource-exhausted') return toast('⏰', err.message || 'Upload limit reached. Try again in 1 hour.');
+        if (err.code === 'invalid-argument') return toast('❌', err.message || 'Invalid image format or size.');
         return toast('❌', 'Image upload failed. Please check your connection.');
       }
     }
@@ -538,12 +545,19 @@ window.doCreate = async () => {
       budget: budget, 
       status:'active', popups:0, visits:0, claims:0, redemptions:0,
       uid: secureUser.uid,
-      startDate, 
+      startDate: rawStart, 
       expiryDate,
       dailyPopupLimit: budget * 10,
       popupsSentToday: 0,
       image: imageUrl
     };
+
+    // ✅ 6. Final safety check on the built dictionary using sanitizer instance
+    const validation = sanitizer.validateListing(listing);
+    if (!validation.valid) {
+      hideLdr();
+      return toast('⚠️', validation.errors[0]);
+    }
 
     await addDoc(collection(db,'listings'), {...listing, createdAt:serverTimestamp()});
     hideLdr();
@@ -554,9 +568,9 @@ window.doCreate = async () => {
     toast('❌','Failed to save: '+e.message);
   }
 };
+
 function showLdr(t) { document.getElementById('l-txt').textContent=t; document.getElementById('loader').classList.add('on'); }
 function hideLdr() { document.getElementById('loader').classList.remove('on'); }
-
 
 // 🚀 NEW: Guided Onboarding Tour Engine
 class AppTour {
@@ -648,7 +662,6 @@ window.startCreateTour = () => {
   
   new AppTour(steps, async () => {
     localStorage.setItem('np_tour_create', 'true');
-    // Optional: Sync completion to firestore here if needed
   }).start();
 };
 
