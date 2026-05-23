@@ -19,6 +19,11 @@
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="NearPop - Local Deals Near You">
 
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="NearPop - Discover Local Deals Near You">
+<meta name="twitter:description" content="Check out amazing deals, rentals, PG accommodations, and jobs near you on NearPop!">
+<meta name="twitter:image" content="https://nearpop.in/icons/og-banner.jpg">
+
 <title>NearPop — Detail</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -138,6 +143,18 @@
   .skeleton { background: linear-gradient(90deg, #1F2937 25%, #374151 50%, #1F2937 75%) !important; background-size: 200% 100%; }
   .hero-loading { background: #111827 !important; }
   .toast { background: #1F2937 !important; color: #F9FAFB !important; border: 1px solid #374151 !important; }
+  
+  .footfall-bar { box-shadow: 0 8px 24px rgba(0,0,0,0.4) !important; }
+  .ff-btn { background: rgba(255,255,255,0.15) !important; color: #10B981 !important; border: 1px solid rgba(255,255,255,0.1); }
+  .ff-progress { background: rgba(255,255,255,0.15) !important; }
+  
+  .exp-badge.exp-active { background: rgba(16, 185, 129, 0.15) !important; }
+  .exp-badge.exp-soon { background: rgba(245, 158, 11, 0.15) !important; }
+  .exp-badge.exp-expired { background: rgba(239, 68, 68, 0.15) !important; }
+  .exp-badge.exp-unlimited { background: rgba(16, 185, 129, 0.15) !important; }
+  
+  #contact-body strong { color: #F9FAFB !important; }
+  #contact-body span { color: #9CA3AF !important; }
 }
 </style>
 </head>
@@ -261,7 +278,8 @@ function render(l) {
       heroLoading.classList.remove('hidden');
       const img = new Image();
       img.onload = () => {
-        document.getElementById('hero').style.background = `#f9fafb url('${safeImgUrl}') center/cover no-repeat`;
+        const bgColor = window.matchMedia('(prefers-color-scheme: dark)').matches ? '#111827' : '#f9fafb';
+        document.getElementById('hero').style.background = `${bgColor} url('${safeImgUrl}') center/cover no-repeat`;
         document.getElementById('d-em').style.display = 'none';
         setTimeout(() => { heroLoading.classList.add('hidden'); }, 100);
       };
