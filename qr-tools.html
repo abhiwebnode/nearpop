@@ -187,7 +187,7 @@ window.showStoreQR = () => {
   document.getElementById('mod-qr').classList.add('on');
 };
 
-// 2. EXPORT STANDEE AS PDF (Using html2pdf logic from old_merchant)
+// 2. EXPORT STANDEE AS PDF (Optimized to match exact new A4 parameters)
 window.exportStandee = async (format) => {
   window.haptic(30);
 
@@ -204,8 +204,8 @@ window.exportStandee = async (format) => {
   const tempDiv = document.createElement('div');
   new QRCode(tempDiv, {
       text: targetUrl,
-      width: 400,
-      height: 400,
+      width: 600, // Higher resolution internal render
+      height: 600,
       colorDark : "#000000",
       colorLight : "#ffffff",
       correctLevel : QRCode.CorrectLevel.H
@@ -215,59 +215,49 @@ window.exportStandee = async (format) => {
       const qrCanvas = tempDiv.querySelector('canvas');
       const qrDataUrl = qrCanvas.toDataURL('image/png');
 
-      // ✅ SECURE: Sanitize merchant name and logo URL
       const mLogoUrl = LS('logoUrl');
       const safeMname = sanitizer.sanitizeText(LS('mname') || 'Our Store', { maxLength: 100 });
       const safeLogoUrl = mLogoUrl ? sanitizer.sanitizeUrl(mLogoUrl) : '';
       
       const shopLogoHtml = safeLogoUrl 
-        ? `<img src="${safeLogoUrl}" style="max-width: 100px; max-height: 100px; border-radius: 20px; object-fit: contain; background: #fff; margin-bottom: 15px; box-shadow: 0 8px 24px rgba(0,0,0,0.1); border: 2px solid #e5e7eb; display: block; margin-left: auto; margin-right: auto;">` 
+        ? `<img src="${safeLogoUrl}" style="max-height: 120px; max-width: 80%; border-radius: 20px; object-fit: contain; background: #fff; margin-bottom: 20px; box-shadow: 0 8px 24px rgba(0,0,0,0.1); border: 2px solid #e5e7eb; display: block; margin-left: auto; margin-right: auto;">` 
         : '';
 
       const container = document.createElement('div');
       container.style.position = 'absolute';
       container.style.left = '-9999px';
       container.style.top = '0';
+      
+      // Exact A4 Dimensions with upgraded text and QR sizes
       container.innerHTML = `
         <div id="pdf-content" style="width: 210mm; height: 297mm; background: #111827; display: flex; align-items: center; justify-content: center; padding: 12mm; box-sizing: border-box; font-family: 'Nunito', sans-serif;">
            <div style="width: 100%; height: 100%; background: #ffffff; border-radius: 28px; text-align: center; box-sizing: border-box; display: flex; flex-direction: column; overflow: hidden;">
               
-              <!-- Top branded strip -->
-              <div style="background: linear-gradient(135deg, #FF5722, #E64A19); padding: 24px 20px; display: flex; align-items: center; justify-content: center; gap: 12px;">
-                <img src="https://nearpop.in/icons/logo.png" style="height: 36px; filter: brightness(0) invert(1);" onerror="this.style.display='none'">
+              <div style="background: linear-gradient(135deg, #FF5722, #E64A19); padding: 30px 20px; display: flex; align-items: center; justify-content: center;">
+                <img src="https://nearpop.in/icons/logo.png" style="height: 48px; filter: brightness(0) invert(1);" onerror="this.style.display='none'">
               </div>
               
-              <!-- Main content -->
-              <div style="flex: 1; display: flex; flex-direction: column; justify-content: space-evenly; align-items: center; padding: 20px 30px;">
+              <div style="flex: 1; display: flex; flex-direction: column; justify-content: space-evenly; align-items: center; padding: 20px 40px;">
                 ${shopLogoHtml}
-                <h1 style="font-family: 'Syne', sans-serif; color: #0F0F13; font-size: 32px; font-weight: 800; margin: 0; line-height: 1.2;">Welcome to <br><span style="color:#FF5722">${safeMname}</span></h1>
+                <h1 style="font-family: 'Syne', sans-serif; color: #0F0F13; font-size: 46px; font-weight: 800; margin: 0; line-height: 1.2;">Welcome to <br><span style="color:#FF5722">${safeMname}</span></h1>
                 
-                <div style="background: #fff; padding: 20px; border-radius: 24px; border: 5px solid #F3F4F6; box-shadow: 0 8px 30px rgba(0,0,0,0.08);">
-                   <img src="${qrDataUrl}" style="width: 260px; height: 260px; object-fit: contain;">
+                <div style="background: #fff; padding: 30px; border-radius: 32px; border: 6px solid #F3F4F6; box-shadow: 0 12px 40px rgba(0,0,0,0.08);">
+                   <img src="${qrDataUrl}" style="width: 130mm; height: 130mm; object-fit: contain;">
                 </div>
                 
                 <div style="text-align: center;">
-                  <h2 style="color: #FF5722; font-size: 26px; font-weight: 900; margin: 0 0 6px 0;">📱 Scan to see today's deals!</h2>
-                  <p style="color: #6B7280; font-size: 14px; font-weight: 700; margin: 0;">Point your camera at the QR code above</p>
+                  <h2 style="color: #FF5722; font-size: 38px; font-weight: 900; margin: 0 0 12px 0;">📱 Scan to see today's deals!</h2>
+                  <p style="color: #6B7280; font-size: 20px; font-weight: 700; margin: 0;">Point your camera at the QR code above</p>
                 </div>
               </div>
               
-              <!-- Bottom Play Store promo -->
-              <div style="background: #111827; padding: 22px 30px; display: flex; align-items: center; justify-content: space-between; border-radius: 0 0 28px 28px;">
-                <div style="display: flex; align-items: center; gap: 14px;">
-                  <img src="https://nearpop.in/icons/playstore-qr-code.png" style="width: 70px; height: 70px; border-radius: 10px; background: #fff; padding: 4px;">
-                  <div style="text-align: left;">
-                    <div style="color: #9CA3AF; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">Also available on</div>
-                    <div style="color: #fff; font-size: 22px; font-weight: 900; line-height: 1.2;">Google Play</div>
-                    <div style="color: #FF5722; font-size: 12px; font-weight: 800;">Download NearPop App ➔</div>
-                  </div>
+              <div style="background: #111827; padding: 30px 40px; display: flex; align-items: center; justify-content: space-between; border-radius: 0 0 28px 28px;">
+                <div>
+                  <img src="https://nearpop.in/icons/Google_Play_Store.png" alt="Get it on Google Play" style="height: 65px; object-fit: contain;" onerror="this.style.display='none'">
                 </div>
-                <div style="background: #000; padding: 10px 18px; border-radius: 12px; display: flex; align-items: center; gap: 10px; border: 1px solid #333;">
-                  <svg width="28" height="28" viewBox="0 0 24 24" fill="#fff"><path d="M3.609 1.814L13.792 12 3.61 22.186a1.981 1.981 0 0 1-.36-.088A1.91 1.91 0 0 1 2 20.316V3.684a1.91 1.91 0 0 1 1.25-1.782c.115-.043.235-.073.359-.088zM14.85 13.06l3.418 3.417-6.07 3.504-4.59-4.591 7.242-2.33zM21.576 9.176l-3.308-1.91-3.418 3.418 3.418 3.418 3.308-1.91a1.915 1.915 0 0 0 0-3.016zM18.268 7.266L14.85 10.684 7.608 8.354l6.07-3.504 4.59 4.591H18.268z"/></svg>
-                  <div style="text-align: left;">
-                    <div style="font-size: 8px; color: #ccc; text-transform: uppercase; letter-spacing: 0.5px;">GET IT ON</div>
-                    <div style="font-size: 15px; font-weight: 800; color: #fff; line-height: 1;">Google Play</div>
-                  </div>
+                <div style="display: flex; flex-direction: column; align-items: center; gap: 10px;">
+                  <img src="https://nearpop.in/icons/playstore-qr-code.png" style="width: 100px; height: 100px; border-radius: 16px; background: #fff; padding: 8px;">
+                  <div style="color: #fff; font-size: 16px; font-weight: 800;">Scan to download NearPop App</div>
                 </div>
               </div>
               
@@ -300,13 +290,12 @@ window.exportStandee = async (format) => {
   }, 100);
 };
 
-// 3. GENERATE PERMANENT STANDEE (Print View - Exact replica of old_merchant logic)
+// 3. GENERATE PERMANENT STANDEE (Screen/Print View - Dynamically Scaled & Updated)
 window.generatePermanentStandee = () => {
   const merchantUid = LS('uid'); 
   const targetUrl = `https://nearpop.in/store.html?mid=${merchantUid}&utm_source=qr_standee&utm_medium=offline`;
-  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(targetUrl)}&margin=10`;
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=600x600&data=${encodeURIComponent(targetUrl)}&margin=10`;
 
-  // ✅ SECURE: Sanitize merchant name and logo URL
   const currLogoUrl = LS('logoUrl');
   const safeLogoUrl = currLogoUrl ? sanitizer.sanitizeUrl(currLogoUrl) : '';
   const shopLogoHtml = safeLogoUrl 
@@ -327,40 +316,51 @@ window.generatePermanentStandee = () => {
       <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;900&family=Syne:wght@800&display=swap" rel="stylesheet">
       <style>
         @page { size: A4 portrait; margin: 0; }
-        body { font-family: 'Nunito', sans-serif; margin: 0; background: #111827; -webkit-print-color-adjust: exact; display: flex; justify-content: center; align-items: center; min-height: 100vh; box-sizing: border-box; }
-        .standee-container { width: 100%; height: 100vh; padding: 16px; box-sizing: border-box; display: flex; justify-content: center; align-items: center; }
-        .standee { width: 100%; max-width: 600px; height: 100%; background: #fff; border-radius: 28px; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.4); display: flex; flex-direction: column; overflow: hidden; box-sizing: border-box; }
-        .brand-top { background: linear-gradient(135deg, #FF5722, #E64A19); padding: 18px 20px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-        .main-content { flex: 1; display: flex; flex-direction: column; justify-content: space-evenly; align-items: center; padding: 20px 24px; }
-        .logo { max-height: 32px; filter: brightness(0) invert(1); }
-        .shop-img { max-height: 80px; max-width: 70%; object-fit: contain; border-radius: 14px; }
-        h1 { font-family: 'Syne', sans-serif; color: #0F0F13; font-size: clamp(20px, 3.5vmin, 32px); font-weight: 800; margin: 0; line-height: 1.2; width: 100%; word-wrap: break-word; }
-        .qr-box { background: #fff; padding: 14px; border-radius: 20px; display: inline-flex; justify-content: center; align-items: center; border: 4px solid #F3F4F6; box-shadow: 0 8px 24px rgba(0,0,0,0.06); }
-        .qr-code { width: clamp(140px, 30vmin, 200px); height: clamp(140px, 30vmin, 200px); object-fit: contain; }
-        .scan-text { color: #FF5722; font-size: clamp(16px, 2.5vmin, 24px); font-weight: 900; margin: 0; }
-        .scan-sub { color: #6B7280; font-size: clamp(10px, 1.5vmin, 13px); font-weight: 700; margin: 4px 0 0 0; }
-        .promo-bottom { background: #111827; padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; border-radius: 0 0 28px 28px; flex-shrink: 0; gap: 12px; }
-        .promo-qr { width: 60px; height: 60px; border-radius: 10px; background: #fff; padding: 3px; flex-shrink: 0; }
-        .promo-qr img { width: 100%; height: 100%; object-fit: contain; }
-        .promo-text { text-align: left; flex: 1; }
-        .promo-text .small { color: #9CA3AF; font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
-        .promo-text .big { color: #fff; font-size: 18px; font-weight: 900; line-height: 1.2; }
-        .promo-text .link { color: #FF5722; font-size: 11px; font-weight: 800; }
-        .play-badge { background: #000; padding: 8px 14px; border-radius: 10px; display: flex; align-items: center; gap: 8px; border: 1px solid #333; flex-shrink: 0; }
-        .play-badge svg { width: 22px; height: 22px; }
-        .play-badge .label div:first-child { font-size: 7px; color: #ccc; text-transform: uppercase; letter-spacing: 0.5px; }
-        .play-badge .label div:last-child { font-size: 13px; font-weight: 800; color: #fff; line-height: 1; }
+        body { font-family: 'Nunito', sans-serif; margin: 0; background: #111827; -webkit-print-color-adjust: exact; print-color-adjust: exact; display: flex; justify-content: center; align-items: center; min-height: 100vh; box-sizing: border-box; }
+        
+        /* Container fills the viewport dynamically */
+        .standee-container { width: 100%; height: 100vh; padding: 2vmin; box-sizing: border-box; display: flex; justify-content: center; align-items: center; }
+        .standee { width: 100%; max-width: 800px; height: 100%; background: #fff; border-radius: 4vmin; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.4); display: flex; flex-direction: column; overflow: hidden; box-sizing: border-box; }
+        
+        .brand-top { background: linear-gradient(135deg, #FF5722, #E64A19); padding: 3vmin 2vmin; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .logo { max-height: 5vmin; filter: brightness(0) invert(1); }
+        
+        .main-content { flex: 1; display: flex; flex-direction: column; justify-content: space-evenly; align-items: center; padding: 2vmin 4vmin; }
+        .shop-img { max-height: 12vmin; max-width: 60%; object-fit: contain; border-radius: 2vmin; }
+        h1 { font-family: 'Syne', sans-serif; color: #0F0F13; font-size: clamp(32px, 6vmin, 54px); font-weight: 800; margin: 0; line-height: 1.2; width: 100%; word-wrap: break-word; }
+        
+        /* Scaled up QR Code Section */
+        .qr-box { background: #fff; padding: 3vmin; border-radius: 3vmin; display: inline-flex; justify-content: center; align-items: center; border: 0.8vmin solid #F3F4F6; box-shadow: 0 10px 40px rgba(0,0,0,0.08); }
+        .qr-code { width: clamp(220px, 45vmin, 450px); height: clamp(220px, 45vmin, 450px); object-fit: contain; }
+        
+        .scan-text { color: #FF5722; font-size: clamp(24px, 4.5vmin, 42px); font-weight: 900; margin: 0; }
+        .scan-sub { color: #6B7280; font-size: clamp(14px, 2.5vmin, 22px); font-weight: 700; margin: 1vmin 0 0 0; }
+        
+        /* New Simplified Footer */
+        .promo-bottom { background: #111827; padding: 3vmin 5vmin; display: flex; align-items: center; justify-content: space-between; border-radius: 0 0 4vmin 4vmin; flex-shrink: 0; }
+        .play-store-img { height: clamp(40px, 8vmin, 70px); object-fit: contain; }
+        .promo-qr-wrap { display: flex; flex-direction: column; align-items: center; gap: 1vmin; }
+        .promo-qr-wrap img { width: clamp(70px, 12vmin, 110px); height: clamp(70px, 12vmin, 110px); border-radius: 1.5vmin; background: #fff; padding: 1vmin; }
+        .promo-qr-wrap div { color: #fff; font-size: clamp(12px, 2vmin, 18px); font-weight: 800; text-align: center;}
+        
         @media print {
           body { background: #fff; display: block; }
-          .no-print { display: none !important; }
-          .standee-container { padding: 8mm; height: 100vh; display: flex; align-items: center; justify-content: center; }
-          .standee { max-width: 100%; height: 100%; box-shadow: none; }
-          .logo { max-height: 12mm; }
-          .shop-img { max-height: 20mm !important; }
-          h1 { font-size: 22pt; }
-          .qr-box { padding: 4mm; border-width: 2mm; }
-          .qr-code { width: 55mm; height: 55mm; }
-          .promo-qr { width: 14mm; height: 14mm; }
+          .standee-container { padding: 0; height: 297mm; width: 210mm; margin: 0 auto; display: flex; align-items: center; justify-content: center; }
+          .standee { max-width: 100%; height: 100%; box-shadow: none; border-radius: 0; }
+          .brand-top { padding: 12mm; }
+          .logo { max-height: 14mm; }
+          .main-content { padding: 10mm 20mm; }
+          .shop-img { max-height: 35mm; border-radius: 4mm; }
+          h1 { font-size: 42pt; }
+          .qr-box { padding: 10mm; border-width: 2mm; border-radius: 8mm; }
+          .qr-code { width: 130mm; height: 130mm; }
+          .scan-text { font-size: 32pt; }
+          .scan-sub { font-size: 18pt; margin-top: 3mm; }
+          .promo-bottom { padding: 12mm 20mm; border-radius: 0; }
+          .play-store-img { height: 22mm; }
+          .promo-qr-wrap { gap: 3mm; }
+          .promo-qr-wrap img { width: 32mm; height: 32mm; border-radius: 4mm; padding: 2mm; }
+          .promo-qr-wrap div { font-size: 14pt; }
         }
       </style>
     </head>
@@ -380,18 +380,12 @@ window.generatePermanentStandee = () => {
             </div>
           </div>
           <div class="promo-bottom">
-            <div class="promo-qr"><img src="https://nearpop.in/icons/playstore-qr-code.png" alt="Download App"></div>
-            <div class="promo-text">
-              <div class="small">Also available on</div>
-              <div class="big">Google Play</div>
-              <div class="link">Download NearPop App ➔</div>
+            <div>
+              <img src="https://nearpop.in/icons/Google_Play_Store.png" alt="Google Play Store" class="play-store-img" onerror="this.style.display='none'">
             </div>
-            <div class="play-badge">
-              <svg viewBox="0 0 24 24" fill="#fff"><path d="M3.609 1.814L13.792 12 3.61 22.186a1.981 1.981 0 0 1-.36-.088A1.91 1.91 0 0 1 2 20.316V3.684a1.91 1.91 0 0 1 1.25-1.782c.115-.043.235-.073.359-.088zM14.85 13.06l3.418 3.417-6.07 3.504-4.59-4.591 7.242-2.33zM21.576 9.176l-3.308-1.91-3.418 3.418 3.418 3.418 3.308-1.91a1.915 1.915 0 0 0 0-3.016zM18.268 7.266L14.85 10.684 7.608 8.354l6.07-3.504 4.59 4.591H18.268z"/></svg>
-              <div class="label">
-                <div>GET IT ON</div>
-                <div>Google Play</div>
-              </div>
+            <div class="promo-qr-wrap">
+              <img src="https://nearpop.in/icons/playstore-qr-code.png" alt="App Download QR">
+              <div>Scan to download NearPop App</div>
             </div>
           </div>
         </div>
