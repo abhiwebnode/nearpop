@@ -68,16 +68,16 @@
     <div class="section" id="standee">
       <div class="section-title">🖨️ QR Standee Generator</div>
       <div class="qr-card">
-        <p class="qr-desc">Print or download a permanent QR code that automatically routes customers to your live deals. Perfect for counter displays, windows, or anywhere customers can scan.</p>
+        <p class="qr-desc">Print a permanent QR code that automatically routes customers to your live deals. Perfect for counter displays, windows, or anywhere customers can scan.</p>
         <div class="btn-grid">
-          <button class="qr-btn primary" onclick="window.exportStandee('print')">
-            <span style="font-size:20px;">🖨️</span> Show on Screen / Print
+          <button class="qr-btn primary" onclick="window.generatePermanentStandee('A4')">
+            <span style="font-size:20px;">🖨️</span> Show / Print (A4 Size)
           </button>
-          <button class="qr-btn secondary" onclick="window.exportStandee('pdf-a4')">
-            <span style="font-size:20px;">📄</span> Download PDF (A4)
+          <button class="qr-btn primary" onclick="window.generatePermanentStandee('A5')">
+            <span style="font-size:20px;">🖨️</span> Show / Print (A5 Size)
           </button>
           <button class="qr-btn secondary" onclick="window.showStoreQR()">
-            <span style="font-size:20px;">📱</span> Show Store QR (Show this to customers in-store)
+            <span style="font-size:20px;">📱</span> Show Store QR (In-store)
           </button>
         </div>
         <div class="info-box">
@@ -187,116 +187,9 @@ window.showStoreQR = () => {
   document.getElementById('mod-qr').classList.add('on');
 };
 
-// 2. EXPORT STANDEE AS PDF (Strict 210x297mm A4 bounding box with exactly mirrored header/footer)
-window.exportStandee = async (format) => {
-  window.haptic(30);
 
-  if (format === 'print') {
-    window.generatePermanentStandee();
-    return;
-  }
-
-  toast('⏳', 'Generating high-res A4 PDF...');
-
-  const merchantUid = LS('uid'); 
-  const targetUrl = `https://nearpop.in/store.html?mid=${merchantUid}&utm_source=qr_standee&utm_medium=offline`;
-  
-  const tempDiv = document.createElement('div');
-  new QRCode(tempDiv, {
-      text: targetUrl,
-      width: 600, 
-      height: 600,
-      colorDark : "#000000",
-      colorLight : "#ffffff",
-      correctLevel : QRCode.CorrectLevel.H
-  });
-
-  setTimeout(async () => {
-      const qrCanvas = tempDiv.querySelector('canvas');
-      const qrDataUrl = qrCanvas.toDataURL('image/png');
-
-      const mLogoUrl = LS('logoUrl');
-      const safeMname = sanitizer.sanitizeText(LS('mname') || 'Our Store', { maxLength: 100 });
-      const safeLogoUrl = mLogoUrl ? sanitizer.sanitizeUrl(mLogoUrl) : '';
-      
-      const shopLogoHtml = safeLogoUrl 
-        ? `<img crossorigin="anonymous" src="${safeLogoUrl}" style="max-height: 90px; max-width: 80%; border-radius: 16px; object-fit: contain; border: 2px solid #E5E7EB; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 20px;">` 
-        : '';
-
-      const container = document.createElement('div');
-      container.style.position = 'absolute';
-      container.style.left = '-9999px';
-      container.style.top = '0';
-      
-      // Strict layout exactly matching the Screen version
-      container.innerHTML = `
-        <div id="pdf-content" style="width: 210mm; height: 297mm; background: #ffffff; padding: 0.5in; box-sizing: border-box; font-family: 'Nunito', sans-serif;">
-           <div style="width: 100%; height: 100%; border: 2px solid #E5E7EB; border-radius: 24px; box-sizing: border-box; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 0 0 1px #F3F4F6;">
-              
-              <div style="background: linear-gradient(135deg, #FF5722, #E64A19); padding: 30px 20px; text-align: center; flex-shrink: 0;">
-                <img crossorigin="anonymous" src="https://nearpop.in/icons/logo.png" style="height: 50px; filter: brightness(0) invert(1); object-fit: contain;" onerror="this.style.display='none'">
-              </div>
-              
-              <div style="flex: 1; display: flex; flex-direction: column; justify-content: space-evenly; align-items: center; padding: 20px 40px; text-align: center;">
-                ${shopLogoHtml}
-                <h1 style="font-family: 'Syne', sans-serif; color: #0F0F13; font-size: 42px; font-weight: 800; margin: 0; line-height: 1.2;">Welcome to <br><span style="color:#FF5722">${safeMname}</span></h1>
-                
-                <div style="background: #fff; padding: 25px; border-radius: 28px; border: 6px solid #F3F4F6; box-shadow: 0 10px 30px rgba(0,0,0,0.06); display: inline-block;">
-                   <img src="${qrDataUrl}" style="width: 100mm; height: 100mm; object-fit: contain; display: block;">
-                </div>
-                
-                <div>
-                  <h2 style="color: #FF5722; font-size: 32px; font-weight: 900; margin: 0 0 8px 0;">📱 Scan to see today's deals!</h2>
-                  <p style="color: #6B7280; font-size: 18px; font-weight: 700; margin: 0;">Point your camera at the QR code above</p>
-                </div>
-              </div>
-              
-              <div style="background: #111827; padding: 35px 40px; display: flex; justify-content: space-between; align-items: center; gap: 20px; flex-shrink: 0;">
-                
-                <div style="display: flex; flex-direction: column; align-items: flex-start; text-align: left; gap: 10px; flex: 1;">
-                  <h3 style="color: #ffffff; font-size: 22px; font-weight: 800; margin: 0; line-height: 1.2;">Get the NearPop App</h3>
-                  <p style="color: #9CA3AF; font-size: 14px; font-weight: 600; margin: 0;">Discover and save more local deals around you.</p>
-                  <img crossorigin="anonymous" src="https://nearpop.in/icons/Google_Play_Store.png" style="height: 45px; margin-top: 4px; object-fit: contain;" onerror="this.style.display='none'">
-                </div>
-                
-                <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
-                  <img crossorigin="anonymous" src="https://nearpop.in/icons/playstore-qr-code.png" style="width: 75px; height: 75px; border-radius: 12px; background: #fff; padding: 6px; object-fit: contain;">
-                  <span style="color: #ffffff; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">Scan for App</span>
-                </div>
-
-              </div>
-              
-           </div>
-        </div>
-      `;
-      document.body.appendChild(container);
-
-      if (!window.html2pdf) {
-          await new Promise((resolve) => {
-              const script = document.createElement('script');
-              script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
-              script.onload = resolve;
-              document.head.appendChild(script);
-          });
-      }
-
-      const opt = {
-          margin:       0,
-          filename:     `NearPop_Standee.pdf`,
-          image:        { type: 'jpeg', quality: 1 },
-          html2canvas:  { scale: 2, useCORS: true },
-          jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
-      };
-
-      html2pdf().set(opt).from(container.firstElementChild).save().then(() => {
-          document.body.removeChild(container);
-          toast('✅', 'PDF Downloaded successfully!');
-      });
-  }, 100);
-};
-
-// 3. GENERATE PERMANENT STANDEE (Screen/Print View - Fully Responsive Flexbox Layout)
-window.generatePermanentStandee = () => {
+// 2. GENERATE PERMANENT STANDEE (Screen/Print View - Handles A4 and A5 Dynamically)
+window.generatePermanentStandee = (paperSize) => {
   const merchantUid = LS('uid'); 
   const targetUrl = `https://nearpop.in/store.html?mid=${merchantUid}&utm_source=qr_standee&utm_medium=offline`;
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=600x600&data=${encodeURIComponent(targetUrl)}&margin=10`;
@@ -308,6 +201,9 @@ window.generatePermanentStandee = () => {
     : '';
     
   const safeMname = sanitizer.sanitizeText(LS('mname') || 'Our Store', { maxLength: 100 });
+  
+  // Adjust scaling slightly based on A4 vs A5 to ensure it always looks perfect
+  const isA5 = paperSize === 'A5';
 
   const printWindow = window.open('', '_blank');
   
@@ -315,7 +211,7 @@ window.generatePermanentStandee = () => {
     <!DOCTYPE html>
     <html>
     <head>
-      <title>NearPop Store Standee</title>
+      <title>NearPop Store Standee - ${paperSize}</title>
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <link rel="preconnect" href="https://fonts.googleapis.com">
       <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&family=Syne:wght@700;800&display=swap" rel="stylesheet">
@@ -323,34 +219,34 @@ window.generatePermanentStandee = () => {
         body { margin: 0; background: #E5E7EB; font-family: 'Nunito', sans-serif; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
         
         /* The Card Wrapper */
-        .standee { width: 100%; max-width: 650px; background: #ffffff; border-radius: 24px; box-shadow: 0 16px 40px rgba(0,0,0,0.15); overflow: hidden; display: flex; flex-direction: column; }
+        .standee { width: 100%; max-width: ${isA5 ? '500px' : '650px'}; background: #ffffff; border-radius: 24px; box-shadow: 0 16px 40px rgba(0,0,0,0.15); overflow: hidden; display: flex; flex-direction: column; }
         
         /* Theme Gradient Header */
-        .brand-header { background: linear-gradient(135deg, #FF5722, #E64A19); padding: 30px 20px; text-align: center; }
-        .brand-header img { height: 50px; filter: brightness(0) invert(1); object-fit: contain; }
+        .brand-header { background: linear-gradient(135deg, #FF5722, #E64A19); padding: ${isA5 ? '20px 15px' : '30px 20px'}; text-align: center; }
+        .brand-header img { height: ${isA5 ? '40px' : '50px'}; filter: brightness(0) invert(1); object-fit: contain; }
         
         /* Main Body Content */
-        .content { padding: 40px 20px; display: flex; flex-direction: column; align-items: center; text-align: center; flex: 1; }
-        .shop-logo { max-height: 90px; max-width: 80%; object-fit: contain; border-radius: 16px; margin-bottom: 20px; border: 2px solid #E5E7EB; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-        h1 { font-family: 'Syne', sans-serif; font-size: clamp(28px, 6vw, 42px); color: #0F0F13; margin: 0 0 30px; font-weight: 800; line-height: 1.2; word-break: break-word; }
+        .content { padding: ${isA5 ? '30px 15px' : '40px 20px'}; display: flex; flex-direction: column; align-items: center; text-align: center; flex: 1; }
+        .shop-logo { max-height: ${isA5 ? '70px' : '90px'}; max-width: 80%; object-fit: contain; border-radius: 16px; margin-bottom: 20px; border: 2px solid #E5E7EB; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        h1 { font-family: 'Syne', sans-serif; font-size: clamp(24px, 6vw, 42px); color: #0F0F13; margin: 0 0 30px; font-weight: 800; line-height: 1.2; word-break: break-word; }
         h1 span { color: #FF5722; }
         
         .qr-wrapper { background: #fff; padding: 25px; border-radius: 28px; border: 6px solid #F3F4F6; box-shadow: 0 10px 30px rgba(0,0,0,0.06); display: inline-block; margin-bottom: 30px; }
-        .qr-wrapper img { width: 100%; max-width: 320px; height: auto; aspect-ratio: 1/1; display: block; object-fit: contain; }
+        .qr-wrapper img { width: 100%; max-width: ${isA5 ? '220px' : '320px'}; height: auto; aspect-ratio: 1/1; display: block; object-fit: contain; }
         
-        .scan-title { font-size: clamp(22px, 5vw, 32px); font-weight: 900; color: #FF5722; margin: 0 0 8px; }
-        .scan-sub { font-size: clamp(15px, 3vw, 18px); color: #6B7280; font-weight: 700; margin: 0; }
+        .scan-title { font-size: clamp(20px, 5vw, 32px); font-weight: 900; color: #FF5722; margin: 0 0 8px; }
+        .scan-sub { font-size: clamp(14px, 3vw, 18px); color: #6B7280; font-weight: 700; margin: 0; }
         
         /* High-End App Promo Footer */
-        .footer { background: #111827; padding: 35px 40px; display: flex; justify-content: space-between; align-items: center; gap: 20px; flex-wrap: wrap; }
+        .footer { background: #111827; padding: ${isA5 ? '25px 30px' : '35px 40px'}; display: flex; justify-content: space-between; align-items: center; gap: 20px; flex-wrap: wrap; }
         
-        .footer-text-col { display: flex; flex-direction: column; align-items: flex-start; text-align: left; gap: 10px; flex: 1; min-width: 200px; }
-        .f-title { color: #ffffff; font-size: clamp(18px, 4vw, 22px); font-weight: 800; margin: 0; line-height: 1.2; }
+        .footer-text-col { display: flex; flex-direction: column; align-items: flex-start; text-align: left; gap: 10px; flex: 1; min-width: 180px; }
+        .f-title { color: #ffffff; font-size: clamp(16px, 4vw, 22px); font-weight: 800; margin: 0; line-height: 1.2; }
         .f-desc { color: #9CA3AF; font-size: 14px; font-weight: 600; margin: 0; }
-        .f-badge { height: 45px; margin-top: 4px; object-fit: contain; }
+        .f-badge { height: ${isA5 ? '35px' : '45px'}; margin-top: 4px; object-fit: contain; }
         
         .footer-qr-col { display: flex; flex-direction: column; align-items: center; gap: 8px; }
-        .footer-qr-col img { width: 75px; height: 75px; background: #fff; padding: 6px; border-radius: 12px; }
+        .footer-qr-col img { width: ${isA5 ? '60px' : '75px'}; height: ${isA5 ? '60px' : '75px'}; background: #fff; padding: 6px; border-radius: 12px; }
         .footer-qr-col span { color: #ffffff; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }
 
         @media (max-width: 480px) {
@@ -359,9 +255,11 @@ window.generatePermanentStandee = () => {
            .footer-text-col { align-items: center; text-align: center; }
         }
 
+        /* Direct Print Directives */
         @media print {
+           @page { size: ${paperSize} portrait; margin: 0.5in; }
            body { background: #fff; padding: 0; display: block; }
-           .standee { box-shadow: none; border-radius: 0; max-width: 100%; margin: 0; border: none; }
+           .standee { box-shadow: none; border-radius: 0; max-width: 100%; margin: 0; border: none; height: 100%; justify-content: space-between; }
         }
       </style>
     </head>
