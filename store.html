@@ -11,7 +11,6 @@
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/shared.css">
 <style>
-  /* 🚀 Scrolling Fix Enforced */
   html, body { 
     background: #ffffff !important; 
     margin: 0 !important; 
@@ -68,13 +67,13 @@
     left: 50%;
     transform: translateX(-50%);
     height: 38px;
-    filter: brightness(0) invert(1); /* Makes logo white for the orange background */
+    filter: brightness(0) invert(1);
   }
 
   /* ─── Store Header ─── */
   .store-hdr {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     padding: 10px 20px 0;
     gap: 14px;
   }
@@ -107,10 +106,21 @@
   }
   .s-partner-tag {
     font-size: 11px;
-    color: rgba(255, 255, 255, 0.85);
+    color: rgba(255, 255, 255, 0.9);
     font-weight: 800;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    margin-bottom: 6px;
+  }
+  .s-address {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.85);
+    font-weight: 600;
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
   }
 
   /* ─── Tabs & Search ─── */
@@ -293,7 +303,6 @@
     line-height: 1;
   }
 
-  /* Utilities */
   .skeleton {
     background: linear-gradient(90deg, #F3F4F6 25%, #E5E7EB 50%, #F3F4F6 75%);
     background-size: 200% 100%;
@@ -303,42 +312,30 @@
   @keyframes shimmer { to { background-position: -200% 0; } }
   .zero-box { padding: 40px 20px; text-align: center; }
 
-  /* ═══════════════════════════════════════════════════════════ */
-  /* 🌙 DARK MODE */
-  /* ═══════════════════════════════════════════════════════════ */
   @media (prefers-color-scheme: dark) {
     html, body { background: #0B1120 !important; color: #F8FAFC !important; }
     #wrap { background: #0B1120 !important; }
-    
-    /* Keep Hero Header Vibrant inside Dark Mode */
     .hero-header { background: linear-gradient(180deg, #E64A19 0%, #C62828 100%); }
     .s-logo-box { background: #1E293B !important; border-color: #334155 !important; }
-    
     .tabs { border-bottom-color: #334155 !important; }
     .tab { color: #64748B !important; }
     .tab.active { color: #FF5722 !important; }
-    
     .search-box { background: #1E293B !important; }
     .search-box input { color: #F8FAFC !important; }
     .search-box input::placeholder { color: #64748B !important; }
-    
     .item-row { background: #0B1120 !important; border-bottom-color: #1E293B !important; }
     .item-row:nth-child(odd) { background: #111827 !important; }
     .item-row:nth-child(even) { background: #0B1120 !important; }
     .item-row:active { background: #1E293B !important; }
-    
     .item-img { background: #1E293B !important; border-color: #334155 !important; }
     .item-ti { color: #F8FAFC !important; }
     .item-desc { color: #94A3B8 !important; }
     .item-unit { color: #94A3B8 !important; }
-    
     .btm-nav { background: #111827 !important; border-top-color: #1E293B !important; }
     .nav-item { color: #64748B !important; }
     .nav-item.active { color: #FF5722 !important; }
-    
     .zero-box h3 { color: #F8FAFC !important; }
     .zero-box p { color: #94A3B8 !important; }
-    
     #no-results { color: #94A3B8 !important; }
     .skeleton { background: linear-gradient(90deg, #1E293B 25%, #334155 50%, #1E293B 75%) !important; background-size: 200% 100%; }
     .toast { background: #1E293B !important; color: #F8FAFC !important; border: 1px solid #334155 !important; }
@@ -357,9 +354,12 @@
       
       <img src="icons/logo.png" alt="NearPop" class="top-logo-center">
       
-      <button class="top-btn" onclick="window.shareStore()" style="justify-content: flex-end;">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
-      </button>
+      <div style="display: flex; gap: 8px; align-items: center;">
+        <button id="top-auth-btn" class="top-btn" onclick="window.handleTopAuth()" style="font-size: 12px; font-weight: 800; background: rgba(255,255,255,0.2); padding: 4px 12px; border-radius: 8px; width: auto; display: none;">Login</button>
+        <button class="top-btn" onclick="window.shareStore()">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
+        </button>
+      </div>
     </div>
 
     <div class="store-hdr">
@@ -369,6 +369,7 @@
       <div class="s-info">
         <h1 class="s-name" id="s-name">Loading...</h1>
         <div class="s-partner-tag">NearPop Local Partner</div>
+        <div class="s-address" id="s-address" style="display:none;"></div>
       </div>
     </div>
   </div>
@@ -418,23 +419,21 @@
   import { db, toast, TE, LS, SS, addPts } from './js/app.js';
   import { syncField } from './js/userSync.js';
   import { doc, getDoc, collection, query, where, getDocs, updateDoc, increment } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
-  import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js';
 
   window.isShowingSaved = false;
 
-  // Extract variables early so they can be securely passed through the app
   const urlParams = new URLSearchParams(window.location.search);
   const mid = urlParams.get('mid');
   
-  // Prepare tracking tags for clicked links
   const trackParams = new URLSearchParams(window.location.search);
   trackParams.delete('mid');
   const trackingTags = trackParams.toString() ? `&${trackParams.toString()}` : '';
 
-  // 🚀 MAIN RENDERING FUNCTION
+  // 🚀 PUBLIC PAGE RENDERING
   async function renderStore() {
     const content = document.getElementById('content');
     const nameEl = document.getElementById('s-name');
+    const addressEl = document.getElementById('s-address');
 
     if (!mid) {
       nameEl.textContent = "Oops!";
@@ -442,7 +441,6 @@
       return;
     }
 
-    // 🚀 FULL QR ANALYTICS
     if (!sessionStorage.getItem('np_scanned_' + mid)) {
       updateDoc(doc(db, 'users', mid), { qrScans: increment(1) }).catch(e => console.warn(e));
       sessionStorage.setItem('np_scanned_' + mid, 'true');
@@ -456,17 +454,22 @@
     }
 
     try {
-      // 1. Fetch Store Data
       const userDoc = await getDoc(doc(db, 'users', mid));
       const userData = userDoc.exists() ? userDoc.data() : {};
 
       const mname = userData.mname || 'Local Store';
+      const maddress = userData.maddress || '';
       const mlogo = userData.logoUrl || 'icons/logo.png';
       
       nameEl.textContent = mname;
       document.getElementById('s-logo-img').src = mlogo;
+      
+      // Inject Merchant Address
+      if (maddress) {
+        addressEl.textContent = maddress;
+        addressEl.style.display = 'block';
+      }
 
-      // 2. Fetch Active Offers
       const q = query(collection(db, 'listings'), where('uid', '==', mid), where('status', '==', 'active'));
       const snap = await getDocs(q);
       const listings = snap.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -522,34 +525,25 @@
         `;
       }
     } catch (e) {
-      console.error(e);
       nameEl.textContent = "Error";
       content.innerHTML = `<div class="zero-box"><p>Could not connect to store.</p></div>`;
     }
   }
 
-  // 🚀 FIXED AUTHENTICATION & ROUTING LOGIC
-  if (!mid) {
-    renderStore(); // Show the generic 'Missing Store' UI
-  } else if (!LS('uid')) {
-    // Unauthenticated User - Route exactly to index.html with Intent
-    sessionStorage.setItem('np_intent', window.location.href);
-    window.location.href = `index.html?qr=1&mid=${mid}`;
-  } else {
-    // User is logged in locally. Verify Auth state securely so they don't see a blank screen
-    onAuthStateChanged(getAuth(), (user) => {
-      if (user) {
-        renderStore();
-      } else {
-        // Logged out / Token expired on Firebase side
-        sessionStorage.setItem('np_intent', window.location.href);
-        window.location.href = `index.html?qr=1&mid=${mid}`;
-      }
-    });
+  // 🚀 REMOVED LOGIN RESTRICTION - EXECUTE DIRECTLY
+  renderStore();
+
+  // Show login button only if user is NOT logged in
+  if (!LS('uid')) {
+    document.getElementById('top-auth-btn').style.display = 'block';
   }
 
+  window.handleTopAuth = () => {
+    sessionStorage.setItem('np_intent', window.location.href);
+    window.location.href = `index.html?qr=1&mid=${mid}`;
+  };
 
-  // 🚀 UI Interaction Functions (Likes, Search, Share)
+  // 🚀 UI Interaction Functions
   window.toggleLike = (id, el) => {
     if (navigator.vibrate) navigator.vibrate(30);
     
@@ -645,19 +639,69 @@
     window.filterDeals();
   };
 
+  // 🚀 ADVANCED SCREENSHOT SHARE
   window.shareStore = async () => {
     const storeName = document.getElementById('s-name').textContent;
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: storeName,
-          text: `Check out live offers from ${storeName} on NearPop!`,
-          url: window.location.href
+    const shareText = `Check out live offers from ${storeName} on NearPop!\n${window.location.href}`;
+    
+    toast('⏳', 'Preparing image for sharing...');
+
+    // Function to run fallback sharing if screenshot fails
+    const runTextShare = async () => {
+      if (navigator.share) {
+        try { await navigator.share({ title: storeName, text: shareText }); } catch(err) {}
+      } else {
+        navigator.clipboard.writeText(shareText);
+        toast('🔗', 'Store link copied!');
+      }
+    };
+    
+    try {
+      // Dynamically load html2canvas to save initial page load weight
+      if (!window.html2canvas) {
+        await new Promise((resolve) => {
+            const script = document.createElement('script');
+            script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+            script.onload = resolve;
+            document.head.appendChild(script);
         });
-      } catch (err) { }
-    } else {
-      navigator.clipboard.writeText(window.location.href);
-      toast('🔗', 'Store link copied!');
+      }
+
+      // Hide elements we don't want in screenshot
+      const btmNav = document.querySelector('.btm-nav');
+      if(btmNav) btmNav.style.visibility = 'hidden';
+
+      const canvas = await html2canvas(document.getElementById('wrap'), {
+        useCORS: true,
+        scale: 2,
+        backgroundColor: '#ffffff'
+      });
+
+      if(btmNav) btmNav.style.visibility = 'visible';
+
+      canvas.toBlob(async (blob) => {
+        if (!blob) return runTextShare();
+        
+        const file = new File([blob], 'nearpop-store-offers.png', { type: 'image/png' });
+
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          try {
+            await navigator.share({
+              title: storeName,
+              text: shareText,
+              files: [file]
+            });
+          } catch(e) {
+            // If user dismissed or errored, silently fallback or ignore
+          }
+        } else {
+          runTextShare();
+        }
+      }, 'image/png');
+
+    } catch (err) {
+      console.warn("Screenshot generation failed, falling back to text share.", err);
+      runTextShare();
     }
   };
 </script>
