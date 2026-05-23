@@ -581,8 +581,8 @@ window.exportStatus = async (id) => {
   
   toast('⏳', 'Generating share image...');
 
-  const merchantName = l.owner || LS('mname') || 'Our Store';
-  const shareText = `Check out our ${merchantName} latest offer on NearPop!\n\n${l.title}${l.price ? ' for ' + l.price : ''}`;
+  const merchantName = _decodeHTML(l.owner || LS('mname') || 'Our Store');
+  const shareText = `Check out our ${merchantName} latest offer on NearPop!\n\n${_decodeHTML(l.title)}${l.price ? ' for ' + _decodeHTML(l.price) : ''}`;
 
   try {
     const canvas = document.createElement('canvas');
@@ -651,13 +651,13 @@ window.exportStatus = async (id) => {
 
     ctx.fillStyle = '#FFFFFF';
     ctx.font = 'bold 64px sans-serif';
-    const titleLines = _wrapText(ctx, l.title || 'Amazing Deal!', 900);
+    const titleLines = _wrapText(ctx, _decodeHTML(l.title || 'Amazing Deal!'), 900);
     titleLines.forEach((line, i) => ctx.fillText(line, 540, 1360 + (i * 80)));
 
     if (l.price) {
       ctx.fillStyle = '#10B981';
       ctx.font = 'bold 76px sans-serif';
-      ctx.fillText(l.price, 540, 1400 + (titleLines.length * 80));
+      ctx.fillText(_decodeHTML(l.price), 540, 1400 + (titleLines.length * 80));
     }
 
     // 5. Promo banner + QR code
@@ -710,6 +710,11 @@ window.exportStatus = async (id) => {
 };
 
 // Canvas helpers
+function _decodeHTML(str) {
+  const el = document.createElement('textarea');
+  el.innerHTML = str;
+  return el.value;
+}
 function _loadImg(src) {
   return new Promise((resolve, reject) => {
     const img = new Image();

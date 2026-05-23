@@ -385,11 +385,11 @@ window.shareListing = async () => {
   
   updateMetaTags();
   
-  const merchantName = listing.owner || listing.merchant || 'Local Business';
+  const merchantName = decodeHTML(listing.owner || listing.merchant || 'Local Business');
   const shareUrl = window.location.href;
-  const shareTitle = `${listing.title} - ${merchantName}`;
+  const shareTitle = `${decodeHTML(listing.title)} - ${merchantName}`;
   // Removed URL here to prevent duplication during native sharing
-  const shareText = `Check out our ${merchantName} latest offer on NearPop!\n\n${listing.title}${listing.price ? ' for ' + listing.price : ''}`;
+  const shareText = `Check out our ${merchantName} latest offer on NearPop!\n\n${decodeHTML(listing.title)}${listing.price ? ' for ' + decodeHTML(listing.price) : ''}`;
   
   try {
     const shareImageFile = await generateShareImage(listing, merchantName);
@@ -517,11 +517,11 @@ async function generateShareImage(listing, merchantName) {
     
     ctx.fillStyle = '#D1D5DB';
     ctx.font = 'bold 36px "Nunito", sans-serif';
-    ctx.fillText(merchantName.toUpperCase(), 540, 1270);
+    ctx.fillText(decodeHTML(merchantName).toUpperCase(), 540, 1270);
 
     ctx.fillStyle = '#FFFFFF';
     ctx.font = 'bold 64px "Syne", sans-serif';
-    const titleLines = wrapText(ctx, listing.title || 'Amazing Local Deal!', 900);
+    const titleLines = wrapText(ctx, decodeHTML(listing.title || 'Amazing Local Deal!'), 900);
     titleLines.forEach((line, i) => {
       ctx.fillText(line, 540, 1360 + (i * 80));
     });
@@ -529,7 +529,7 @@ async function generateShareImage(listing, merchantName) {
     if (listing.price) {
       ctx.fillStyle = '#10B981'; // Vibrant Green
       ctx.font = 'bold 76px "Syne", sans-serif';
-      ctx.fillText(listing.price, 540, 1400 + (titleLines.length * 80));
+      ctx.fillText(decodeHTML(listing.price), 540, 1400 + (titleLines.length * 80));
     }
 
     // 5. App Promo Banner & QR Code (Widened to match image padding)
@@ -574,6 +574,11 @@ async function generateShareImage(listing, merchantName) {
 }
 
 // Canvas Helpers
+function decodeHTML(str) {
+  const el = document.createElement('textarea');
+  el.innerHTML = str;
+  return el.value;
+}
 function loadImage(src) {
   return new Promise((resolve, reject) => {
     const img = new Image();
