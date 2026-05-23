@@ -4,7 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>NearPop — Local Store</title>
-<meta name="theme-color" content="#ffffff">
+<meta name="theme-color" content="#FF5722">
+<meta name="color-scheme" content="light dark">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800;900&display=swap" rel="stylesheet">
@@ -303,11 +304,64 @@
   }
   @keyframes shimmer { to { background-position: -200% 0; } }
   .zero-box { padding: 40px 20px; text-align: center; }
+  
+  /* Top branded gradient strip */
+  .brand-strip {
+    height: 4px;
+    background: linear-gradient(90deg, #FF5722 0%, #E64A19 100%);
+    flex-shrink: 0;
+  }
+
+  /* ═══════════════════════════════════════════════════════════ */
+  /* 🌙 DARK MODE */
+  /* ═══════════════════════════════════════════════════════════ */
+  @media (prefers-color-scheme: dark) {
+    html, body { background: #0B1120 !important; color: #F8FAFC !important; }
+    #wrap { background: #0B1120 !important; }
+    
+    .top-bar { background: #111827 !important; }
+    .top-btn { color: #D1D5DB !important; }
+    
+    .s-logo-box { background: #1E293B !important; border-color: #334155 !important; }
+    .s-name { color: #F8FAFC !important; }
+    
+    .tabs { border-bottom-color: #334155 !important; }
+    .tab { color: #64748B !important; }
+    .tab.active { color: #FF5722 !important; }
+    
+    .search-box { background: #1E293B !important; }
+    .search-box input { color: #F8FAFC !important; }
+    .search-box input::placeholder { color: #64748B !important; }
+    
+    .item-row { background: #0B1120 !important; border-bottom-color: #1E293B !important; }
+    .item-row:nth-child(odd) { background: #111827 !important; }
+    .item-row:nth-child(even) { background: #0B1120 !important; }
+    .item-row:active { background: #1E293B !important; }
+    
+    .item-img { background: #1E293B !important; border-color: #334155 !important; }
+    .item-ti { color: #F8FAFC !important; }
+    .item-desc { color: #94A3B8 !important; }
+    .item-unit { color: #94A3B8 !important; }
+    
+    .btm-nav { background: #111827 !important; border-top-color: #1E293B !important; }
+    .nav-item { color: #64748B !important; }
+    .nav-item.active { color: #FF5722 !important; }
+    
+    .zero-box h3 { color: #F8FAFC !important; }
+    .zero-box p { color: #94A3B8 !important; }
+    
+    #no-results { color: #94A3B8 !important; }
+    
+    .skeleton { background: linear-gradient(90deg, #1E293B 25%, #334155 50%, #1E293B 75%) !important; background-size: 200% 100%; }
+    
+    .toast { background: #1E293B !important; color: #F8FAFC !important; border: 1px solid #334155 !important; }
+  }
 </style>
 </head>
 <body>
 
 <div id="wrap">
+  <div class="brand-strip"></div>
   
   <div class="top-bar">
     <button class="top-btn" onclick="window.location.href='map.html'" title="Back to Map">
@@ -373,10 +427,13 @@
 
 </div>
 
+<div class="toast" id="toast"><span id="t-ic">✅</span><span id="t-tx"></span></div>
+
 <script type="module">
   import { db, toast, TE, LS, SS, addPts } from './js/app.js';
   import { syncField } from './js/userSync.js';
   import { doc, getDoc, collection, query, where, getDocs, updateDoc, increment } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
+  import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js';
 
   // Global variables for search & filtering
   window.isShowingSaved = false;
@@ -619,7 +676,22 @@
     }
   };
 
-  initStore();
+  // Wait for Firebase Auth before querying Firestore
+  if (LS('uid')) {
+    onAuthStateChanged(getAuth(), (user) => {
+      if (user) {
+        initStore();
+      } else {
+        const mid = new URLSearchParams(window.location.search).get('mid');
+        if (mid) {
+          sessionStorage.setItem('np_intent', window.location.href);
+          window.location.href = 'index.html?qr=1&mid=' + mid;
+        }
+      }
+    });
+  } else {
+    initStore();
+  }
 </script>
 </body>
 </html>
