@@ -715,7 +715,7 @@ function injectFootfallBanner() {
   const div = document.createElement('div');
   div.id = 'ff-banner';
   div.className = 'footfall-bar';
-  div.innerHTML = `<div class="ff-title">📍 You're nearby — verifying your visit</div><div class="ff-sub" id="ff-time">Stay within 50m for 5 Seconds to earn rewards</div><div class="ff-progress"><div class="ff-bar" id="ff-bar" style="width:0%"></div></div><button class="ff-btn" onclick="document.getElementById('ff-banner').classList.remove('on');clearInterval(ffTimer)\">Not visiting now</button>`;
+  div.innerHTML = `<div class="ff-title">You're nearby — verifying your visit</div><div class="ff-sub" id="ff-time">Stay within 50m for 5 Seconds to earn rewards</div><div class="ff-progress"><div class="ff-bar" id="ff-bar" style="width:0%"></div></div><button class="ff-btn" onclick="document.getElementById('ff-banner').classList.remove('on');clearInterval(ffTimer)\">Not visiting now</button>`;
   
   dbody.insertBefore(div, dbody.firstChild);
   setTimeout(startFootfallTracking, 3000);
