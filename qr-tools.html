@@ -27,7 +27,7 @@
 .section{margin-bottom:24px}
 .section-title{font-size:16px;font-weight:800;color:var(--deep);margin-bottom:12px;display:flex;align-items:center;gap:8px}
 
-.qr-card{background:var(--card);border-radius:16px;padding:20px;border:1px solid var(--bdr);box-shadow:0 4px 12px rgba(0,0,0,.04);text-align:center}
+.qr-card{background:var(--bg-app);border-radius:16px;padding:20px;border:1px solid var(--bdr);box-shadow:0 4px 12px rgba(0,0,0,.04);text-align:center}
 .qr-desc{font-size:13px;color:var(--gray);margin-bottom:16px;font-weight:600;line-height:1.5}
 
 .btn-grid{display:grid;gap:10px;margin-bottom:16px}
@@ -46,6 +46,15 @@
 .info-box{background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.3);border-radius:12px;padding:14px;margin-top:16px}
 .info-box p{font-size:12px;color:var(--blue);font-weight:600;line-height:1.6;margin:0}
 .info-box strong{color:var(--deep)}
+
+@media (prefers-color-scheme: dark) {
+  .qr-btn.primary { background: #F8FAFC; color: #0F172A; }
+  .qr-btn.secondary { background: #1E293B; color: #F8FAFC; border: 1px solid #334155; }
+  .info-box { background: rgba(59,130,246,0.08); border-color: rgba(59,130,246,0.2); }
+  .info-box p { color: #93C5FD; }
+  .stat-row { border-bottom-color: #334155; }
+  .toast { background: #1E293B !important; color: #F8FAFC !important; border: 1px solid #334155 !important; }
+}
 </style>
 </head>
 <body>
@@ -229,7 +238,7 @@ window.exportStandee = async (format) => {
                  <img src="${qrDataUrl}" style="width: 280px; height: 280px; object-fit: contain;">
               </div>
               <h2 style="color: #FF5722; font-size: 26px; font-weight: 900; margin: 0;">Scan to see today's deals!</h2>
-              <p style="color: #6b7280; font-size: 15px; font-weight: 800; margin: 0; text-transform: uppercase; letter-spacing: 1px;">No app download required<br>Powered by nearpop.in</p>
+              <p style="color: #6b7280; font-size: 15px; font-weight: 800; margin: 0; text-transform: uppercase; letter-spacing: 1px;">Powered by nearpop.in</p>
            </div>
         </div>
       `;
@@ -362,7 +371,7 @@ window.generatePermanentStandee = () => {
         h2 { color: #FF5722; font-size: clamp(18px, 3vmin, 24px); font-weight: 900; margin: 0; line-height: 1.3; }
         p { color: #6b7280; font-size: clamp(11px, 2vmin, 14px); font-weight: 800; margin: 0; text-transform: uppercase; letter-spacing: 1px; }
 
-        @media print { 
+        @media print {
           body { background: #fff; display: block; } 
           .no-print { display: none !important; }
           
@@ -401,7 +410,7 @@ window.generatePermanentStandee = () => {
           <h1>Welcome to <br><span style="color:#FF5722">${safeMname}</span></h1>
           <div class="qr-box"><img src="${qrUrl}" alt="Scan Me" class="qr-code"></div>
           <h2>Scan to see today's deals!</h2>
-          <p>No app download required<br>Powered by nearpop.in</p>
+          <p>Powered by nearpop.in</p>
         </div>
       </div>
     </body>

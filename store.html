@@ -11,7 +11,7 @@
 <link rel="stylesheet" href="css/shared.css">
 <style>
   html, body { 
-    background: #F9FAFB !important; 
+    background: var(--bg-body) !important; 
     margin: 0 !important; 
     padding: 0 !important; 
     font-family: 'Nunito', sans-serif !important; 
@@ -29,7 +29,7 @@
     min-height: 100vh; 
     max-width: 500px; 
     margin: 0 auto; 
-    background: #F9FAFB; 
+    background: var(--bg-body); 
     box-shadow: 0 0 20px rgba(0,0,0,0.05); 
     padding-bottom: 60px; 
   }
@@ -326,6 +326,22 @@
     animation: spin 0.8s linear infinite; margin: 0 auto 16px; 
   }
   @keyframes spin { to { transform: rotate(360deg); } }
+
+  @media (prefers-color-scheme: dark) {
+    .search-wrap { background: #1E293B !important; border-color: #334155 !important; }
+    .search-wrap input { color: #F8FAFC !important; }
+    .search-wrap input::placeholder { color: #64748B !important; }
+    .menu-lbl { color: #94A3B8 !important; }
+    .deal-card { background: #1E293B !important; border-color: #334155 !important; }
+    .d-ti { color: #F8FAFC !important; }
+    .d-pr { color: #94A3B8 !important; }
+    .zero-box { background: #1E293B !important; border-color: #334155 !important; }
+    .z-ti { color: #F8FAFC !important; }
+    .z-desc { color: #94A3B8 !important; }
+    .btn-claim { background: #FF5722 !important; color: #fff !important; }
+    .skeleton { background: linear-gradient(90deg, #1E293B 0%, #334155 50%, #1E293B 100%) !important; background-size: 200% 100%; }
+    .toast { background: #1E293B !important; color: #F8FAFC !important; border: 1px solid #334155 !important; }
+  }
 </style>
 </head>
 <body>
@@ -343,13 +359,13 @@
   <div id="content">
     <div class="search-wrap skeleton" style="height: 48px; border:none; box-shadow:none;"></div>
     <div class="deals-grid" style="margin-top:20px;">
-      <div class="deal-card" style="border:none; box-shadow:none; background:#fff;">
+      <div class="deal-card" style="border:none; box-shadow:none;">
         <div class="skeleton" style="width:100%; height:100px; border-radius:14px;"></div>
         <div class="skeleton" style="width:80%; height:16px; margin-top:8px;"></div>
         <div class="skeleton" style="width:50%; height:16px;"></div>
         <div class="skeleton" style="width:40%; height:20px; margin-top:auto;"></div>
       </div>
-      <div class="deal-card" style="border:none; box-shadow:none; background:#fff;">
+      <div class="deal-card" style="border:none; box-shadow:none;">
         <div class="skeleton" style="width:100%; height:100px; border-radius:14px;"></div>
         <div class="skeleton" style="width:70%; height:16px; margin-top:8px;"></div>
         <div class="skeleton" style="width:40%; height:16px;"></div>
@@ -386,6 +402,7 @@
       sessionStorage.setItem('np_scanned_' + mid, 'true');
     }
 
+    // Force new users to sign up first (grows userbase)
     if (!LS('uid')) {
       sessionStorage.setItem('np_intent', window.location.href);
       window.location.href = 'index.html?qr=1&mid=' + mid;
@@ -528,11 +545,37 @@
   };
 
   window.claimVisitPoints = () => {
+    if (!LS('uid')) {
+      toast('ℹ️', 'Please sign in to claim points!');
+      setTimeout(() => { window.location.href = 'index.html'; }, 1200);
+      return;
+    }
     toast('⭐', '50 Points Claimed! Redirecting to map...');
     setTimeout(() => { window.location.href = 'map.html'; }, 1500);
   };
 
-  initStore();
+  import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js';
+
+  // Wait for Firebase Auth to be ready before querying Firestore
+  const auth = getAuth();
+  if (LS('uid')) {
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        initStore();
+      } else {
+        // Auth expired — redirect to login
+        const urlParams = new URLSearchParams(window.location.search);
+        const mid = urlParams.get('mid');
+        if (mid) {
+          sessionStorage.setItem('np_intent', window.location.href);
+          window.location.href = 'index.html?qr=1&mid=' + mid;
+        }
+      }
+    });
+  } else {
+    // Not logged in — redirect handled inside initStore
+    initStore();
+  }
 </script>
 </body>
 </html>
