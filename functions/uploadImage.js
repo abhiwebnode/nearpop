@@ -6,8 +6,6 @@
 // ║  ✅ ENVIRONMENT VARIABLES - Modern Firebase approach              ║
 // ╚══════════════════════════════════════════════════════════════════╝
 
-// Load environment variables
-require('dotenv').config();
 
 const functions = require('firebase-functions');
 const admin = require('firebase-admin');
