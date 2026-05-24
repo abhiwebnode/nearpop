@@ -1735,7 +1735,7 @@ let hasLiveCentered = false;
 const initCenter = savedLoc && savedLoc.lat ? [savedLoc.lat, savedLoc.lng] : [28.4089, 77.3178];
 window._map = L.map('map', { 
   center: initCenter, 
-  zoom: savedLoc ? 15 : 13, 
+  zoom: savedLoc ? 17 : 15, 
   zoomControl: false, 
   attributionControl: false 
 });
@@ -1800,7 +1800,7 @@ function startWatch() {
           // GPS manager only fires callback when moved 10m+ or first fix
           // so every invocation here is significant — always redraw
           if (!hasLiveCentered) {
-            window._map.flyTo([lat, lng], 15, { duration: 0.5 });
+            window._map.flyTo([lat, lng], 17, { duration: 0.5 });
             hasLiveCentered = true;
 			window.forceRefresh();
           }
@@ -1831,7 +1831,7 @@ function startWatch() {
         SS('lastLoc', loc);
         if (window.userMarker) window.userMarker.setLatLng([lat, lng]);
         if (!hasLiveCentered) {
-          window._map.flyTo([lat, lng], 15, { duration: 0.5 });
+          window._map.flyTo([lat, lng], 17, { duration: 0.5 });
           hasLiveCentered = true;
         }
         gpsConfirmed = true;
@@ -1858,7 +1858,7 @@ function basicGPSFallback() {
       SS('lastLoc', loc);
       if (window.userMarker) window.userMarker.setLatLng([loc.lat, loc.lng]);
       if (!hasLiveCentered) {
-        window._map.flyTo([loc.lat, loc.lng], 15, { duration: 0.5 });
+        window._map.flyTo([loc.lat, loc.lng], 17, { duration: 0.5 });
         hasLiveCentered = true;
 		window.forceRefresh();
       }
