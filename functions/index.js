@@ -149,3 +149,72 @@ exports.sendProximityNotification = functions.https.onRequest(async (req, res) =
     });
   }
 });
+// ═══════════════════════════════════════════════════════════════════
+// SERVER-SIDE RADAR: BACKGROUND PROXIMITY ENGINE (Scheduled)
+// ═══════════════════════════════════════════════════════════════════
+exports.backgroundProximityEngine = functions.pubsub.schedule('every 5 minutes').onRun(async (context) => {
+    const db = admin.firestore();
+    const now = Date.now();
+
+    // 1. Get users active in the last 2 hours who have push enabled
+    const usersSnap = await db.collection('users')
+        .where('lastActive', '>', now - (2 * 60 * 60 * 1000))
+        .get();
+
+    if (usersSnap.empty) return null;
+
+    // 2. Get active deals
+    const dealsSnap = await db.collection('listings')
+        .where('status', '==', 'active')
+        .get();
+
+    const deals = dealsSnap.docs.map(d => ({id: d.id, ...d.data()}));
+    const pushPromises = [];
+
+    // 3. Radar Check: Compare every active user to every active deal
+    usersSnap.forEach(userDoc => {
+        const user = userDoc.data();
+        if (!user.fcmToken || !user.lastKnownLat) return;
+
+        deals.forEach(deal => {
+            if (!deal.lat || !deal.lng) return;
+            
+            const dist = getDistance(user.lastKnownLat, user.lastKnownLng, deal.lat, deal.lng);
+            
+            // If user is within 500 meters of a deal, fire the background push!
+            if (dist <= 500) {
+                const message = {
+                    token: user.fcmToken,
+                    notification: {
+                        title: `🏷️ ${deal.title}`,
+                        body: `${Math.round(dist)}m away! Tap to view offer.`
+                    },
+                    data: {
+                        listingId: String(deal.id),
+                        merchantId: String(deal.uid || ''),
+                        url: `/detail.html?id=${deal.id}`
+                    }
+                };
+                
+                // Send push to user's phone. 
+                // Don't worry about spam; your sw.js IndexedDB cooldowns will block duplicates perfectly.
+                pushPromises.push(admin.messaging().send(message).catch(e => console.log('FCM Error:', e)));
+            }
+        });
+    });
+
+    await Promise.all(pushPromises);
+    console.log(`[Radar] Checked ${usersSnap.size} users. Sent ${pushPromises.length} potential background pushes.`);
+    return null;
+});
+
+// Helper: Haversine distance in meters
+function getDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371e3; 
+    const p1 = lat1 * Math.PI/180;
+    const p2 = lat2 * Math.PI/180;
+    const dp = (lat2-lat1) * Math.PI/180;
+    const dl = (lon2-lon1) * Math.PI/180;
+    const a = Math.sin(dp/2) * Math.sin(dp/2) + Math.cos(p1) * Math.cos(p2) * Math.sin(dl/2) * Math.sin(dl/2);
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}

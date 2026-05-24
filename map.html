@@ -1777,6 +1777,29 @@ function gpsDistM(lat1, lng1, lat2, lng2) {
 let gpsManager = null;
 let gpsConfirmed = false;
 
+// 🚀 NEW: Silently sync GPS to Firestore every 3 minutes for background pushes
+function syncLocationToServer(lat, lng) {
+  const uid = LS('uid');
+  if (!uid) return;
+  
+  const now = Date.now();
+  const lastSync = parseInt(LS('last_gps_sync')) || 0;
+  
+  // Only sync once every 3 minutes (180,000 ms) to save battery and database writes
+  if (now - lastSync > 180000) { 
+    try {
+      updateDoc(doc(db, 'users', uid), {
+        lastKnownLat: lat,
+        lastKnownLng: lng,
+        lastActive: now
+      });
+      SS('last_gps_sync', now);
+    } catch (e) {
+      console.warn("Background sync failed", e);
+    }
+  }
+}
+
 function startWatch() {
   if (!gpsManager) {
     import('./js/adaptive-gps-manager.js').then(module => {
@@ -1792,7 +1815,7 @@ function startWatch() {
           
           loc = { lat, lng };
           SS('lastLoc', loc);
-          
+          syncLocationToServer(lat, lng);
           if (window.userMarker) {
             window.userMarker.setLatLng([lat, lng]);
           }
@@ -1829,6 +1852,7 @@ function startWatch() {
         const lng = position.coords.longitude;
         loc = { lat, lng };
         SS('lastLoc', loc);
+		syncLocationToServer(lat, lng);
         if (window.userMarker) window.userMarker.setLatLng([lat, lng]);
         if (!hasLiveCentered) {
           window._map.flyTo([lat, lng], 17, { duration: 0.5 });
@@ -1856,6 +1880,7 @@ function basicGPSFallback() {
     p => {
       loc = { lat: p.coords.latitude, lng: p.coords.longitude };
       SS('lastLoc', loc);
+	  syncLocationToServer(p.coords.latitude, p.coords.longitude);
       if (window.userMarker) window.userMarker.setLatLng([loc.lat, loc.lng]);
       if (!hasLiveCentered) {
         window._map.flyTo([loc.lat, loc.lng], 17, { duration: 0.5 });
