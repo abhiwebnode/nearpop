@@ -1,4 +1,5 @@
-const functions = require('firebase-functions');
+const { onRequest } = require('firebase-functions/v2/https');
+const { onSchedule } = require('firebase-functions/v2/scheduler');
 const admin = require('firebase-admin');
 
 if (!admin.apps.length) {
@@ -6,9 +7,10 @@ if (!admin.apps.length) {
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// SEND PROXIMITY NOTIFICATION
+// FOREGROUND PUSH: SEND PROXIMITY NOTIFICATION
 // ═══════════════════════════════════════════════════════════════════
-exports.sendProximityNotification = functions.https.onRequest(async (req, res) => {
+// Note: cors: true automatically handles OPTIONS preflights in Gen 2
+exports.sendProximityNotification = onRequest({ cors: true }, async (req, res) => {
   res.set('Access-Control-Allow-Origin', '*');
   res.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.set('Access-Control-Allow-Headers', 'Content-Type');
@@ -25,15 +27,10 @@ exports.sendProximityNotification = functions.https.onRequest(async (req, res) =
     const { userId, title, body, data } = req.body;
 
     if (!userId || !title || !body) {
-      return res.status(400).json({ 
-        error: 'Missing required fields: userId, title, body' 
-      });
+      return res.status(400).json({ error: 'Missing required fields: userId, title, body' });
     }
 
-    const userDoc = await admin.firestore()
-      .collection('users')
-      .doc(userId)
-      .get();
+    const userDoc = await admin.firestore().collection('users').doc(userId).get();
 
     if (!userDoc.exists) {
       return res.status(404).json({ error: 'User not found' });
@@ -74,17 +71,9 @@ exports.sendProximityNotification = functions.https.onRequest(async (req, res) =
       },
       apns: {
         payload: {
-          aps: {
-            sound: 'default',
-            badge: 1,
-            contentAvailable: true,
-            category: 'NEARPOP_DEAL'
-          }
+          aps: { sound: 'default', badge: 1, contentAvailable: true, category: 'NEARPOP_DEAL' }
         },
-        headers: {
-          'apns-priority': '10',
-          'apns-push-type': 'alert'
-        }
+        headers: { 'apns-priority': '10', 'apns-push-type': 'alert' }
       },
       webpush: {
         notification: {
@@ -106,13 +95,10 @@ exports.sendProximityNotification = functions.https.onRequest(async (req, res) =
     const response = await admin.messaging().send(message);
     console.log('Notification sent successfully:', response);
 
-    await admin.firestore()
-      .collection('users')
-      .doc(userId)
-      .update({
+    await admin.firestore().collection('users').doc(userId).update({
         notificationsSent: admin.firestore.FieldValue.increment(1),
         lastNotificationSent: admin.firestore.FieldValue.serverTimestamp()
-      });
+    });
 
     return res.status(200).json({
       success: true,
@@ -126,17 +112,10 @@ exports.sendProximityNotification = functions.https.onRequest(async (req, res) =
     if (error.code === 'messaging/invalid-registration-token' || 
         error.code === 'messaging/registration-token-not-registered') {
       try {
-        await admin.firestore()
-          .collection('users')
-          .doc(req.body.userId)
-          .update({
+        await admin.firestore().collection('users').doc(req.body.userId).update({
             fcmToken: admin.firestore.FieldValue.delete()
-          });
-        
-        return res.status(410).json({ 
-          error: 'FCM token expired/invalid', 
-          code: 'TOKEN_EXPIRED' 
         });
+        return res.status(410).json({ error: 'FCM token expired/invalid', code: 'TOKEN_EXPIRED' });
       } catch (e) {
         console.error('Failed to remove invalid token:', e);
       }
@@ -149,10 +128,11 @@ exports.sendProximityNotification = functions.https.onRequest(async (req, res) =
     });
   }
 });
+
 // ═══════════════════════════════════════════════════════════════════
 // SERVER-SIDE RADAR: BACKGROUND PROXIMITY ENGINE (Scheduled)
 // ═══════════════════════════════════════════════════════════════════
-exports.backgroundProximityEngine = functions.pubsub.schedule('every 5 minutes').onRun(async (context) => {
+exports.backgroundProximityEngine = onSchedule('every 5 minutes', async (event) => {
     const db = admin.firestore();
     const now = Date.now();
 
@@ -181,7 +161,7 @@ exports.backgroundProximityEngine = functions.pubsub.schedule('every 5 minutes')
             
             const dist = getDistance(user.lastKnownLat, user.lastKnownLng, deal.lat, deal.lng);
             
-            // If user is within 500 meters of a deal, fire the background push!
+            // If user is within 500 meters of a deal, fire the background push
             if (dist <= 500) {
                 const message = {
                     token: user.fcmToken,
@@ -196,8 +176,6 @@ exports.backgroundProximityEngine = functions.pubsub.schedule('every 5 minutes')
                     }
                 };
                 
-                // Send push to user's phone. 
-                // Don't worry about spam; your sw.js IndexedDB cooldowns will block duplicates perfectly.
                 pushPromises.push(admin.messaging().send(message).catch(e => console.log('FCM Error:', e)));
             }
         });
