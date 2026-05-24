@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="NearPop — Merchant Dashboard">
+<meta name="theme-color" content="#FF5722">
+<meta name="color-scheme" content="light dark"> 
+<meta name="mobile-web-app-capable" content="yes">
+<title>NearPop — Dashboard</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800;900&family=Syne:wght@700;800&display=swap">
+<link rel="stylesheet" href="css/shared.css">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+#wrap{display:flex;flex-direction:column;height:100vh;height:100dvh;background:var(--bg-body)}
+
+.mhdr{background:#FF5722;padding:20px 16px 24px 16px;color:#fff;flex-shrink:0;border-radius:0 0 24px 24px;box-shadow:0 4px 20px rgba(255,87,34,.3);position:relative}
+.mhdr h2{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;margin-bottom:2px; line-height:1.3; word-wrap:break-word;}
+.mhdr p{font-size:13px;font-weight:600;opacity:.9}
+.mbtn{position:absolute;top:20px;right:16px;background:rgba(255,255,255,.2);color:#fff;border:none;padding:6px 12px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer}
+
+.mwbox{background:var(--card);border-radius:18px;padding:16px;margin:16px;box-shadow:0 6px 16px rgba(0,0,0,.06);display:flex;align-items:center;justify-content:space-between;position:relative;z-index:10;border:1px solid var(--bdr)}
+.mw-lbl{font-size:11px;font-weight:800;color:var(--gray);text-transform:uppercase;letter-spacing:1px;margin-bottom:2px}
+.mw-val{font-size:24px;font-weight:900;color:var(--deep);font-family:'Syne',sans-serif}
+.mw-btn{background:var(--or);color:#fff;padding:10px 16px;border-radius:12px;font-size:13px;font-weight:800;border:none;cursor:pointer;box-shadow:0 4px 12px rgba(255,87,34,.25)}
+
+.mbody{flex:1;overflow-y:auto;padding:0 16px 90px}
+
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px}
+.stat{background:var(--card);padding:14px;border-radius:16px;border:1px solid var(--bdr);box-shadow:0 2px 8px rgba(0,0,0,.03)}
+.stat-v{font-size:22px;font-weight:900;color:var(--deep);margin-bottom:2px;font-family:'Syne',sans-serif}
+.stat-l{font-size:11px;font-weight:700;color:var(--gray)}
+
+.action-cards{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px}
+.action-card{background:var(--card);border-radius:16px;padding:18px;border:1px solid var(--bdr);box-shadow:0 4px 12px rgba(0,0,0,.04);cursor:pointer;transition:all 0.2s;text-decoration:none;display:block}
+.action-card:active{transform:scale(0.97);box-shadow:0 2px 6px rgba(0,0,0,.06)}
+.action-card-icon{font-size:32px;margin-bottom:8px}
+.action-card-title{font-size:14px;font-weight:800;color:var(--deep);margin-bottom:3px}
+.action-card-desc{font-size:11px;color:var(--gray);font-weight:600;line-height:1.4}
+
+.action-card.primary{background:linear-gradient(135deg, #FF5722, #F97316);border:none;color:#fff}
+.action-card.primary .action-card-title{color:#fff}
+.action-card.primary .action-card-desc{color:rgba(255,255,255,0.9)}
+
+.quick-actions{margin-bottom:24px}
+.quick-action{background:var(--card);border-radius:14px;padding:14px;margin-bottom:10px;border:1px solid var(--bdr);display:flex;align-items:center;gap:12px;cursor:pointer;transition:all 0.2s;text-decoration:none}
+.quick-action:active{transform:scale(0.98);background:var(--light)}
+.qa-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.qa-icon.or{background:rgba(255,87,34,0.1)}
+.qa-icon.blue{background:rgba(59,130,246,0.1)}
+.qa-icon.grn{background:rgba(16,185,129,0.1)}
+.qa-content{flex:1}
+.qa-title{font-size:14px;font-weight:800;color:var(--deep);margin-bottom:2px}
+.qa-desc{font-size:11px;color:var(--gray);font-weight:600}
+.qa-arrow{font-size:18px;color:var(--gray)}
+
+.sec-title{font-size:16px;font-weight:800;color:var(--deep);margin-bottom:12px}
+
+.edit-lbl{font-size:11px;font-weight:800;color:var(--gray);margin-bottom:4px;display:block;text-transform:uppercase;letter-spacing:0.5px}
+.edit-grp{margin-bottom:12px}
+.a-inp{width:100%;padding:12px;border-radius:10px;border:2px solid var(--bdr);background:var(--bg-body);font-size:13px;font-weight:700;color:var(--deep);font-family:inherit}
+.a-inp:focus{border-color:var(--or);outline:none}
+
+.fab-create{position:fixed;bottom:24px;right:24px;height:56px;padding:0 24px 0 16px;background:linear-gradient(135deg, #FF5722, #D97706);color:#fff;border-radius:28px;display:flex;align-items:center;justify-content:center;gap:8px;font-size:15px;font-weight:800;box-shadow:0 8px 24px rgba(255, 87, 34, 0.4);cursor:pointer;z-index:900;border:none;transition:transform 0.2s;font-family:'Nunito', sans-serif;text-decoration:none}
+.fab-create:active{transform:scale(0.95)}
+.fab-icon{font-size:26px;font-weight:300;line-height:1;margin-top:-2px}
+</style>
+</head>
+<body>
+<div id="app-shell"><div id="wrap">
+  <div class="mhdr">
+    <button class="mbtn" onclick="window.logout()">Logout</button>
+    
+    <div style="display: flex; align-items: center; gap: 16px; margin-top: 24px;">
+      
+      <div style="position:relative; flex-shrink: 0; cursor:pointer;" onclick="window.openPhotoChoice('logo')">
+        <img id="m-logo" style="width: 64px; height: 64px; border-radius: 16px; background: #fff; object-fit: contain; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.15); border: 2px solid rgba(255,255,255,0.3);">
+        <div id="m-logo-placeholder" style="width: 64px; height: 64px; border-radius: 16px; background: rgba(255,255,255,0.2); border: 2px dashed rgba(255,255,255,0.5); display: flex; align-items: center; justify-content: center; font-size:24px; color:#fff;" title="Upload Shop Logo">📷</div>
+        <div style="position:absolute; bottom:-6px; right:-6px; background:#111827; border-radius:50%; width:24px; height:24px; display:flex; align-items:center; justify-content:center; font-size:12px; border:2px solid #FF5722; color:#fff; box-shadow:0 2px 4px rgba(0,0,0,0.2);">✏️</div>
+      </div>
+
+      <div style="flex: 1; display: flex; justify-content: space-between; align-items: center;">
+        
+        <div style="flex: 1; padding-right: 12px;">
+          <h2 id="mbiz" style="margin:0;">My Business</h2>
+          <p id="m-address" style="font-size:12px; opacity:0.9; margin-top:4px; margin-bottom:0;">Click to add address</p>
+        </div>
+
+        <div style="cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; flex-shrink: 0;" onclick="openProfileEdit()">
+          <div style="background: rgba(255,255,255,0.2); width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+             ✏️
+          </div>
+          <span style="font-size: 10px; font-weight: 700; opacity: 0.9; margin-top: 4px;">Edit</span>
+        </div>
+        
+      </div>
+      
+    </div>
+    
+    <div id="logo-status" style="font-size:11px; color:#fff; font-weight:bold; margin-top:6px; margin-left: 80px;"></div>
+  </div>
+
+  <div class="mwbox">
+    <div>
+      <div class="mw-lbl">Promo Credits</div>
+      <div class="mw-val" id="mwal">--- 🪙</div>
+    </div>
+    <button class="mw-btn" onclick="document.getElementById('mod-credits').classList.add('on')">🎁 Earn Free</button>
+  </div>
+
+  <div class="mbody">
+    <div class="stats">
+      <div class="stat"><div class="stat-v" id="st-a">0</div><div class="stat-l">Active Listings</div></div>
+      <div class="stat"><div class="stat-v" id="st-p">0</div><div class="stat-l">Map Views</div></div>
+      <div class="stat"><div class="stat-v" id="st-v">0</div><div class="stat-l">Store Visits</div></div>
+      <div class="stat"><div class="stat-v" id="st-r">0%</div><div class="stat-l">Visit Rate</div></div>
+    </div>
+
+    <div class="sec-title">🚀 Quick Actions</div>
+    <div class="action-cards">
+      <a href="create.html" class="action-card primary">
+        <div class="action-card-icon">➕</div>
+        <div class="action-card-title">Create Listing</div>
+        <div class="action-card-desc">Post new deal or offer</div>
+      </a>
+      
+      <a href="my-listings.html" class="action-card">
+        <div class="action-card-icon">📋</div>
+        <div class="action-card-title">My Listings</div>
+        <div class="action-card-desc">Manage all offers</div>
+      </a>
+      
+      <a href="qr-tools.html" class="action-card">
+        <div class="action-card-icon">📱</div>
+        <div class="action-card-title">QR Tools</div>
+        <div class="action-card-desc">Standee & analytics</div>
+      </a>
+      
+      <a href="map.html" class="action-card">
+        <div class="action-card-icon">🗺️</div>
+        <div class="action-card-title">View as Customer</div>
+        <div class="action-card-desc">See listings</div>
+      </a>
+    </div>
+
+    <div class="sec-title">⚡ More Tools</div>
+    <div class="quick-actions">
+      <a href="my-listings.html#analytics" class="quick-action">
+        <div class="qa-icon blue"><span>📊</span></div>
+        <div class="qa-content">
+          <div class="qa-title">Analytics Dashboard</div>
+          <div class="qa-desc">Customer journey & insights</div>
+        </div>
+        <div class="qa-arrow">→</div>
+      </a>
+      
+      <a href="qr-tools.html#standee" class="quick-action">
+        <div class="qa-icon or"><span>🖨️</span></div>
+        <div class="qa-content">
+          <div class="qa-title">Print Standee</div>
+          <div class="qa-desc">Generate QR code poster</div>
+        </div>
+        <div class="qa-arrow">→</div>
+      </a>
+       
+    </div>
+  </div>
+</div>
+
+<a href="create.html" class="fab-create" title="Create New Listing">
+  <span class="fab-icon">＋</span> Create Listing
+</a>
+
+<div class="modal" id="mod-credits" onclick="if(event.target===this)this.classList.remove('on')">
+  <div class="msht" style="padding-bottom: 30px;">
+    <div class="mh"></div>
+    <div class="mt" style="font-size:22px;">🎁 Earn Free Credits</div>
+    <p style="font-size:13px;color:var(--gray);margin-bottom:20px;line-height:1.5;">NearPop is 100% free. Earn promo credits to keep your deals live and reach more local customers!</p>
+    
+    <div style="background:var(--card); border:2px solid var(--bdr); border-radius:14px; padding:16px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
+        <div>
+            <div style="font-size:14px; font-weight:800; color:var(--deep); margin-bottom:4px;">Daily Check-In</div>
+            <div style="font-size:12px; color:var(--gray); font-weight:600;">+100 Credits every 24 hours</div>
+        </div>
+        <button id="btn-claim-daily" onclick="window.claimDailyCredits()" style="background:var(--or); color:#fff; border:none; padding:8px 16px; border-radius:10px; font-weight:800; font-size:12px; cursor:pointer;">Claim</button>
+    </div>
+
+    <div style="background:var(--card); border:2px solid var(--bdr); border-radius:14px; padding:16px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
+        <div>
+            <div style="font-size:14px; font-weight:800; color:var(--deep); margin-bottom:4px;">Share With Neighbor</div>
+            <div style="font-size:12px; color:var(--gray); font-weight:600;">+200 Credits once</div>
+        </div>
+        <button id="btn-claim-share" onclick="window.shareAppBonus()" style="background:var(--blue); color:#fff; border:none; padding:8px 16px; border-radius:10px; font-weight:800; font-size:12px; cursor:pointer;">Share</button>
+    </div>
+
+    <button class="btn-lt" style="width:100%; margin-top:8px;" onclick="document.getElementById('mod-credits').classList.remove('on')">Close</button>
+  </div>
+</div>
+
+<div class="modal" id="mod-photo-choice" onclick="if(event.target===this)this.classList.remove('on')">
+  <div class="msht" style="padding-bottom: 30px;">
+    <div class="mh"></div>
+    <div style="text-align: center; margin-bottom: 10px; font-weight: 800; font-size: 16px; color: var(--deep);">Upload Photo</div>
+    <button class="btn-or" onclick="document.getElementById('img-camera').click(); document.getElementById('mod-photo-choice').classList.remove('on');" style="width: 100%; margin-bottom: 12px; font-size: 15px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+      <span style="font-size: 20px;">📸</span> Take Live Photo
+    </button>
+    <button class="btn-lt" onclick="document.getElementById('img-gallery').click(); document.getElementById('mod-photo-choice').classList.remove('on');" style="width: 100%; font-size: 15px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+      <span style="font-size: 20px;">🖼️</span> Choose from Gallery
+    </button>
+    <input type="file" id="img-camera" accept="image/*" capture="environment" style="display:none;">
+    <input type="file" id="img-gallery" accept="image/*" style="display:none;">
+  </div>
+</div>
+
+<div class="modal" id="mod-profile-edit" onclick="if(event.target===this)this.classList.remove('on')">
+  <div class="msht" style="max-width:400px;">
+    <div class="mh"></div>
+    <div class="mt">✏️ Edit Business Profile</div>
+    
+    <div class="edit-grp">
+      <label class="edit-lbl">Business Name *</label>
+      <input type="text" id="edit-mname" class="a-inp" placeholder="e.g. Sharma Sweets" maxlength="100">
+    </div>
+    
+    <div class="edit-grp">
+      <label class="edit-lbl">Business Address *</label>
+      <textarea id="edit-address" class="a-inp" placeholder="e.g. Shop 12, Main Market, Sector 15, Faridabad" maxlength="300" style="min-height:80px; resize:vertical;"></textarea>
+      <div style="font-size:11px; color:var(--gray); margin-top:4px; font-weight:600;">
+        💡 Tip: Include nearby landmarks for better visibility
+      </div>
+    </div>
+    
+    <button class="btn-or" onclick="saveProfile()" style="width:100%; margin-top:8px;">
+      💾 Save Profile
+    </button>
+  </div>
+</div>
+
+<div class="toast" id="toast"><span id="t-ic">✅</span><span id="t-tx"></span></div>
+</div>
+
+<script type="module">
+import { db, auth, LS, SS, toast, cacheGet, cacheSet } from './js/app.js';
+import { sanitizer } from './js/sanitizer.js';
+import { getDoc, getDocs, query, collection, where, updateDoc, doc, setDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
+import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js';
+
+if (!LS('uid') || LS('role') !== 'merchant') { window.location.href = 'index.html'; }
+
+const uid = LS('uid');
+let wallet = LS('wallet')||500;
+
+window.haptic = (ms = 50) => {
+  try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) {}
+};
+
+const logoUrl = LS('logoUrl');
+if (logoUrl) {
+  const mLogo = document.getElementById('m-logo');
+  mLogo.src = logoUrl;
+  mLogo.style.display = 'block';
+  const ph = document.getElementById('m-logo-placeholder');
+  if(ph) ph.style.display = 'none';
+}
+
+let userPlan = LS('plan') || 'free';
+updateProfileDisplay();
+document.getElementById('mwal').textContent = Math.floor(wallet) + ' 🪙';
+
+let currentPhotoTarget = '';
+
+window.openPhotoChoice = (target) => {
+  window.haptic(30);
+  currentPhotoTarget = target;
+  document.getElementById('mod-photo-choice').classList.add('on');
+};
+
+window.openProfileEdit = () => {
+  window.haptic(30);
+  const currentName = LS('mname') || 'My Business';
+  const currentAddress = LS('maddress') || '';
+  document.getElementById('edit-mname').value = currentName;
+  document.getElementById('edit-address').value = currentAddress;
+  document.getElementById('mod-profile-edit').classList.add('on');
+};
+
+window.saveProfile = async () => {
+  window.haptic(50);
+  const rawName = document.getElementById('edit-mname').value;
+  const rawAddress = document.getElementById('edit-address').value;
+  
+  const mname = sanitizer.sanitizeText(rawName, { maxLength: 100, minLength: 3, allowNewlines: false });
+  const maddress = sanitizer.sanitizeText(rawAddress, { maxLength: 300, allowNewlines: true });
+  
+  if (!mname || mname.length < 3) return toast('⚠️', 'Business name must be at least 3 characters');
+  if (!maddress || maddress.length < 10) return toast('⚠️', 'Please enter a complete address');
+  
+  toast('⏳', 'Saving profile...');
+  
+  try {
+    await updateDoc(doc(db, 'users', uid), { mname, maddress, profileUpdatedAt: serverTimestamp() });
+    SS('mname', mname);
+    SS('maddress', maddress);
+    updateProfileDisplay();
+    document.getElementById('mod-profile-edit').classList.remove('on');
+    toast('✅', 'Profile updated successfully!');
+  } catch (error) {
+    console.error('[Profile] Save error:', error);
+    toast('❌', 'Failed to save. Please try again.');
+  }
+};
+
+function updateProfileDisplay() {
+  const mname = LS('mname') || 'My Business';
+  const maddress = LS('maddress') || '';
+  const safeName = sanitizer.sanitizeText(mname, { maxLength: 100 });
+  const safeAddress = sanitizer.sanitizeText(maddress, { maxLength: 300 });
+  
+  const mbizEl = document.getElementById('mbiz');
+  mbizEl.textContent = safeName;
+  
+  if (userPlan === 'premium') {
+    const crown = document.createElement('span');
+    crown.style.fontSize = '14px';
+    crown.textContent = ' 👑';
+    mbizEl.appendChild(crown);
+  }
+  
+  const addressEl = document.getElementById('m-address');
+  if (safeAddress) {
+    addressEl.textContent = safeAddress;
+    addressEl.style.opacity = '0.9';
+  } else {
+    addressEl.textContent = 'Click to add address';
+    addressEl.style.opacity = '0.6';
+  }
+}
+
+const handleImageSelection = (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  toast('⏳', 'Processing photo...');
+  const reader = new FileReader();
+  reader.onload = (event) => {
+    const img = new Image();
+    img.onload = async () => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const size = Math.min(img.width, img.height);
+      const sx = (img.width - size) / 2;
+      const sy = (img.height - size) / 2;
+      canvas.width = 400;
+      canvas.height = 400;
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(0, 0, 400, 400);
+      ctx.drawImage(img, sx, sy, size, size, 0, 0, 400, 400);
+      const compressedB64 = canvas.toDataURL('image/webp', 0.8);
+      e.target.value = '';
+      await uploadLogoToImgBB(compressedB64);
+    };
+    img.src = event.target.result;
+  };
+  reader.readAsDataURL(file);
+};
+
+document.getElementById('img-camera').addEventListener('change', handleImageSelection);
+document.getElementById('img-gallery').addEventListener('change', handleImageSelection);
+
+async function uploadToImgBB(base64Str) {
+  const apiKey = "4dd5a19986e0ffeabe66a2eb0114d358";
+  const formData = new FormData();
+  formData.append("image", base64Str.split(',')[1]);
+  const res = await fetch(`https://api.imgbb.com/1/upload?key=${apiKey}`, { method: "POST", body: formData });
+  const data = await res.json();
+  if (data.success) return data.data.url;
+  throw new Error("ImgBB rejection");
+}
+
+async function uploadLogoToImgBB(b64) {
+  document.getElementById('logo-status').textContent = '⏳ Uploading logo...';
+  try {
+    const url = await uploadToImgBB(b64);
+    await updateDoc(doc(db, 'users', uid), { logoUrl: url });
+    localStorage.setItem('np_logoUrl', url);
+    const mLogo = document.getElementById('m-logo');
+    mLogo.src = url;
+    mLogo.style.display = 'block';
+    document.getElementById('m-logo-placeholder').style.display = 'none';
+    document.getElementById('logo-status').textContent = '';
+    toast('✅', 'Shop logo updated!');
+  } catch (err) {
+    document.getElementById('logo-status').textContent = '❌ Upload failed';
+    toast('❌', 'Logo upload failed. Check network.');
+  }
+}
+
+async function loadDashboard() {
+  try {
+    const userDocRef = doc(db, 'users', uid);
+    const userDocSnap = await getDoc(userDocRef);
+    const userData = userDocSnap.exists() ? userDocSnap.data() : {};
+    
+    if (userData.logoUrl) {
+      localStorage.setItem('np_logoUrl', userData.logoUrl);
+      const mLogo = document.getElementById('m-logo');
+      mLogo.src = userData.logoUrl;
+      mLogo.style.display = 'block';
+      const ph = document.getElementById('m-logo-placeholder');
+      if(ph) ph.style.display = 'none';
+    }
+    
+    if (userData.mname) SS('mname', userData.mname);
+    if (userData.maddress) {
+      SS('maddress', userData.maddress);
+      updateProfileDisplay();
+    }
+    
+    const snap = await getDocs(query(collection(db,'listings'), where('uid','==',uid)));
+    const listings = snap.docs.map(d => ({id:d.id,...d.data()}));
+    
+    // Cache listings so my-listings.html can use them
+    cacheSet(listings);
+    
+    const activeCount = listings.filter(l=>l.status!=='paused').length;
+    const totMapViews = listings.reduce((a,l)=>a+(l.popups||0), 0);
+    const totVisits = listings.reduce((a,l)=>a+(l.visits||0), 0);
+    const visitRate = totMapViews > 0 ? ((totVisits / totMapViews) * 100).toFixed(1) + '%' : '0%';
+    
+    document.getElementById('st-a').textContent = activeCount;
+    document.getElementById('st-p').textContent = totMapViews;
+    document.getElementById('st-v').textContent = totVisits;
+    document.getElementById('st-r').textContent = visitRate;
+  } catch(e) {
+    console.error('[Dashboard] Load error:', e);
+  }
+}
+
+window.claimDailyCredits = async () => {
+  window.haptic(50);
+  const lastClaim = LS('lastDaily');
+  const now = Date.now();
+  const DAY_MS = 86400000;
+  
+  if (lastClaim && now - parseInt(lastClaim) < DAY_MS) {
+    const hoursLeft = Math.ceil((DAY_MS - (now - parseInt(lastClaim))) / 3600000);
+    return toast('⏳', `Come back in ${hoursLeft}h for your next reward!`);
+  }
+  
+  const btn = document.getElementById('btn-claim-daily');
+  btn.textContent = 'Claiming...';
+  
+  try {
+    const newWallet = wallet + 100;
+    await setDoc(doc(db, 'users', uid), { wallet: newWallet }, { merge: true });
+    wallet = newWallet;
+    SS('wallet', wallet);
+    SS('lastDaily', String(now));
+    document.getElementById('mwal').textContent = Math.floor(wallet) + ' 🪙';
+    toast('🎁', '+100 Credits claimed!');
+    btn.textContent = 'Claimed ✅';
+    setTimeout(() => { btn.textContent = 'Claim'; }, 3000);
+  } catch(e) {
+    toast('❌', 'Claim failed. Try again.');
+    btn.textContent = 'Claim';
+  }
+};
+
+window.shareAppBonus = async () => {
+  window.haptic(50);
+  if (LS('shareBonus')) return toast('✅', 'You already claimed the share bonus!');
+  
+  const shareData = {
+    title: 'NearPop Merchant',
+    text: 'I use NearPop to get local customers for free. Check it out!',
+    url: 'https://nearpop.in'
+  };
+  
+  const shareProcess = async () => {
+    try {
+      const newWallet = wallet + 200;
+      await setDoc(doc(db, 'users', uid), { wallet: newWallet }, { merge: true });
+      wallet = newWallet;
+      SS('wallet', wallet);
+      SS('shareBonus', 'true');
+      document.getElementById('mwal').textContent = Math.floor(wallet) + ' 🪙';
+      toast('🎉', '+200 Credits earned!');
+      document.getElementById('btn-claim-share').textContent = 'Claimed ✅';
+    } catch(e) {
+      toast('❌', 'Bonus claim failed.');
+    }
+  };
+  
+  if (navigator.share) {
+    try {
+      await navigator.share(shareData);
+      await shareProcess();
+    } catch(e) { }
+  } else {
+    navigator.clipboard.writeText('https://nearpop.in');
+    toast('🔗', 'Share link copied to clipboard!');
+    await shareProcess();
+  }
+};
+
+window.logout = async () => {
+  window.haptic(50);
+  try { await signOut(auth); } catch(e) { }
+  ['uid','role','mname','maddress','wallet','phone', 'plan', 'logoUrl'].forEach(k=>localStorage.removeItem('np_'+k));
+  sessionStorage.clear();
+  window.location.href = 'index.html';
+};
+
+window.toast = toast;
+onAuthStateChanged(auth, (user) => { if (user) { loadDashboard(); } });
+</script>
+</body>
+</html>

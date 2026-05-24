@@ -1,0 +1,32 @@
+<style>
+/* Active indicator bar — not in shared.css */
+.nt.on .ni { transform: scale(1.15); transition: transform 0.2s; }
+.nt.on::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 20px;
+  height: 3px;
+  border-radius: 0 0 3px 3px;
+  background: var(--or);
+}
+.nt { position: relative; }
+</style>
+
+<nav class="bnav">
+  <button class="nt" id="nav-map" onclick="window.go('map.html')"><span class="ni">🗺️</span><span class="nl">Map</span></button>
+  <button class="nt" id="nav-home" onclick="window.go('home.html')"><span class="ni">📋</span><span class="nl">Nearby</span></button>
+  <button class="nt" id="nav-profile" onclick="window.go('profile.html')"><span class="ni">👤</span><span class="nl">Profile</span></button>
+  <button class="nt" id="nav-merchant" style="display:none;" onclick="window.go('merchant.html')"><span class="ni">🏪</span><span class="nl">Panel</span></button>
+</nav>
+
+<script>
+(function() {
+  var page = location.pathname.split('/').pop() || 'map.html';
+  var map = { 'map.html':'nav-map', 'home.html':'nav-home', 'profile.html':'nav-profile', 'merchant.html':'nav-merchant' };
+  var id = map[page];
+  if (id) { var el = document.getElementById(id); if (el) el.classList.add('on'); }
+})();
+</script>

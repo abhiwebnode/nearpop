@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="NearPop — QR Tools">
+<meta name="theme-color" content="#FF5722">
+<meta name="color-scheme" content="light dark"> 
+<meta name="mobile-web-app-capable" content="yes">
+<title>NearPop — QR Tools</title>
+<link rel="manifest" href="manifest.json">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800;900&family=Syne:wght@700;800&display=swap">
+<link rel="stylesheet" href="css/shared.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+#wrap{display:flex;flex-direction:column;height:100vh;height:100dvh;background:var(--bg-body)}
+
+.page-header{background:#FF5722;padding:16px;color:#fff;flex-shrink:0;box-shadow:0 2px 12px rgba(255,87,34,.3);display:flex;align-items:center;gap:12px}
+.back-btn{width:40px;height:40px;border-radius:12px;background:rgba(255,255,255,.2);color:#fff;border:none;display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer}
+.page-title{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;flex:1}
+
+.page-body{flex:1;overflow-y:auto;padding:16px 16px 90px}
+
+.section{margin-bottom:24px}
+.section-title{font-size:16px;font-weight:800;color:var(--deep);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+
+.qr-card{background:var(--bg-app);border-radius:16px;padding:20px;border:1px solid var(--bdr);box-shadow:0 4px 12px rgba(0,0,0,.04);text-align:center}
+.qr-desc{font-size:13px;color:var(--gray);margin-bottom:16px;font-weight:600;line-height:1.5}
+
+.btn-grid{display:grid;gap:10px;margin-bottom:16px}
+.qr-btn{padding:14px 20px;border-radius:12px;font-size:14px;font-weight:800;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;font-family:inherit;transition:transform 0.2s}
+.qr-btn:active{transform:scale(0.97)}
+.qr-btn.primary{background:var(--deep);color:#fff}
+.qr-btn.secondary{background:var(--light);color:var(--deep)}
+
+.stat-row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px dashed var(--bdr)}
+.stat-row:last-child{border-bottom:none}
+.stat-icon{font-size:18px;margin-right:8px}
+.stat-title{font-size:13px;font-weight:800;color:var(--deep)}
+.stat-sub{font-size:10px;color:var(--gray);font-weight:600;display:block;margin-top:2px}
+.stat-val{font-size:18px;font-weight:900;color:var(--or)}
+
+.info-box{background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.3);border-radius:12px;padding:14px;margin-top:16px}
+.info-box p{font-size:12px;color:var(--blue);font-weight:600;line-height:1.6;margin:0}
+.info-box strong{color:var(--deep)}
+
+@media (prefers-color-scheme: dark) {
+  .qr-btn.primary { background: #F8FAFC; color: #0F172A; }
+  .qr-btn.secondary { background: #1E293B; color: #F8FAFC; border: 1px solid #334155; }
+  .info-box { background: rgba(59,130,246,0.08); border-color: rgba(59,130,246,0.2); }
+  .info-box p { color: #93C5FD; }
+  .stat-row { border-bottom-color: #334155; }
+  .toast { background: #1E293B !important; color: #F8FAFC !important; border: 1px solid #334155 !important; }
+}
+</style>
+</head>
+<body>
+<div id="app-shell"><div id="wrap">
+  <div class="page-header">
+    <button class="back-btn" onclick="window.location.href='merchant.html'">←</button>
+    <div class="page-title">📱 QR Tools</div>
+  </div>
+
+  <div class="page-body">
+    <div class="section" id="standee">
+      <div class="section-title">🖨️ QR Standee Generator</div>
+      <div class="qr-card">
+        <p class="qr-desc">Print a permanent QR code that automatically routes customers to your live deals. Perfect for counter displays, windows, or anywhere customers can scan.</p>
+        <div class="btn-grid">
+          <button class="qr-btn primary" onclick="window.generatePermanentStandee('A5')">
+            <span style="font-size:20px;">🖨️</span> Show on Screen
+          </button>
+          <button class="qr-btn secondary" onclick="window.generatePermanentStandee('A4')">
+            <span style="font-size:20px;">🖨️</span> Show / Print (A4 Size)
+          </button>
+          <button class="qr-btn secondary" onclick="window.showStoreQR()">
+            <span style="font-size:20px;">📱</span> Show Store QR (In-store)
+          </button>
+        </div>
+        <div class="info-box">
+          <p><strong>💡 Pro Tip:</strong> Place this QR code at your entrance, counter, or menu board. Customers scan it to see all your active deals instantly on NearPop!</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">📊 QR Analytics</div>
+      <div class="qr-card">
+        <div class="stat-row">
+          <div>
+            <span class="stat-title"><span class="stat-icon">📷</span> Total Scans</span>
+            <span class="stat-sub">All people who scanned your QR</span>
+          </div>
+          <div class="stat-val" id="qr-scan">0</div>
+        </div>
+        <div class="stat-row">
+          <div>
+            <span class="stat-title"><span class="stat-icon">🌟</span> New Users Acquired</span>
+            <span class="stat-sub">First-time NearPop signups</span>
+          </div>
+          <div class="stat-val" style="color:var(--grn)" id="qr-new">0</div>
+        </div>
+        <div class="stat-row">
+          <div>
+            <span class="stat-title"><span class="stat-icon">🔄</span> Returning Users</span>
+            <span class="stat-sub">Existing users returning</span>
+          </div>
+          <div class="stat-val" style="color:var(--blue)" id="qr-ret">0</div>
+        </div>
+        <div class="stat-row">
+          <div>
+            <span class="stat-title"><span class="stat-icon">👀</span> Store Menu Opens</span>
+            <span class="stat-sub">Viewed your digital storefront</span>
+          </div>
+          <div class="stat-val" style="color:var(--deep)" id="qr-open">0</div>
+        </div>
+        <div class="info-box" style="margin-top:16px;">
+          <p><strong>📈 Analytics Note:</strong> QR analytics update in real-time. Share your QR code widely to attract more foot traffic!</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="mod-qr" onclick="if(event.target===this)this.classList.remove('on')">
+  <div class="msht" style="align-items: center; text-align: center; padding-bottom: 30px;">
+    <div class="mh"></div>
+    <h3 style="color: var(--deep); margin-bottom: 5px; font-family: 'Syne', sans-serif;">Your Store QR</h3>
+    <p style="font-size: 12px; color: var(--gray); margin-bottom: 20px; font-weight: 600;">Show this to customers in-store</p>
+    <div id="qrcode-box" style="background: white; padding: 15px; border-radius: 12px; display: inline-block; box-shadow: 0 4px 15px rgba(0,0,0,0.1);"></div>
+    <button class="btn-lt" onclick="document.getElementById('mod-qr').classList.remove('on')" style="width: 100%; margin-top: 20px;">Close</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"><span id="t-ic">✅</span><span id="t-tx"></span></div>
+</div>
+
+<script type="module">
+import { db, LS, toast } from './js/app.js';
+import { sanitizer } from './js/sanitizer.js';
+import { getDoc, doc } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
+
+if (!LS('uid') || LS('role') !== 'merchant') { window.location.href = 'index.html'; }
+
+const uid = LS('uid');
+
+window.haptic = (ms = 50) => {
+  try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) {}
+};
+
+async function loadQRAnalytics() {
+  try {
+    const userDocRef = doc(db, 'users', uid);
+    const userDocSnap = await getDoc(userDocRef);
+    const userData = userDocSnap.exists() ? userDocSnap.data() : {};
+    
+    document.getElementById('qr-scan').textContent = userData.qrScans || 0;
+    document.getElementById('qr-new').textContent = userData.qrNew || 0;
+    document.getElementById('qr-ret').textContent = userData.qrRet || 0;
+    document.getElementById('qr-open').textContent = userData.qrOpens || 0;
+  } catch(e) {
+    console.error('[QR] Load error:', e);
+  }
+}
+
+// 1. QUICK SHOW QR
+window.showStoreQR = () => {
+  window.haptic(30);
+  const merchantUid = LS('uid');
+  if(!merchantUid) return alert("Error: Merchant not logged in.");
+  
+  const targetUrl = `https://nearpop.in/store.html?mid=${merchantUid}&utm_source=qr_standee&utm_medium=offline`;
+  
+  const box = document.getElementById('qrcode-box');
+  box.innerHTML = '';
+  new QRCode(box, {
+    text: targetUrl,
+    width: 220,
+    height: 220,
+    colorDark : "#000000",
+    colorLight : "#ffffff",
+    correctLevel : QRCode.CorrectLevel.H
+  });
+  document.getElementById('mod-qr').classList.add('on');
+};
+
+
+// 2. GENERATE PERMANENT STANDEE (Screen/Print View - Handles A4 and A5 Dynamically)
+window.generatePermanentStandee = (paperSize) => {
+  const merchantUid = LS('uid'); 
+  const targetUrl = `https://nearpop.in/store.html?mid=${merchantUid}&utm_source=qr_standee&utm_medium=offline`;
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=600x600&data=${encodeURIComponent(targetUrl)}&margin=10`;
+
+  const currLogoUrl = LS('logoUrl');
+  const safeLogoUrl = currLogoUrl ? sanitizer.sanitizeUrl(currLogoUrl) : '';
+  const shopLogoHtml = safeLogoUrl 
+    ? `<img src="${safeLogoUrl}" class="shop-logo">` 
+    : '';
+    
+  const safeMname = sanitizer.sanitizeText(LS('mname') || 'Our Store', { maxLength: 100 });
+  
+  // Adjust scaling slightly based on A4 vs A5 to ensure it always looks perfect
+  const isA5 = paperSize === 'A5';
+
+  const printWindow = window.open('', '_blank');
+  
+  printWindow.document.write(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>NearPop Store Standee - ${paperSize}</title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <link rel="preconnect" href="https://fonts.googleapis.com">
+      <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+      <style>
+        body { margin: 0; background: #E5E7EB; font-family: 'Nunito', sans-serif; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        
+        /* The Card Wrapper */
+        .standee { width: 100%; max-width: ${isA5 ? '500px' : '650px'}; background: #ffffff; border-radius: 24px; box-shadow: 0 16px 40px rgba(0,0,0,0.15); overflow: hidden; display: flex; flex-direction: column; }
+        
+        /* Theme Gradient Header */
+        .brand-header { background: linear-gradient(135deg, #FF5722, #E64A19); padding: ${isA5 ? '20px 15px' : '30px 20px'}; text-align: center; }
+        .brand-header img { height: ${isA5 ? '40px' : '50px'}; filter: brightness(0) invert(1); object-fit: contain; }
+        
+        /* Main Body Content */
+        .content { padding: ${isA5 ? '30px 15px' : '40px 20px'}; display: flex; flex-direction: column; align-items: center; text-align: center; flex: 1; }
+        .shop-logo { max-height: ${isA5 ? '70px' : '90px'}; max-width: 80%; object-fit: contain; border-radius: 16px; margin-bottom: 20px; border: 2px solid #E5E7EB; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        h1 { font-family: 'Syne', sans-serif; font-size: clamp(24px, 6vw, 42px); color: #0F0F13; margin: 0 0 30px; font-weight: 800; line-height: 1.2; word-break: break-word; }
+        h1 span { color: #FF5722; }
+        
+        .qr-wrapper { background: #fff; padding: 25px; border-radius: 28px; border: 6px solid #F3F4F6; box-shadow: 0 10px 30px rgba(0,0,0,0.06); display: inline-block; margin-bottom: 30px; }
+        .qr-wrapper img { width: 100%; max-width: ${isA5 ? '220px' : '320px'}; height: auto; aspect-ratio: 1/1; display: block; object-fit: contain; }
+        
+        .scan-title { font-size: clamp(20px, 5vw, 32px); font-weight: 900; color: #FF5722; margin: 0 0 8px; }
+        .scan-sub { font-size: clamp(14px, 3vw, 18px); color: #6B7280; font-weight: 700; margin: 0; }
+        
+        /* High-End App Promo Footer */
+        .footer { background: #111827; padding: ${isA5 ? '25px 30px' : '35px 40px'}; display: flex; justify-content: space-between; align-items: center; gap: 20px; flex-wrap: wrap; }
+        
+        .footer-text-col { display: flex; flex-direction: column; align-items: flex-start; text-align: left; gap: 10px; flex: 1; min-width: 180px; }
+        .f-title { color: #ffffff; font-size: clamp(16px, 4vw, 22px); font-weight: 800; margin: 0; line-height: 1.2; }
+        .f-desc { color: #9CA3AF; font-size: 14px; font-weight: 600; margin: 0; }
+        .f-badge { height: ${isA5 ? '35px' : '45px'}; margin-top: 4px; object-fit: contain; }
+        
+        .footer-qr-col { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+        .footer-qr-col img { width: ${isA5 ? '60px' : '75px'}; height: ${isA5 ? '60px' : '75px'}; background: #fff; padding: 6px; border-radius: 12px; }
+        .footer-qr-col span { color: #ffffff; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }
+
+        @media (max-width: 480px) {
+           body { padding: 10px; }
+           .footer { padding: 30px 20px; flex-direction: column; text-align: center; justify-content: center; }
+           .footer-text-col { align-items: center; text-align: center; }
+        }
+
+        /* Direct Print Directives */
+        @media print {
+           @page { size: ${paperSize} portrait; margin: 0.5in; }
+           body { background: #fff; padding: 0; display: block; }
+           .standee { box-shadow: none; border-radius: 0; max-width: 100%; margin: 0; border: none; height: 100%; justify-content: space-between; }
+        }
+      </style>
+    </head>
+    <body>
+      <div class="standee">
+        
+        <div class="brand-header">
+          <img src="https://nearpop.in/icons/logo.png" alt="NearPop">
+        </div>
+        
+        <div class="content">
+          ${shopLogoHtml}
+          <h1>Welcome to <br><span>${safeMname}</span></h1>
+          
+          <div class="qr-wrapper">
+             <img src="${qrUrl}" alt="Scan Me">
+          </div>
+          
+          <div class="scan-title">📱 Scan to see today's deals!</div>
+          <div class="scan-sub">Point your camera at the QR code above</div>
+        </div>
+        
+        <div class="footer">
+          <div class="footer-text-col">
+             <h3 class="f-title">Get the NearPop App</h3>
+             <p class="f-desc">Discover and save more local deals around you.</p>
+             <img src="https://nearpop.in/icons/Google_Play_Store.png" class="f-badge" alt="Get it on Google Play">
+          </div>
+          <div class="footer-qr-col">
+             <img src="https://nearpop.in/icons/playstore-qr-code.png" alt="App Download QR">
+             <span>Scan for App</span>
+          </div>
+        </div>
+
+      </div>
+    </body>
+    </html>
+  `);
+  printWindow.document.close();
+};
+
+loadQRAnalytics();
+</script>
+</body>
+</html>
