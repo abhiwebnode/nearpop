@@ -2085,6 +2085,7 @@ function redraw() {
   }
 
   renderCards();
+  if (gpsConfirmed) checkForNewNearbyListings({ isStationary: true });
 }
 
 window.previewPin = (l) => {
@@ -2390,8 +2391,8 @@ function showNotif(l) {
   if (matchingCard) {
     // Reset all other cards
     document.querySelectorAll('.hcd').forEach(c => {
-       c.style.border = '1px solid rgba(0,0,0,0.05)';
-       c.style.boxShadow = '0 4px 15px rgba(0,0,0,0.03)';
+       c.style.border = '';     // Let CSS handle the theme mode
+       c.style.boxShadow = '';  // Let CSS handle the theme mode
     });
     // Highlight the active nearest card
     matchingCard.style.border = `2px solid ${col}`;
