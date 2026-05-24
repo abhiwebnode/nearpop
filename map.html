@@ -1802,6 +1802,7 @@ function startWatch() {
           if (!hasLiveCentered) {
             window._map.flyTo([lat, lng], 15, { duration: 0.5 });
             hasLiveCentered = true;
+			window.forceRefresh();
           }
           gpsConfirmed = true;
           redraw();
@@ -1859,6 +1860,7 @@ function basicGPSFallback() {
       if (!hasLiveCentered) {
         window._map.flyTo([loc.lat, loc.lng], 15, { duration: 0.5 });
         hasLiveCentered = true;
+		window.forceRefresh();
       }
       gpsConfirmed = true;
       redraw();
