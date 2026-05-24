@@ -2419,7 +2419,7 @@ function showNotif(l) {
   };
   
   document.getElementById('notif').classList.add('on');
-  window.haptic([100, 50, 100]);
+  window.haptic([100, 50, 100, 50, 100]);
   clearTimeout(window._nt); 
   window._nt = setTimeout(hideNotif, 8000);
 }
