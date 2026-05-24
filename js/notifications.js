@@ -5,7 +5,7 @@
 // ║  ✅ Features: Smart linger, priority scoring, real notifications║
 // ╚══════════════════════════════════════════════════════════════════╝
 
-import { db, LS, SS, distM } from './app.js';
+import { db, LS, SS, distM, app } from './app.js';
 import { updateDoc, doc, increment } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
 import { getMessaging, getToken, onMessage } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-messaging.js';
 
@@ -168,12 +168,12 @@ class SmartNotificationEngine {
             const registration = await navigator.serviceWorker.register('/sw.js');
             console.log('[NotifEngine] Service Worker registered');
 
-            // Initialize Firebase Messaging
-            this.messaging = getMessaging();
+            // Initialize Firebase Messaging with app instance
+            this.messaging = getMessaging(app);
 
-            // Get FCM token with VAPID key
+            // Get FCM token with VAPID key (must match Firebase Console → Project Settings → Cloud Messaging)
             this.fcmToken = await getToken(this.messaging, {
-                vapidKey: 'BJWz7jdnCy1hb-E8M-7-Q2wanQdNY46Rw7T9I8g_EPr02m-AYAxhGCM7QBm7DpL0WgE-nSnud5mqBK6MWd4w6T0',
+                vapidKey: 'BKybN5UdJys9wB137592emPk83awpfTy_97V45LeM3MByP6FZA3fPhXqY6N1k5vP5--CUKXrnWUmeyG7dFLJMwQ',
                 serviceWorkerRegistration: registration
             });
 
@@ -204,11 +204,17 @@ class SmartNotificationEngine {
         if (!uid) return;
 
         try {
+            // Wait for auth to be ready before writing to Firestore
+            const { getAuth } = await import('https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js');
+            const auth = getAuth(app);
+            if (!auth.currentUser) {
+                console.warn('[NotifEngine] Auth not ready, skipping FCM token save');
+                return;
+            }
+
             await updateDoc(doc(db, 'users', uid), {
                 fcmToken: token,
-                fcmTokenUpdated: new Date().toISOString(),
-                platform: this.detectPlatform(),
-                userAgent: navigator.userAgent
+                fcmTokenUpdated: new Date().toISOString()
             });
             console.log('[NotifEngine] FCM token saved to Firestore');
         } catch (error) {
@@ -741,14 +747,13 @@ class SmartNotificationEngine {
                 this.writeQueue.enqueue(async () => {
                     try {
                         await updateDoc(doc(db, 'users', deal.uid), {
-                            wallet: increment(-0.1),
-                            totalSpent: increment(0.1),
-                            lastChargeAt: now
+                            wallet: increment(-0.1)
+                            // Only 'wallet' field — Firestore rule requires hasOnly(['wallet'])
                         });
                         console.log(`[NotifEngine] Charged merchant: ${deal.uid} (₹0.10)`);
                     } catch (error) {
                         console.error(`[NotifEngine] Failed to charge merchant ${deal.uid}:`, error);
-                        throw error; // Re-throw for retry mechanism
+                        throw error;
                     }
                 });
             }
