@@ -1038,6 +1038,30 @@
   }
 }
 
+/* Popup pause/play toggle */
+.popup-toggle {
+  position: fixed;
+  bottom: 90px;
+  left: 12px;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.9);
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(0,0,0,0.05);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  cursor: pointer;
+  z-index: 800;
+  transition: transform 0.1s;
+}
+.popup-toggle:active { transform: scale(0.9); }
+.popup-toggle.paused { opacity: 0.5; }
+
 /* ═══════════════════════════════════════════════════════════════ */
 /* NOTIFICATION PERMISSION MODAL */
 /* ═══════════════════════════════════════════════════════════════ */
@@ -1337,6 +1361,12 @@
   .app-sheet-handle {
     background: #374151;
   }
+  
+  .popup-toggle {
+    background: rgba(31, 41, 55, 0.9) !important;
+    border-color: #374151 !important;
+    color: #F9FAFB !important;
+  }
 }
 
 </style>
@@ -1453,6 +1483,8 @@
   </div> 
   <div id="nav-placeholder"></div>
 
+  <button class="popup-toggle" id="popup-toggle" onclick="window.togglePopups()" title="Pause/Play notifications">🔔</button>
+  
   <div class="mnotif" id="notif">
     <div style="display:flex; gap:12px; margin-bottom:10px;">
       <div id="n-ic" style="width:48px; height:48px; border-radius:12px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:24px; border:1px solid #E5E7EB;"></div>
@@ -1757,6 +1789,7 @@ function gpsDistM(lat1, lng1, lat2, lng2) {
 
 // ✅ GPS Manager Integration
 let gpsManager = null;
+let gpsConfirmed = false;
 
 function startWatch() {
   if (!gpsManager) {
@@ -1780,7 +1813,9 @@ function startWatch() {
               window._map.flyTo([lat, lng], 15, { duration: 0.5 });
               hasLiveCentered = true;
             }
+            gpsConfirmed = true;
             redraw();
+            checkForNewNearbyListings();
           }
           
           if (filteredList && filteredList.length > 0) {
@@ -1814,7 +1849,9 @@ function basicGPSFallback() {
         window._map.flyTo([loc.lat, loc.lng], 15, { duration: 0.5 });
         hasLiveCentered = true;
       }
+      gpsConfirmed = true;
       redraw();
+      checkForNewNearbyListings();
     },
     handleGeoError,
     { enableHighAccuracy: true, timeout: 12000 }
@@ -2037,9 +2074,6 @@ function redraw() {
   }
 
   renderCards();
-  
-  // ✅ NEW: Continuous in-app popup system
-  checkForNewNearbyListings();
 }
 
 window.previewPin = (l) => {
@@ -2540,79 +2574,106 @@ window.addEventListener('beforeunload', () => {
 });
 
 // ═══════════════════════════════════════════════════════════════════
-// CONTINUOUS IN-APP POPUP NOTIFICATION SYSTEM
+// CONTINUOUS IN-APP POPUP NOTIFICATION SYSTEM (FIXED)
 // ═══════════════════════════════════════════════════════════════════
 
 const POPUP_COOLDOWN = 10000;        // 10 seconds between popups
 const AUTO_DISMISS_TIME = 3000;      // 3 seconds auto-dismiss
-const PROXIMITY_THRESHOLD = 500;     // 500m radius for high-priority popups
+const PROXIMITY_THRESHOLD = 500;     // 500m radius
+const MAX_QUEUE_SIZE = 3;            // Max 3 popups queued at a time
 
 let shownInAppPopups = new Set();
 let lastInAppPopupTime = 0;
 let popupQueue = [];
 let isPopupActive = false;
 let currentPopupElement = null;
+let popupsPaused = false;
+let popupTimer = null;
 
-// Main function - called when filteredList updates
-window.checkForNewNearbyListings = function() {
-  if (!filteredList || filteredList.length === 0 || !loc) return;
+// Pause/Play toggle
+window.togglePopups = () => {
+  popupsPaused = !popupsPaused;
+  const btn = document.getElementById('popup-toggle');
+  if (btn) {
+    btn.textContent = popupsPaused ? '🔕' : '🔔';
+    btn.classList.toggle('paused', popupsPaused);
+  }
   
-  // Find listings that haven't been shown yet and are within close proximity
+  if (popupsPaused) {
+    // Dismiss current popup if showing
+    if (currentPopupElement) dismissPopup(currentPopupElement);
+    if (popupTimer) { clearTimeout(popupTimer); popupTimer = null; }
+    toast('🔕', window.lang === 'hi' ? 'पॉपअप रोक दिए गए' : 'Popups paused');
+  } else {
+    toast('🔔', window.lang === 'hi' ? 'पॉपअप शुरू किए गए' : 'Popups resumed');
+    processPopupQueue();
+  }
+};
+
+// Main function - called ONLY from GPS updates (not category/radius changes)
+window.checkForNewNearbyListings = function() {
+  if (!filteredList || filteredList.length === 0 || !loc || !gpsConfirmed) return;
+  if (popupsPaused) return;
+  
+  // Find listings within proximity that haven't been shown
   const unseenNearby = filteredList.filter(listing => {
     if (shownInAppPopups.has(listing.id)) return false;
-    
+    if (popupQueue.find(l => l.id === listing.id)) return false;
     const dist = distM(loc.lat, loc.lng, listing.lat, listing.lng);
     return dist <= PROXIMITY_THRESHOLD;
   });
   
-  // Add to queue (avoid duplicates)
-  unseenNearby.forEach(listing => {
-    if (!popupQueue.find(l => l.id === listing.id)) {
-      popupQueue.push(listing);
-    }
+  // Sort by distance, take only MAX_QUEUE_SIZE
+  unseenNearby.sort((a, b) => {
+    return distM(loc.lat, loc.lng, a.lat, a.lng) - distM(loc.lat, loc.lng, b.lat, b.lng);
   });
   
-  // Sort queue by distance (nearest first)
-  popupQueue.sort((a, b) => {
-    const distA = distM(loc.lat, loc.lng, a.lat, a.lng);
-    const distB = distM(loc.lat, loc.lng, b.lat, b.lng);
-    return distA - distB;
-  });
+  const slotsAvailable = MAX_QUEUE_SIZE - popupQueue.length;
+  if (slotsAvailable > 0) {
+    popupQueue.push(...unseenNearby.slice(0, slotsAvailable));
+  }
   
-  // Try to show next popup
   processPopupQueue();
 };
 
-// Process the popup queue
+// Process queue with cooldown
 function processPopupQueue() {
-  if (isPopupActive || popupQueue.length === 0) return;
+  if (isPopupActive || popupQueue.length === 0 || popupsPaused) return;
   
   const now = Date.now();
   const timeSinceLastPopup = now - lastInAppPopupTime;
   
-  // Respect 10-second cooldown
   if (timeSinceLastPopup < POPUP_COOLDOWN) {
-    setTimeout(processPopupQueue, POPUP_COOLDOWN - timeSinceLastPopup);
+    if (popupTimer) clearTimeout(popupTimer);
+    popupTimer = setTimeout(processPopupQueue, POPUP_COOLDOWN - timeSinceLastPopup);
     return;
   }
   
-  // Get next listing from queue
   const listing = popupQueue.shift();
+  
+  // Re-verify distance before showing (user may have moved away)
+  if (loc && gpsConfirmed) {
+    const currentDist = distM(loc.lat, loc.lng, listing.lat, listing.lng);
+    if (currentDist > PROXIMITY_THRESHOLD * 2) {
+      // User moved away — skip this one
+      shownInAppPopups.add(listing.id);
+      processPopupQueue();
+      return;
+    }
+  }
+  
   showInAppPopup(listing);
   shownInAppPopups.add(listing.id);
   lastInAppPopupTime = now;
 }
 
-// Show in-app popup with auto-dismiss
+// Show popup with auto-dismiss
 function showInAppPopup(listing) {
   isPopupActive = true;
-  
-  // Show popup using existing showNotif function
   showNotif(listing);
   
   setTimeout(() => {
-    // FIX: Grab the singleton directly by ID
-    currentPopupElement = document.getElementById('notif'); 
+    currentPopupElement = document.getElementById('notif');
     
     if (!currentPopupElement) {
       isPopupActive = false;
@@ -2620,33 +2681,28 @@ function showInAppPopup(listing) {
       return;
     }
     
-    // FIX: Clear any old progress bars before adding a new one
     currentPopupElement.querySelectorAll('.popup-progress').forEach(el => el.remove());
     
     let autoDismissTimer = null;
     let userInteracted = false;
     
-    // Add progress bar
     const progressBar = document.createElement('div');
     progressBar.className = 'popup-progress';
     currentPopupElement.appendChild(progressBar);
     
-    // Start 3-second auto-dismiss
     autoDismissTimer = setTimeout(() => {
       if (!userInteracted && currentPopupElement) {
         dismissPopup(currentPopupElement);
       }
     }, AUTO_DISMISS_TIME);
     
-    // Pause on hover (desktop)
     currentPopupElement.addEventListener('mouseenter', () => {
       if (autoDismissTimer) clearTimeout(autoDismissTimer);
       userInteracted = true;
       if (progressBar) progressBar.style.animationPlayState = 'paused';
     });
     
-    // Pause on touch (mobile)
-    currentPopupElement.addEventListener('touchstart', (e) => {
+    currentPopupElement.addEventListener('touchstart', () => {
       if (autoDismissTimer) clearTimeout(autoDismissTimer);
       userInteracted = true;
       if (progressBar) progressBar.style.animationPlayState = 'paused';
@@ -2655,36 +2711,29 @@ function showInAppPopup(listing) {
   }, 100);
 }
 
-// Dismiss popup with animation
+// Dismiss popup
 function dismissPopup(popupElement) {
   if (!popupElement) return;
-  
   popupElement.style.animation = 'slideOut 0.3s ease forwards';
   
   setTimeout(() => {
-    // FIX: Do not use .remove() on the singleton! Just hide it and clean up.
     popupElement.classList.remove('on');
     popupElement.style.animation = '';
-    
     const pb = popupElement.querySelector('.popup-progress');
     if (pb) pb.remove();
-    
     isPopupActive = false;
     currentPopupElement = null;
-    processPopupQueue(); // Show next popup
+    processPopupQueue();
   }, 300);
 }
 
-// Clear old shown popups from memory when it gets too large
+// Memory cleanup
 function resetPopupMemory() {
   if (shownInAppPopups.size > 50) {
     const arr = Array.from(shownInAppPopups);
-    shownInAppPopups = new Set(arr.slice(-50)); // Keep last 50
+    shownInAppPopups = new Set(arr.slice(-50));
   }
 }
-
-// Call reset on significant GPS movement (new area)
-// This is already handled by redraw() which calls checkForNewNearbyListings()
 
 // ═══════════════════════════════════════════════════════════════════
 // NOTIFICATION PERMISSION MODAL
