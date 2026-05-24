@@ -1650,34 +1650,48 @@ function initDragToScroll() {
 window.askForNotifs = async () => {
   window.haptic(50);
   try {
-    const perm = await Notification.requestPermission();
+    const perm = Notification.permission === 'granted' 
+      ? 'granted' 
+      : await Notification.requestPermission();
+      
     if (perm === 'granted') {
       document.getElementById('notif-prompt').style.display = 'none';
-      const swRegistration = await navigator.serviceWorker.register('/sw.js');
-      const messaging = getMessaging(app);
-
-      onMessage(messaging, (payload) => {
-        swRegistration.showNotification(payload.notification.title, {
-          body: payload.notification.body, 
-          icon: '/icons/icon-192.png'
-        });
-      });
-
-      const currentToken = await getToken(messaging, { 
-        vapidKey: 'BKybN5UdJys9wB137592emPk83awpfTy_97V45LeM3MByP6FZA3fPhXqY6N1k5vP5--CUKXrnWUmeyG7dFLJMwQ',
-        serviceWorkerRegistration: swRegistration
-      });
-
-      if (currentToken) {
-        if (LS('uid')) { 
-          await updateDoc(doc(db, 'users', LS('uid')), { fcmToken: currentToken }); 
-        }
-      }
+      await window.initFCM();
     } else {
       document.getElementById('notif-prompt').style.display = 'none';
     }
   } catch (error) { 
     console.error(error); 
+  }
+};
+
+// Separate FCM init — safe to call when permission already granted
+window.initFCM = async () => {
+  try {
+    const swRegistration = await navigator.serviceWorker.register('/sw.js');
+    const messaging = getMessaging(app);
+
+    onMessage(messaging, (payload) => {
+      swRegistration.showNotification(payload.notification.title, {
+        body: payload.notification.body, 
+        icon: '/icons/icon-192.png'
+      });
+    });
+
+    const currentToken = await getToken(messaging, { 
+      vapidKey: 'BKybN5UdJys9wB137592emPk83awpfTy_97V45LeM3MByP6FZA3fPhXqY6N1k5vP5--CUKXrnWUmeyG7dFLJMwQ',
+      serviceWorkerRegistration: swRegistration
+    });
+
+    if (currentToken && LS('uid')) {
+      // Wait for auth before writing to Firestore
+      const auth = getAuth();
+      if (auth.currentUser) {
+        await updateDoc(doc(db, 'users', LS('uid')), { fcmToken: currentToken });
+      }
+    }
+  } catch (error) {
+    console.error('[FCM] Init error:', error);
   }
 };
 
@@ -1768,8 +1782,11 @@ function startWatch() {
     import('./js/adaptive-gps-manager.js').then(module => {
       const AdaptiveGPSManager = module.AdaptiveGPSManager;
       
-      gpsManager = new AdaptiveGPSManager({
-        onPositionUpdate: (position, movementContext) => {
+      gpsManager = new AdaptiveGPSManager();
+      
+      gpsManager.start(
+        // onPosition callback
+        (position, movementContext) => {
           const lat = position.coords.latitude;
           const lng = position.coords.longitude;
           
@@ -1780,30 +1797,52 @@ function startWatch() {
             window.userMarker.setLatLng([lat, lng]);
           }
           
-          if (movementContext.significantMovement || movementContext.firstUpdate) {
-            if (!hasLiveCentered) {
-              window._map.flyTo([lat, lng], 15, { duration: 0.5 });
-              hasLiveCentered = true;
-            }
-            gpsConfirmed = true;
-            redraw();
-            checkForNewNearbyListings();
+          // GPS manager only fires callback when moved 10m+ or first fix
+          // so every invocation here is significant — always redraw
+          if (!hasLiveCentered) {
+            window._map.flyTo([lat, lng], 15, { duration: 0.5 });
+            hasLiveCentered = true;
           }
+          gpsConfirmed = true;
+          redraw();
+          checkForNewNearbyListings();
           
           if (filteredList && filteredList.length > 0) {
             NotificationEngine.evaluate(position, filteredList, movementContext);
           }
         },
-        onError: handleGeoError
-      });
+        // onMovementChange callback (optional)
+        null,
+        // onError callback
+        handleGeoError
+      );
       
-      gpsManager.start();
     }).catch(err => {
       console.error('GPS Manager load failed:', err);
       basicGPSFallback();
     });
   } else {
-    gpsManager.start();
+    gpsManager.start(
+      (position, movementContext) => {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+        loc = { lat, lng };
+        SS('lastLoc', loc);
+        if (window.userMarker) window.userMarker.setLatLng([lat, lng]);
+        if (!hasLiveCentered) {
+          window._map.flyTo([lat, lng], 15, { duration: 0.5 });
+          hasLiveCentered = true;
+        }
+        gpsConfirmed = true;
+        redraw();
+        checkForNewNearbyListings();
+        if (filteredList && filteredList.length > 0) {
+          NotificationEngine.evaluate(position, filteredList, movementContext);
+        }
+      },
+      null,
+      handleGeoError
+    );
   }
 }
 
@@ -2340,9 +2379,18 @@ function showNotif(l) {
     nic.style.background = `${col}20`; 
   }
 
+  // Use current live loc for distance (so popup and card match)
   document.getElementById('n-dist').textContent = fmtDist(l);
   document.getElementById('n-title2').textContent = (l.title || '').slice(0, 60);
   document.getElementById('n-body').textContent = (l.desc || '').slice(0, 100) + '…';
+  
+  // Scroll matching card into view so popup and card are synced
+  const matchingCard = document.querySelector(`.hcd[data-id="${l.id}"]`);
+  if (matchingCard) {
+    matchingCard.style.outline = '2px solid var(--or)';
+    matchingCard.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+    setTimeout(() => { matchingCard.style.outline = ''; }, 5000);
+  }
   
   document.getElementById('n-view').onclick = () => {
     window.haptic(50);
@@ -2520,7 +2568,7 @@ setTimeout(() => {
       const notifPrompt = document.getElementById('notif-prompt');
       if (notifPrompt) notifPrompt.style.display = 'flex';
     } else if (Notification.permission === 'granted') { 
-      window.askForNotifs(); 
+      window.initFCM(); // Already granted — just register token, don't re-request
     }
   }
 }, 3000);

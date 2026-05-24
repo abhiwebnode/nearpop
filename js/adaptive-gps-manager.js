@@ -35,7 +35,7 @@ class AdaptiveGPSManager {
     // ═══════════════════════════════════════════════════════════════
     // START GPS TRACKING
     // ═══════════════════════════════════════════════════════════════
-    start(onPosition, onMovementChange = null) {
+    start(onPosition, onMovementChange = null, onError = null) {
         if (!navigator.geolocation) {
             console.warn('[GPS] Geolocation not available');
             return false;
@@ -43,6 +43,7 @@ class AdaptiveGPSManager {
 
         this.onPositionCallback = onPosition;
         this.onMovementChangeCallback = onMovementChange;
+        this.onErrorCallback = onError;
 
         // Initial high-accuracy position
         navigator.geolocation.getCurrentPosition(
@@ -317,6 +318,7 @@ class AdaptiveGPSManager {
     // ═══════════════════════════════════════════════════════════════
     _handleError(error) {
         console.error('[GPS] Error:', error.message);
+        if (this.onErrorCallback) this.onErrorCallback(error);
 
         switch (error.code) {
             case error.PERMISSION_DENIED:
@@ -327,7 +329,6 @@ class AdaptiveGPSManager {
                 break;
             case error.TIMEOUT:
                 console.warn('[GPS] Location request timed out');
-                // Retry with lower accuracy
                 if (this.mode === 'high') {
                     this._startWatchWithMode('medium');
                 }
@@ -406,3 +407,5 @@ window.addEventListener('beforeunload', () => {
 */
 
 console.log('[GPS] Adaptive GPS Manager loaded');
+
+export { AdaptiveGPSManager };
