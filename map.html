@@ -1805,7 +1805,7 @@ function startWatch() {
           }
           gpsConfirmed = true;
           redraw();
-          checkForNewNearbyListings();
+          checkForNewNearbyListings(movementContext);
           
           if (filteredList && filteredList.length > 0) {
             NotificationEngine.evaluate(position, filteredList, movementContext);
@@ -2195,6 +2195,7 @@ function renderCards() {
     filteredList.forEach(l => {
       const card = document.createElement('div');
       card.className = 'hcd';
+	  card.setAttribute('data-id', l.id);
       card.onclick = () => openListing(l.id);
       card.style.cssText = 'min-width:200px; max-width:200px;';
       
@@ -2373,23 +2374,29 @@ function showNotif(l) {
   
   if (imgUrl) { 
     nic.textContent = ''; 
-    nic.style.background = `#ffffff url('${imgUrl}') center/contain no-repeat`; 
+    nic.style.background = `#ffffff url('${sanitizer.sanitizeUrl(imgUrl)}') center/contain no-repeat`; 
   } else { 
-    nic.textContent = l.emoji || TE(l.type); 
+    nic.textContent = sanitizer.sanitizeText(l.emoji || TE(l.type), { maxLength: 10 }); 
     nic.style.background = `${col}20`; 
   }
 
-  // Use current live loc for distance (so popup and card match)
+  // Set Content
   document.getElementById('n-dist').textContent = fmtDist(l);
-  document.getElementById('n-title2').textContent = (l.title || '').slice(0, 60);
-  document.getElementById('n-body').textContent = (l.desc || '').slice(0, 100) + '…';
+  document.getElementById('n-title2').textContent = sanitizer.sanitizeText(l.title || '', { maxLength: 60 });
+  document.getElementById('n-body').textContent = sanitizer.sanitizeText(l.desc || '', { maxLength: 100 }) + '…';
   
-  // Scroll matching card into view so popup and card are synced
+  // 🚀 MAGIC SYNC: Scroll the matching .hcd card into view and highlight it
   const matchingCard = document.querySelector(`.hcd[data-id="${l.id}"]`);
   if (matchingCard) {
-    matchingCard.style.outline = '2px solid var(--or)';
+    // Reset all other cards
+    document.querySelectorAll('.hcd').forEach(c => {
+       c.style.border = '1px solid rgba(0,0,0,0.05)';
+       c.style.boxShadow = '0 4px 15px rgba(0,0,0,0.03)';
+    });
+    // Highlight the active nearest card
+    matchingCard.style.border = `2px solid ${col}`;
+    matchingCard.style.boxShadow = `0 8px 24px ${col}40`;
     matchingCard.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-    setTimeout(() => { matchingCard.style.outline = ''; }, 5000);
   }
   
   document.getElementById('n-view').onclick = () => {
@@ -2404,6 +2411,7 @@ function showNotif(l) {
   document.querySelector('#notif .mn-btn.s').onclick = () => { 
     window.haptic(30); 
     window.trackEng(l.id, -5); 
+    manuallyDismissedId = l.id; // 🚀 User dismissed, do not re-show this specific deal until nearest changes
     hideNotif(); 
   };
   
@@ -2411,7 +2419,7 @@ function showNotif(l) {
   clearTimeout(window._nt); 
   window._nt = setTimeout(hideNotif, 8000);
 }
-window.showNotif = showNotif; 
+window.showNotif = showNotif;
 
 window.pickType = (t, btn) => { 
   window.haptic(30); 
@@ -2594,21 +2602,13 @@ window.addEventListener('beforeunload', () => {
 });
 
 // ═══════════════════════════════════════════════════════════════════
-// CONTINUOUS IN-APP POPUP NOTIFICATION SYSTEM (FIXED)
+// CONTINUOUS IN-APP POPUP NOTIFICATION SYSTEM (SYNCED)
 // ═══════════════════════════════════════════════════════════════════
 
-const POPUP_COOLDOWN = 10000;        // 10 seconds between popups
-const AUTO_DISMISS_TIME = 3000;      // 3 seconds auto-dismiss
-const PROXIMITY_THRESHOLD = 500;     // 500m radius
-const MAX_QUEUE_SIZE = 3;            // Max 3 popups queued at a time
-
-let shownInAppPopups = new Set();
-let lastInAppPopupTime = 0;
-let popupQueue = [];
-let isPopupActive = false;
-let currentPopupElement = null;
+const PROXIMITY_THRESHOLD = 500; // Trigger radius (meters)
+let currentNearestId = null;
+let manuallyDismissedId = null;
 let popupsPaused = false;
-let popupTimer = null;
 
 // Pause/Play toggle
 window.togglePopups = () => {
@@ -2620,140 +2620,50 @@ window.togglePopups = () => {
   }
   
   if (popupsPaused) {
-    // Dismiss current popup if showing
-    if (currentPopupElement) dismissPopup(currentPopupElement);
-    if (popupTimer) { clearTimeout(popupTimer); popupTimer = null; }
+    hideNotif();
     toast('🔕', window.lang === 'hi' ? 'पॉपअप रोक दिए गए' : 'Popups paused');
   } else {
     toast('🔔', window.lang === 'hi' ? 'पॉपअप शुरू किए गए' : 'Popups resumed');
-    processPopupQueue();
+    manuallyDismissedId = null; // Reset dismissal on unpause
+    if (loc) window.checkForNewNearbyListings({ isStationary: false });
   }
 };
 
-// Main function - called ONLY from GPS updates (not category/radius changes)
-window.checkForNewNearbyListings = function() {
+// Main real-time tracker - triggered by GPS manager
+window.checkForNewNearbyListings = function(movementContext = {}) {
+  // 1. Validate dependencies
   if (!filteredList || filteredList.length === 0 || !loc || !gpsConfirmed) return;
   if (popupsPaused) return;
-  
-  // Find listings within proximity that haven't been shown
-  const unseenNearby = filteredList.filter(listing => {
-    if (shownInAppPopups.has(listing.id)) return false;
-    if (popupQueue.find(l => l.id === listing.id)) return false;
-    const dist = distM(loc.lat, loc.lng, listing.lat, listing.lng);
-    return dist <= PROXIMITY_THRESHOLD;
-  });
-  
-  // Sort by distance, take only MAX_QUEUE_SIZE
-  unseenNearby.sort((a, b) => {
-    return distM(loc.lat, loc.lng, a.lat, a.lng) - distM(loc.lat, loc.lng, b.lat, b.lng);
-  });
-  
-  const slotsAvailable = MAX_QUEUE_SIZE - popupQueue.length;
-  if (slotsAvailable > 0) {
-    popupQueue.push(...unseenNearby.slice(0, slotsAvailable));
-  }
-  
-  processPopupQueue();
-};
 
-// Process queue with cooldown
-function processPopupQueue() {
-  if (isPopupActive || popupQueue.length === 0 || popupsPaused) return;
-  
-  const now = Date.now();
-  const timeSinceLastPopup = now - lastInAppPopupTime;
-  
-  if (timeSinceLastPopup < POPUP_COOLDOWN) {
-    if (popupTimer) clearTimeout(popupTimer);
-    popupTimer = setTimeout(processPopupQueue, POPUP_COOLDOWN - timeSinceLastPopup);
-    return;
-  }
-  
-  const listing = popupQueue.shift();
-  
-  // Re-verify distance before showing (user may have moved away)
-  if (loc && gpsConfirmed) {
-    const currentDist = distM(loc.lat, loc.lng, listing.lat, listing.lng);
-    if (currentDist > PROXIMITY_THRESHOLD * 2) {
-      // User moved away — skip this one
-      shownInAppPopups.add(listing.id);
-      processPopupQueue();
-      return;
-    }
-  }
-  
-  showInAppPopup(listing);
-  shownInAppPopups.add(listing.id);
-  lastInAppPopupTime = now;
-}
+  // 2. filteredList is strictly sorted nearest-first by redraw()
+  const nearest = filteredList[0];
+  const dist = distM(loc.lat, loc.lng, nearest.lat, nearest.lng);
 
-// Show popup with auto-dismiss
-function showInAppPopup(listing) {
-  isPopupActive = true;
-  showNotif(listing);
-  
-  setTimeout(() => {
-    currentPopupElement = document.getElementById('notif');
-    
-    if (!currentPopupElement) {
-      isPopupActive = false;
-      processPopupQueue();
-      return;
-    }
-    
-    currentPopupElement.querySelectorAll('.popup-progress').forEach(el => el.remove());
-    
-    let autoDismissTimer = null;
-    let userInteracted = false;
-    
-    const progressBar = document.createElement('div');
-    progressBar.className = 'popup-progress';
-    currentPopupElement.appendChild(progressBar);
-    
-    autoDismissTimer = setTimeout(() => {
-      if (!userInteracted && currentPopupElement) {
-        dismissPopup(currentPopupElement);
+  // 3. Proximity & Synchronization check
+  if (dist <= PROXIMITY_THRESHOLD) {
+    // If the user manually dismissed this specific deal, don't annoy them
+    if (nearest.id === manuallyDismissedId) return;
+
+    if (currentNearestId !== nearest.id) {
+      // 🚀 NEW NEAREST LISTING: Sync UI and popup
+      currentNearestId = nearest.id;
+      showNotif(nearest);
+    } else {
+      // 📍 SAME LISTING: Keep distance updated in real-time
+      const popup = document.getElementById('notif');
+      if (popup && popup.classList.contains('on')) {
+        document.getElementById('n-dist').textContent = fmtDist(nearest);
+      } else if (!movementContext.isStationary) {
+        // Re-trigger if popup timed out but user is still walking towards it
+        showNotif(nearest);
       }
-    }, AUTO_DISMISS_TIME);
-    
-    currentPopupElement.addEventListener('mouseenter', () => {
-      if (autoDismissTimer) clearTimeout(autoDismissTimer);
-      userInteracted = true;
-      if (progressBar) progressBar.style.animationPlayState = 'paused';
-    });
-    
-    currentPopupElement.addEventListener('touchstart', () => {
-      if (autoDismissTimer) clearTimeout(autoDismissTimer);
-      userInteracted = true;
-      if (progressBar) progressBar.style.animationPlayState = 'paused';
-    }, { passive: true });
-    
-  }, 100);
-}
-
-// Dismiss popup
-function dismissPopup(popupElement) {
-  if (!popupElement) return;
-  popupElement.style.animation = 'slideOut 0.3s ease forwards';
-  
-  setTimeout(() => {
-    popupElement.classList.remove('on');
-    popupElement.style.animation = '';
-    const pb = popupElement.querySelector('.popup-progress');
-    if (pb) pb.remove();
-    isPopupActive = false;
-    currentPopupElement = null;
-    processPopupQueue();
-  }, 300);
-}
-
-// Memory cleanup
-function resetPopupMemory() {
-  if (shownInAppPopups.size > 50) {
-    const arr = Array.from(shownInAppPopups);
-    shownInAppPopups = new Set(arr.slice(-50));
+    }
+  } else {
+    // Left threshold - cleanup
+    hideNotif();
+    currentNearestId = null;
   }
-}
+};
 
 // ═══════════════════════════════════════════════════════════════════
 // NOTIFICATION PERMISSION MODAL
