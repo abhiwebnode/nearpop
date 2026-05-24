@@ -1906,7 +1906,7 @@ window.forceRefresh = async () => {
 window.recenterMap = () => {
   window.haptic(50);
   if (loc && loc.lat) { 
-    window._map.flyTo([loc.lat, loc.lng], 15, { duration: 0.5 }); 
+    window._map.flyTo([loc.lat, loc.lng], 17, { duration: 0.5 }); 
     toast('🎯', window.lang === 'hi' ? 'आपके स्थान पर वापस' : 'Centered on your location'); 
   } else { 
     getLoc(); 
