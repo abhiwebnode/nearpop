@@ -3,98 +3,61 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#FF5722">
 <title>NearPop — Terms of Service</title>
-
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800;900&family=Syne:wght@700;800&display=swap" rel="stylesheet">
 <style>
-  /* ✅ FORCE SCROLL FIX */
-  html, body {
-    margin: 0;
-    padding: 0;
-    height: auto !important;
-    overflow-y: auto !important;
-    -webkit-overflow-scrolling: touch;
+  html, body { margin: 0; padding: 0; height: auto !important; overflow-y: auto !important; -webkit-overflow-scrolling: touch; }
+  body { font-family: 'Nunito', sans-serif; background: #F8FAFC; color: #333; line-height: 1.7; }
+
+  .page-header {
+    background: linear-gradient(135deg, #FF5722 0%, #E64A19 100%);
+    padding: 20px 24px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    box-shadow: 0 2px 12px rgba(255,87,34,0.3);
   }
+  .back-btn { width: 40px; height: 40px; border-radius: 12px; background: rgba(255,255,255,0.2); color: #fff; border: none; display: flex; align-items: center; justify-content: center; font-size: 20px; cursor: pointer; font-family: inherit; }
+  .back-btn:active { transform: scale(0.9); }
+  .page-header-title { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 800; color: #fff; }
 
-  body {
-    font-family: 'Nunito', Arial, sans-serif;
-    background: #fafafa;
-    color: #333;
-    line-height: 1.6;
-  }
-
-  .container {
-    max-width: 720px;
-    margin: 20px auto;
-    padding: 35px;
-    background: #ffffff;
-    border-radius: 12px;
-    border: 1px solid #eee;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.03);
-  }
-
-  h1 {
-    font-size: 32px;
-    margin-bottom: 5px;
-    color: #FF5722;
-    font-family: 'Syne', sans-serif;
-    font-weight: 800;
-  }
-
-  h2 {
-    font-size: 19px;
-    margin-top: 30px;
-    color: #111827;
-    border-left: 4px solid #FF5722;
-    padding-left: 12px;
-    font-weight: 800;
-  }
-
-  h3 {
-    font-size: 16px;
-    color: #374151;
-    margin-top: 20px;
-    margin-bottom: 8px;
-  }
-
-  p { margin-bottom: 15px; color: #4B5563; font-size: 15px; }
-
-  ul { padding-left: 20px; margin-bottom: 15px; }
+  .container { max-width: 720px; margin: 0 auto; padding: 28px 24px 60px; }
+  h1 { font-size: 28px; margin-bottom: 4px; color: #FF5722; font-family: 'Syne', sans-serif; font-weight: 800; }
+  h2 { font-size: 18px; margin-top: 28px; color: #111827; border-left: 4px solid #FF5722; padding-left: 12px; font-weight: 800; }
+  p { margin-bottom: 14px; color: #4B5563; font-size: 15px; }
+  ul { padding-left: 20px; margin-bottom: 14px; }
   li { margin-bottom: 8px; color: #4B5563; font-size: 15px; }
+  .meta { font-size: 13px; color: #9CA3AF; margin-bottom: 24px; font-weight: 600; }
+  a { text-decoration: none; color: #FF5722; font-weight: bold; }
+  a:hover { text-decoration: underline; }
+  .footer { margin-top: 40px; padding-top: 16px; border-top: 1px solid #E5E7EB; font-size: 13px; text-align: center; color: #9CA3AF; font-weight: 600; }
 
-  .meta {
-    font-size: 13px;
-    color: #9CA3AF;
-    margin-bottom: 30px;
-    font-weight: 600;
-  }
-
-  a {
-    text-decoration: none;
-    color: #FF5722;
-    font-weight: bold;
-  }
-
-  a:hover {
-    text-decoration: underline;
-  }
-
-  .footer {
-    margin-top: 50px;
-    padding-top: 20px;
-    border-top: 1px solid #eee;
-    font-size: 13px;
-    text-align: center;
-    color: #9CA3AF;
-    font-weight: 600;
+  @media (prefers-color-scheme: dark) {
+    body { background: #0B1120; color: #E2E8F0; }
+    h1 { color: #FF7043; }
+    h2 { color: #F8FAFC; }
+    p, li { color: #94A3B8; }
+    strong { color: #E2E8F0; }
+    .meta { color: #64748B; }
+    .footer { border-top-color: #1E293B; color: #64748B; }
   }
 </style>
 </head>
-
 <body>
 
-<div class="container">
+<div class="page-header">
+  <button class="back-btn" onclick="window.location.href='index.html'">←</button>
+  <div class="page-header-title">Terms of Service</div>
+</div>
 
-  <a href="index.html" style="display:inline-block; margin-bottom: 20px; font-size: 14px;">← Back to App</a>
+<div class="container">
 
   <h1>Terms of Service</h1>
   <div class="meta">Effective Date: April 2026</div>
@@ -115,36 +78,37 @@
     <li><strong>Location Accuracy:</strong> You will not use GPS spoofing, VPNs, or location-altering software to falsely trigger footfall verification or claim points for stores you have not physically visited.</li>
     <li><strong>Transactions off-platform:</strong> NearPop is merely a discovery layer. All purchases, rental agreements, or job acceptances occur strictly between you and the Merchant. NearPop is not a party to these transactions and processes no payments.</li>
     <li><strong>Assumption of Risk:</strong> Any interactions or physical visits to merchant locations are undertaken at your own risk.</li>
+    <li><strong>Advertising Interference:</strong> You agree not to use bots, automated scripts, or fraudulent methods to click on, view, or otherwise artificially interact with advertisements served by Google AdMob or AdSense on our Platform. Engaging in invalid click activity is a violation of Google policies and will result in an immediate permanent ban.</li>
   </ul>
 
   <h2>3. Merchant Obligations</h2>
   <p>If you register as a Merchant to list deals, properties, or jobs, you agree to the following:</p>
   <ul>
     <li><strong>Accuracy of Listings:</strong> You must provide accurate information regarding pricing, expiry dates, and descriptions. You agree to honor the deals and prices published on your NearPop listings.</li>
-    <li><strong>Physical Presence:</strong> QR Code Standees generated by the platform must be placed at the physical geo-coordinates of your registered business. </li>
+    <li><strong>Physical Presence:</strong> QR Code Standees generated by the platform must be placed at the physical geo-coordinates of your registered business.</li>
     <li><strong>Prohibited Content:</strong> You may not list illegal items, weapons, drugs, adult content, or engage in deceptive advertising. NearPop reserves the right to delete violating listings and terminate merchant accounts immediately.</li>
     <li><strong>No Traffic Guarantees:</strong> NearPop provides discovery tools but makes no guarantees regarding the volume of foot traffic, impressions, or sales your business will receive.</li>
   </ul>
 
-  <h2>4. Intellectual Property</h2>
+  <h2>4. Third-Party App Stores & Policies</h2>
+  <p>If you download or access the NearPop application from the Google Play Store, you acknowledge that your use of the app is also subject to the <strong>Google Play Terms of Service</strong>. NearPop complies with all Google Play Developer Program Policies, including but not limited to the Data Safety, Deceptive Behavior, and User Data policies.</p>
+
+  <h2>5. Intellectual Property</h2>
   <p>The Platform and its original content (excluding user-generated listings), features, UI/UX, and functionality are and will remain the exclusive property of NearPop and its licensors. You may not copy, modify, or distribute our source code or visual designs without permission.</p>
 
-  <h2>5. Limitation of Liability</h2>
+  <h2>6. Limitation of Liability</h2>
   <p>To the maximum extent permitted by applicable law, in no event shall NearPop, its developers, or affiliates be liable for any indirect, punitive, incidental, special, consequential, or exemplary damages, including without limitation damages for loss of profits, goodwill, use, data, or other intangible losses, arising out of or relating to the use of, or inability to use, the Platform.</p>
   <p>We do not warrant that the Platform will be uninterrupted, secure, or free of errors or viruses.</p>
 
-  <h2>6. Termination</h2>
+  <h2>7. Termination</h2>
   <p>We may terminate or suspend your account immediately, without prior notice or liability, for any reason whatsoever, including without limitation if you breach the Terms (such as engaging in GPS fraud or posting prohibited merchant content).</p>
 
-  <h2>7. Contact Us</h2>
+  <h2>8. Contact Us</h2>
   <p>If you have any questions about these Terms, please contact us at:</p>
   <p><strong>Email:</strong> <a href="mailto:hello@nearpop.in">hello@nearpop.in</a></p>
 
-  <div class="footer">
-    © 2026 NearPop.in. All rights reserved.
-  </div>
+  <div class="footer">© 2026 NearPop.in. All rights reserved.</div>
 
 </div>
-
 </body>
 </html>
