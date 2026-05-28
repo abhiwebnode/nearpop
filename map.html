@@ -1536,13 +1536,11 @@
 import { app, db, LS, SS, TC, TE, distM, isExpired, toast, cacheGet, cacheSet, cacheClear, loadNavigation } from './js/app.js';
 import { ghEncode, ghNeighbors, ghFilter } from './js/geohash.js';
 import { sanitizer } from './js/sanitizer.js';
-// 🚀 NEW: Import the SmartNotificationEngine
 import { NotificationEngine } from './js/notifications.js';
 import { getDocs, query, collection, orderBy, where, doc, updateDoc, increment, limit } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js';
 import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-messaging.js";
 
-// 🚀 SAFETY FALLBACK: Recreate trackEng locally so old button clicks don't break
 window.trackEng = window.trackEng || function(id, value) {
   try {
     if (LS('uid')) updateDoc(doc(db, 'users', LS('uid')), { ['eng_' + id]: increment(value) }).catch(()=>{});
@@ -1552,9 +1550,7 @@ window.trackEng = window.trackEng || function(id, value) {
 window.lang = localStorage.getItem('app_lang') || 'en';
 
 window.haptic = (ms = 50) => {
-  try { 
-    if (navigator.vibrate) navigator.vibrate(ms); 
-  } catch (e) {}
+  try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) {}
 };
 
 let liveSearchQuery = '';
@@ -1575,10 +1571,7 @@ window.clearSearch = () => {
 window.toggleLang = () => {
   window.haptic(30);
   window.lang = window.lang === 'en' ? 'hi' : 'en';
-  try { 
-    localStorage.setItem('app_lang', window.lang); 
-  } catch(e){}
-  
+  try { localStorage.setItem('app_lang', window.lang); } catch(e){}
   window.applyLang();
   redraw(); 
 };
@@ -1607,43 +1600,23 @@ setTimeout(window.applyLang, 100);
 
 function initDragToScroll() {
   const slider = document.getElementById('hscr');
-  let isDown = false;
-  let startX;
-  let scrollLeft;
-  let isDragging = false;
+  let isDown = false, startX, scrollLeft, isDragging = false;
 
   slider.addEventListener('mousedown', (e) => {
-    isDown = true; 
-    isDragging = false; 
-    slider.style.cursor = 'grabbing';
-    startX = e.pageX - slider.offsetLeft; 
-    scrollLeft = slider.scrollLeft;
+    isDown = true; isDragging = false; slider.style.cursor = 'grabbing';
+    startX = e.pageX - slider.offsetLeft; scrollLeft = slider.scrollLeft;
   });
-  
-  slider.addEventListener('mouseleave', () => { 
-    isDown = false; 
-    slider.style.cursor = 'grab'; 
-  });
-  
-  slider.addEventListener('mouseup', () => { 
-    isDown = false; 
-    slider.style.cursor = 'grab'; 
-  });
-  
+  slider.addEventListener('mouseleave', () => { isDown = false; slider.style.cursor = 'grab'; });
+  slider.addEventListener('mouseup', () => { isDown = false; slider.style.cursor = 'grab'; });
   slider.addEventListener('mousemove', (e) => {
     if (!isDown) return;
-    e.preventDefault(); 
-    isDragging = true;
+    e.preventDefault(); isDragging = true;
     const x = e.pageX - slider.offsetLeft;
     const walk = (x - startX) * 2; 
     slider.scrollLeft = scrollLeft - walk;
   });
-
   slider.addEventListener('click', (e) => {
-    if (isDragging) { 
-      e.preventDefault(); 
-      e.stopPropagation(); 
-    }
+    if (isDragging) { e.preventDefault(); e.stopPropagation(); }
   }, true);
 }
 
@@ -1660,39 +1633,29 @@ window.askForNotifs = async () => {
     } else {
       document.getElementById('notif-prompt').style.display = 'none';
     }
-  } catch (error) { 
-    console.error(error); 
-  }
+  } catch (error) { console.error(error); }
 };
 
-// Separate FCM init — safe to call when permission already granted
 window.initFCM = async () => {
   try {
     const swRegistration = await navigator.serviceWorker.register('/sw.js');
     const messaging = getMessaging(app);
-
     onMessage(messaging, (payload) => {
       swRegistration.showNotification(payload.notification.title, {
-        body: payload.notification.body, 
-        icon: '/icons/icon-192.png'
+        body: payload.notification.body, icon: '/icons/icon-192.png'
       });
     });
-
     const currentToken = await getToken(messaging, { 
       vapidKey: 'BKybN5UdJys9wB137592emPk83awpfTy_97V45LeM3MByP6FZA3fPhXqY6N1k5vP5--CUKXrnWUmeyG7dFLJMwQ',
       serviceWorkerRegistration: swRegistration
     });
-
     if (currentToken && LS('uid')) {
-      // Wait for auth before writing to Firestore
-      const auth = getAuth();
+      const auth = getAuth(app);
       if (auth.currentUser) {
         await updateDoc(doc(db, 'users', LS('uid')), { fcmToken: currentToken });
       }
     }
-  } catch (error) {
-    console.error('[FCM] Init error:', error);
-  }
+  } catch (error) { console.error('[FCM] Init error:', error); }
 };
 
 function handleGeoError(err) {
@@ -1704,9 +1667,7 @@ function handleGeoError(err) {
   }
 }
 
-if (!LS('uid')) { 
-  window.location.href = 'index.html'; 
-}
+if (!LS('uid')) { window.location.href = 'index.html'; }
 
 window.onerror = (msg, src, line) => {
   if (!window.go) window.go = href => window.location.href = href;
@@ -1723,33 +1684,19 @@ window.onerror = (msg, src, line) => {
 };
 
 const savedLoc = LS('lastLoc'); 
-let markers = [];
-let listings = [];
-let loc = savedLoc;
-let cat = 'all'; 
-let radiusKm = LS('searchRadius') || 1;
-let filteredList = [];
-let welcomeType = 'all';
-let hasLiveCentered = false; 
+let markers = [], listings = [], loc = savedLoc, cat = 'all'; 
+let radiusKm = LS('searchRadius') || 1, filteredList = [], welcomeType = 'all', hasLiveCentered = false; 
 
 const initCenter = savedLoc && savedLoc.lat ? [savedLoc.lat, savedLoc.lng] : [28.4089, 77.3178];
-window._map = L.map('map', { 
-  center: initCenter, 
-  zoom: savedLoc ? 17 : 15, 
-  zoomControl: false, 
-  attributionControl: false 
-});
-
+window._map = L.map('map', { center: initCenter, zoom: savedLoc ? 17 : 15, zoomControl: false, attributionControl: false });
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(window._map);
 
 window._markerCluster = L.markerClusterGroup({
-  maxClusterRadius: 45, 
-  showCoverageOnHover: false,
+  maxClusterRadius: 45, showCoverageOnHover: false,
   iconCreateFunction: function(cluster) {
     return L.divIcon({ 
       html: `<div class="np-cluster">${cluster.getChildCount()}</div>`, 
-      className: 'custom-cluster', 
-      iconSize: [42, 42] 
+      className: 'custom-cluster', iconSize: [42, 42] 
     });
   }
 });
@@ -1760,99 +1707,49 @@ document.querySelectorAll('.rdist-btn').forEach(b => {
   b.classList.toggle('on', v === radiusKm);
 });
 
-let watchId = null;
-let lastProcLat = null;
-let lastProcLng = null;
-const MIN_MOVE_M = 10;
+let gpsManager = null, gpsConfirmed = false;
 
-function gpsDistM(lat1, lng1, lat2, lng2) {
-  const R = 6371000;
-  const dLa = (lat2 - lat1) * Math.PI / 180;
-  const dLo = (lng2 - lng1) * Math.PI / 180;
-  const a = Math.sin(dLa / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLo / 2) ** 2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-}
-
-// ✅ GPS Manager Integration
-let gpsManager = null;
-let gpsConfirmed = false;
-
-// 🚀 NEW: Silently sync GPS to Firestore every 3 minutes for background pushes
 function syncLocationToServer(lat, lng) {
   const uid = LS('uid');
   if (!uid) return;
-  
-  const now = Date.now();
-  const lastSync = parseInt(LS('last_gps_sync')) || 0;
-  
-  // Only sync once every 3 minutes (180,000 ms) to save battery and database writes
+  const now = Date.now(), lastSync = parseInt(LS('last_gps_sync')) || 0;
   if (now - lastSync > 180000) { 
     try {
-      updateDoc(doc(db, 'users', uid), {
-        lastKnownLat: lat,
-        lastKnownLng: lng,
-        lastActive: now
-      });
+      updateDoc(doc(db, 'users', uid), { lastKnownLat: lat, lastKnownLng: lng, lastActive: now });
       SS('last_gps_sync', now);
-    } catch (e) {
-      console.warn("Background sync failed", e);
-    }
+    } catch (e) {}
   }
 }
 
 function startWatch() {
   if (!gpsManager) {
     import('./js/adaptive-gps-manager.js').then(module => {
-      const AdaptiveGPSManager = module.AdaptiveGPSManager;
-      
-      gpsManager = new AdaptiveGPSManager();
-      
-      gpsManager.start(
-        // onPosition callback
-        (position, movementContext) => {
-          const lat = position.coords.latitude;
-          const lng = position.coords.longitude;
-          
+      gpsManager = new module.AdaptiveGPSManager();
+      gpsManager.start((position, movementContext) => {
+          const lat = position.coords.latitude, lng = position.coords.longitude;
           loc = { lat, lng };
           SS('lastLoc', loc);
           syncLocationToServer(lat, lng);
-          if (window.userMarker) {
-            window.userMarker.setLatLng([lat, lng]);
-          }
-          
-          // GPS manager only fires callback when moved 10m+ or first fix
-          // so every invocation here is significant — always redraw
+          if (window.userMarker) window.userMarker.setLatLng([lat, lng]);
           if (!hasLiveCentered) {
             window._map.flyTo([lat, lng], 17, { duration: 0.5 });
             hasLiveCentered = true;
-			window.forceRefresh();
+            window.forceRefresh();
           }
           gpsConfirmed = true;
           redraw();
           checkForNewNearbyListings(movementContext);
-          
           if (filteredList && filteredList.length > 0) {
             NotificationEngine.evaluate(position, filteredList, movementContext);
           }
-        },
-        // onMovementChange callback (optional)
-        null,
-        // onError callback
-        handleGeoError
-      );
-      
-    }).catch(err => {
-      console.error('GPS Manager load failed:', err);
-      basicGPSFallback();
-    });
+        }, null, handleGeoError);
+    }).catch(err => { basicGPSFallback(); });
   } else {
-    gpsManager.start(
-      (position, movementContext) => {
-        const lat = position.coords.latitude;
-        const lng = position.coords.longitude;
+    gpsManager.start((position, movementContext) => {
+        const lat = position.coords.latitude, lng = position.coords.longitude;
         loc = { lat, lng };
         SS('lastLoc', loc);
-		syncLocationToServer(lat, lng);
+        syncLocationToServer(lat, lng);
         if (window.userMarker) window.userMarker.setLatLng([lat, lng]);
         if (!hasLiveCentered) {
           window._map.flyTo([lat, lng], 17, { duration: 0.5 });
@@ -1861,44 +1758,31 @@ function startWatch() {
         gpsConfirmed = true;
         redraw();
         checkForNewNearbyListings();
-        if (filteredList && filteredList.length > 0) {
-          NotificationEngine.evaluate(position, filteredList, movementContext);
-        }
-      },
-      null,
-      handleGeoError
-    );
+        if (filteredList && filteredList.length > 0) NotificationEngine.evaluate(position, filteredList, movementContext);
+      }, null, handleGeoError);
   }
 }
 
 function basicGPSFallback() {
-  if (!navigator.geolocation) {
-    setFallback();
-    return;
-  }
-  navigator.geolocation.getCurrentPosition(
-    p => {
+  if (!navigator.geolocation) { setFallback(); return; }
+  navigator.geolocation.getCurrentPosition(p => {
       loc = { lat: p.coords.latitude, lng: p.coords.longitude };
       SS('lastLoc', loc);
-	  syncLocationToServer(p.coords.latitude, p.coords.longitude);
+      syncLocationToServer(p.coords.latitude, p.coords.longitude);
       if (window.userMarker) window.userMarker.setLatLng([loc.lat, loc.lng]);
       if (!hasLiveCentered) {
         window._map.flyTo([loc.lat, loc.lng], 17, { duration: 0.5 });
         hasLiveCentered = true;
-		window.forceRefresh();
+        window.forceRefresh();
       }
       gpsConfirmed = true;
       redraw();
       checkForNewNearbyListings();
-    },
-    handleGeoError,
-    { enableHighAccuracy: true, timeout: 12000 }
-  );
+    }, handleGeoError, { enableHighAccuracy: true, timeout: 12000 });
 }
 
-function getLoc() { 
-  startWatch(); 
-}
+function getLoc() { startWatch(); }
+window.getLoc = getLoc; // 🚀 CRITICAL FIX: Bound to window so Sequencer can see it!
 
 function setFallback() { 
   loc = LS('lastLoc') || { lat: 28.4089, lng: 77.3178 }; 
@@ -1908,8 +1792,7 @@ function setFallback() {
 
 function fmtDist(l) {
   if (!loc || !l.lat || !l.lng) return '—';
-  const safeLat = parseFloat(l.lat);
-  const safeLng = parseFloat(l.lng);
+  const safeLat = parseFloat(l.lat), safeLng = parseFloat(l.lng);
   if (isNaN(safeLat) || isNaN(safeLng)) return '—';
   const d = distM(loc.lat, loc.lng, safeLat, safeLng);
   return d < 1000 ? Math.round(d) + 'm' : (d / 1000).toFixed(1) + 'km';
@@ -1919,11 +1802,9 @@ window.forceRefresh = async () => {
   window.haptic(50);
   const btn = document.getElementById('refresh-btn');
   if (btn) btn.classList.add('spinning');
-  
   toast('⏳', window.lang === 'hi' ? 'लाइव डील्स ताज़ा हो रही हैं...' : 'Refreshing live deals...');
   cacheClear(); 
   await loadListings();
-  
   if (btn) btn.classList.remove('spinning');
   toast('✅', window.lang === 'hi' ? 'नक्शा अपडेट किया गया!' : 'Map updated!');
 };
@@ -1933,9 +1814,7 @@ window.recenterMap = () => {
   if (loc && loc.lat) { 
     window._map.flyTo([loc.lat, loc.lng], 17, { duration: 0.5 }); 
     toast('🎯', window.lang === 'hi' ? 'आपके स्थान पर वापस' : 'Centered on your location'); 
-  } else { 
-    getLoc(); 
-  }
+  } else { getLoc(); }
 };
 
 // ═══════════════════════════════════════════════════════════════════
@@ -1943,28 +1822,19 @@ window.recenterMap = () => {
 // ═══════════════════════════════════════════════════════════════════
 class PermissionSequencer {
   static start() {
-    // 1. Notifications: Ask after 2 seconds
     setTimeout(() => this.promptNotifications(), 2000);
-
-    // 2. Location: Ask after 10 seconds, then check/re-ask every 2 minutes
     setTimeout(() => {
       this.promptLocation();
       setInterval(() => this.promptLocation(), 120000); 
     }, 10000);
-
-    // 3. App Install: Ask after 20 seconds
     setTimeout(() => this.promptAppInstall(), 20000);
   }
 
-  // ─── 1. NOTIFICATIONS ───
   static promptNotifications() {
     if (!('Notification' in window)) return;
-    
     if (Notification.permission === 'granted') {
-      // Already granted, initialize FCM silently
       window.initFCM(); 
     } else if (Notification.permission === 'default') {
-      // Only show if the app download sheet isn't blocking the screen
       const appModal = document.getElementById('app-download-sheet');
       if (appModal && appModal.classList.contains('show')) {
         setTimeout(() => this.promptNotifications(), 5000);
@@ -1974,104 +1844,73 @@ class PermissionSequencer {
     }
   }
 
-  // ─── 2. LOCATION ───
   static promptLocation() {
-    // Prevent overlapping with other modals
     const notifModal = document.getElementById('notif-permission-modal');
     if (notifModal && notifModal.classList.contains('show')) return;
-    
     const appModal = document.getElementById('app-download-sheet');
     if (appModal && appModal.classList.contains('show')) return;
 
     if (navigator.permissions) {
       navigator.permissions.query({ name: 'geolocation' }).then(res => {
         if (res.state === 'granted') {
-           // Already granted, ensure tracking is active
            if (!gpsConfirmed && window.getLoc) window.getLoc();
         } else if (res.state === 'denied') {
-           // If denied, trigger the hard-block UI so they know to fix it
            const geoBlock = document.getElementById('hard-geo-block');
            if (geoBlock) geoBlock.style.display = 'flex';
         } else {
-           // State is 'prompt', trigger native request
            if (window.getLoc) window.getLoc();
         }
       });
     } else {
-      // Fallback for older browsers
       if (!gpsConfirmed && window.getLoc) window.getLoc();
     }
   }
 
-  // ─── 3. APP INSTALL ───
   static promptAppInstall() {
-    // Abort if already in native app or installed as PWA
     if (window.isNativeAndroidApp || window.matchMedia('(display-mode: standalone)').matches) return;
-    
-    // Abort if user already clicked download or permanently dismissed
     if (localStorage.getItem('np_app_download_clicked')) return;
     if (localStorage.getItem('np_app_prompt_dismissed') === 'true') return;
 
-    // Prevent overlapping with Notification modal
     const notifModal = document.getElementById('notif-permission-modal');
     if (notifModal && notifModal.classList.contains('show')) {
       setTimeout(() => this.promptAppInstall(), 5000);
       return;
     }
-
     showAppDownloadSheet();
   }
 }
-
-// Start the sequencer
 PermissionSequencer.start();
 
 // ═══════════════════════════════════════════════════════════════════
 // MODAL UI BINDINGS
 // ═══════════════════════════════════════════════════════════════════
-
-// --- Notifications Modal Bindings ---
 function showNotificationPermissionModal() {
   const modal = document.getElementById('notif-permission-modal');
   if (!modal) return;
   modal.classList.add('show');
-  
   document.getElementById('btn-notif-enable').onclick = async () => {
     modal.classList.remove('show');
     await window.askForNotifs(); 
   };
-  
-  document.getElementById('btn-notif-later').onclick = () => {
-    modal.classList.remove('show');
-  };
-  
-  modal.onclick = (e) => {
-    if (e.target === modal) modal.classList.remove('show');
-  };
+  document.getElementById('btn-notif-later').onclick = () => modal.classList.remove('show');
+  modal.onclick = (e) => { if (e.target === modal) modal.classList.remove('show'); };
 }
 
-// --- App Download Sheet Bindings ---
 function showAppDownloadSheet() {
   const sheet = document.getElementById('app-download-sheet');
   if (!sheet) return;
   sheet.classList.add('show');
-
   document.getElementById('btn-download-app').onclick = () => {
     window.open('https://play.google.com/store/apps/details?id=in.nearpop.app', '_blank');
     localStorage.setItem('np_app_download_clicked', 'true');
     sheet.classList.remove('show');
   };
-
   document.getElementById('btn-continue-web').onclick = () => {
-    // Check if the "Don't show this again" box is checked
     const dontShow = document.getElementById('app-dont-show');
-    if (dontShow && dontShow.checked) {
-      localStorage.setItem('np_app_prompt_dismissed', 'true');
-    }
+    if (dontShow && dontShow.checked) localStorage.setItem('np_app_prompt_dismissed', 'true');
     sheet.classList.remove('show');
   };
 }
-
 window.closeAppDownloadSheet = function() {
   const sheet = document.getElementById('app-download-sheet');
   if (sheet) sheet.classList.remove('show');
@@ -2091,27 +1930,16 @@ async function loadListings() {
       const activeCells = ghNeighbors(userHash5); 
       filters.push(where('geohash5', 'in', activeCells));
     }
-    
     filters.push(where('status', '==', 'active'));
-
-    if (filters.length > 0) { 
-      q = query(q, ...filters, limit(150)); 
-    } else { 
-      q = query(q, limit(150)); 
-    }
-
+    q = filters.length > 0 ? query(q, ...filters, limit(150)) : query(q, limit(150)); 
     const snap = await getDocs(q);
     const all = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    
     cacheSet(all); 
     listings = all; 
     redraw();
   } catch(e) {
     const c = cacheGet(); 
-    if (c) { 
-      listings = c; 
-      redraw(); 
-    }
+    if (c) { listings = c; redraw(); }
   }
 }
 
@@ -2121,23 +1949,18 @@ function redraw() {
       if (!l || typeof l !== 'object') return false;
       if (cat !== 'all' && l.type !== cat) return false;
       if (isExpired(l)) return false;
-      
       if (liveSearchQuery) {
         const textToSearch = `${l.title || ''} ${l.desc || ''} ${l.type || ''}`.toLowerCase();
         if (!textToSearch.includes(liveSearchQuery)) return false;
       }
-
       if (radiusKm < 999) {
-          const safeLat = parseFloat(l.lat);
-          const safeLng = parseFloat(l.lng);
+          const safeLat = parseFloat(l.lat), safeLng = parseFloat(l.lng);
           if (isNaN(safeLat) || isNaN(safeLng)) return false; 
           const d = loc && loc.lat ? distM(loc.lat, loc.lng, safeLat, safeLng) : Infinity;
           if (isNaN(d) || d > radiusKm * 1000) return false;
       }
       return true;
-    } catch (e) { 
-      return false; 
-    }
+    } catch (e) { return false; }
   });
 
   if (list.length === 0 && radiusKm < 999 && loc && listings.length > 0 && !liveSearchQuery) {
@@ -2149,20 +1972,15 @@ function redraw() {
         if (cat !== 'all' && l.type !== cat) return false;
         if (isExpired(l)) return false;
         if (r < 999) {
-          const safeLat = parseFloat(l.lat);
-          const safeLng = parseFloat(l.lng);
+          const safeLat = parseFloat(l.lat), safeLng = parseFloat(l.lng);
           if (isNaN(safeLat) || isNaN(safeLng)) return false;
           const d = loc.lat ? distM(loc.lat, loc.lng, safeLat, safeLng) : Infinity;
           if (isNaN(d) || d > r * 1000) return false;
         }
         return true;
       });
-      if (hasItems) { 
-        foundRadius = r; 
-        break; 
-      }
+      if (hasItems) { foundRadius = r; break; }
     }
-    
     const nextR = foundRadius || 999;
     setR(nextR, Array.from(document.querySelectorAll('.rdist-btn')).find(b => parseInt(b.textContent) === nextR || (nextR === 999 && (b.textContent === 'Anywhere' || b.textContent === 'कहीं भी'))));
     const rTxt = nextR === 999 ? (window.lang === 'hi' ? 'कहीं भी' : 'Anywhere') : nextR + 'km';
@@ -2171,10 +1989,7 @@ function redraw() {
   }
 
   list.sort((a, b) => {
-      const aLat = parseFloat(a.lat);
-      const aLng = parseFloat(a.lng);
-      const bLat = parseFloat(b.lat);
-      const bLng = parseFloat(b.lng);
+      const aLat = parseFloat(a.lat), aLng = parseFloat(a.lng), bLat = parseFloat(b.lat), bLng = parseFloat(b.lng);
       const da = loc && !isNaN(aLat) && !isNaN(aLng) ? distM(loc.lat, loc.lng, aLat, aLng) : Infinity;
       const db_dist = loc && !isNaN(bLat) && !isNaN(bLng) ? distM(loc.lat, loc.lng, bLat, bLng) : Infinity;
       return da - db_dist;
@@ -2185,50 +2000,30 @@ function redraw() {
   let newMarkers = [];
 
   list.forEach(l => {
-    const safeLat = parseFloat(l.lat);
-    const safeLng = parseFloat(l.lng);
+    const safeLat = parseFloat(l.lat), safeLng = parseFloat(l.lng);
     if (isNaN(safeLat) || isNaN(safeLng)) return;
-    
-    const col = l.color || TC(l.type);
-    const imgUrl = l.imageUrl || l.image;
-    
+    const col = l.color || TC(l.type), imgUrl = l.imageUrl || l.image;
     const safeImgUrl = imgUrl ? sanitizer.sanitizeUrl(imgUrl) : '';
     const pinInner = safeImgUrl 
       ? `<div style="width:100%;height:100%;border-radius:50%;overflow:hidden;"><img src="${safeImgUrl}" style="width:100%;height:100%;object-fit:cover;"></div>` 
       : `<div class="pin-emo">${sanitizer.sanitizeText(l.emoji || TE(l.type), { maxLength: 10 })}</div>`;
-      
     const ico = L.divIcon({ 
       className: '', 
       html: `<div class="custom-pin" style="background:${col};">${pinInner}<div class="pin-caret" style="border-top-color:${col};"></div></div>`, 
-      iconSize: [38, 46], 
-      iconAnchor: [19, 46] 
+      iconSize: [38, 46], iconAnchor: [19, 46] 
     });
-    
-    const m = L.marker([safeLat, safeLng], { icon: ico }).on('click', () => window.previewPin(l));
-    newMarkers.push(m);
+    newMarkers.push(L.marker([safeLat, safeLng], { icon: ico }).on('click', () => window.previewPin(l)));
   });
   
   window._markerCluster.addLayers(newMarkers);
   
   if (loc) {
-    const userHtml = `
-      <div style="position:relative; width:40px; height:40px; display:flex; align-items:center; justify-content:center;">
-        <div class="user-radar"></div>
-        <img src="https://nearpop.in/icons/icon-512.png" onerror="this.style.display='none'" style="width:28px; height:28px; border-radius:50%; border:3px solid #fff; background:#0F0F13; object-fit:contain; padding:2px; position:relative; z-index:2; box-shadow:0 4px 10px rgba(0,0,0,0.2);">
-      </div>`;
-      
-    const ui = L.divIcon({ 
-      className: '', 
-      html: userHtml, 
-      iconSize: [40, 40], 
-      iconAnchor: [20, 20] 
-    });
-    
+    const userHtml = `<div style="position:relative; width:40px; height:40px; display:flex; align-items:center; justify-content:center;"><div class="user-radar"></div><img src="https://nearpop.in/icons/icon-512.png" onerror="this.style.display='none'" style="width:28px; height:28px; border-radius:50%; border:3px solid #fff; background:#0F0F13; object-fit:contain; padding:2px; position:relative; z-index:2; box-shadow:0 4px 10px rgba(0,0,0,0.2);"></div>`;
+    const ui = L.divIcon({ className: '', html: userHtml, iconSize: [40, 40], iconAnchor: [20, 20] });
     if (!window.userMarker) { 
       window.userMarker = L.marker([loc.lat, loc.lng], { icon: ui, zIndexOffset: 1000 }).addTo(window._map); 
     } else { 
-      window.userMarker.setLatLng([loc.lat, loc.lng]); 
-      window.userMarker.setIcon(ui); 
+      window.userMarker.setLatLng([loc.lat, loc.lng]); window.userMarker.setIcon(ui); 
     }
   }
 
@@ -2238,16 +2033,11 @@ function redraw() {
 
 window.previewPin = (l) => {
   window.haptic(30);
-  const safeLat = parseFloat(l.lat);
-  const safeLng = parseFloat(l.lng);
-  
-  const ppIc = document.getElementById('pp-ic');
+  const safeLat = parseFloat(l.lat), safeLng = parseFloat(l.lng), ppIc = document.getElementById('pp-ic');
   ppIc.innerHTML = ''; 
-  
   if (l.image || l.imageUrl) {
-    const imgUrl = l.imageUrl || l.image;
     const img = document.createElement('img');
-    img.src = sanitizer.sanitizeUrl(imgUrl);
+    img.src = sanitizer.sanitizeUrl(l.imageUrl || l.image);
     img.style.cssText = 'width:100%;height:100%;border-radius:12px;object-fit:cover;';
     ppIc.appendChild(img);
   } else {
@@ -2256,10 +2046,8 @@ window.previewPin = (l) => {
     ppIc.style.background = `${col}20`; 
     ppIc.style.border = `1px solid ${col}40`; 
   }
-  
   document.getElementById('pp-title').textContent = sanitizer.sanitizeText(l.title || 'Special Offer', { maxLength: 200 });
   document.getElementById('pp-price').textContent = sanitizer.sanitizeText(l.price || 'View Details', { maxLength: 50 });
-  
   const distTxt = fmtDist(l);
   document.getElementById('pp-dist').textContent = window.lang === 'hi' ? `📍 आपसे ${distTxt} दूर` : `📍 ${distTxt} from you`;
   
@@ -2271,7 +2059,6 @@ window.previewPin = (l) => {
   
   const fomoEl = document.getElementById('pp-fomo');
   fomoEl.innerHTML = ''; 
-  
   if (l.expiryDate) {
     const hrs = (new Date(l.expiryDate) - new Date()) / 3600000;
     if (hrs > 0 && hrs <= 24) {
@@ -2282,82 +2069,46 @@ window.previewPin = (l) => {
       fomoEl.appendChild(badge);
     }
   }
-  
   document.getElementById('pp-btn').onclick = () => window.openListing(l.id);
   document.getElementById('pin-preview').classList.add('on');
-  
-  if (!isNaN(safeLat) && !isNaN(safeLng)) { 
-    window._map.flyTo([safeLat, safeLng], 16, { duration: 0.4 }); 
-  }
+  if (!isNaN(safeLat) && !isNaN(safeLng)) window._map.flyTo([safeLat, safeLng], 16, { duration: 0.4 }); 
 };
 
-window.closePreview = () => { 
-  window.haptic(30); 
-  document.getElementById('pin-preview').classList.remove('on'); 
-};
+window.closePreview = () => { window.haptic(30); document.getElementById('pin-preview').classList.remove('on'); };
 
 function renderCards() {
   const total = filteredList.length;
-  
   let resultText = window.lang === 'hi' 
       ? `${total} लिस्टिंग${radiusKm < 999 ? ` ${radiusKm}km के भीतर` : ''} · सबसे करीब पहले` 
       : `${total} listing${total === 1 ? '' : 's'}${radiusKm < 999 ? ` within ${radiusKm} km` : ''} · nearest first`;
-      
-  if(liveSearchQuery && total > 0) {
-      resultText = window.lang === 'hi' ? `खोज के लिए ${total} परिणाम` : `${total} results for your search`;
-  }
-
+  if(liveSearchQuery && total > 0) resultText = window.lang === 'hi' ? `खोज के लिए ${total} परिणाम` : `${total} results for your search`;
   document.getElementById('mcnt').textContent = resultText;
-
   const vgrid = document.getElementById('vgrid');
   
   if (total === 0) {
-    const emptyMsg = liveSearchQuery 
-      ? (window.lang === 'hi' ? 'खोज से कुछ नहीं मिला' : 'No search results found') 
-      : (window.lang === 'hi' ? 'कोई ऑफ़र नहीं मिला' : 'No deals found nearby');
-      
-    document.getElementById('hscr').innerHTML = `
-      <div style="width:100%; text-align:center; padding:20px; background:var(--card); border-radius:18px; border:1px dashed var(--bdr); color:var(--gray); font-size:12px; font-weight:800;">
-        ${emptyMsg}
-      </div>
-    `;
-    
+    const emptyMsg = liveSearchQuery ? (window.lang === 'hi' ? 'खोज से कुछ नहीं मिला' : 'No search results found') : (window.lang === 'hi' ? 'कोई ऑफ़र नहीं मिला' : 'No deals found nearby');
+    document.getElementById('hscr').innerHTML = `<div style="width:100%; text-align:center; padding:20px; background:var(--card); border-radius:18px; border:1px dashed var(--bdr); color:var(--gray); font-size:12px; font-weight:800;">${emptyMsg}</div>`;
     vgrid.innerHTML = `
       <div style="grid-column: 1 / -1; text-align:center; padding: 50px 20px; display:flex; flex-direction:column; align-items:center; background:var(--card); border-radius:24px; border:1px solid var(--bdr); box-shadow:0 10px 30px rgba(0,0,0,0.03);">
-        <svg width="100" height="100" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-bottom:16px;">
-          <rect x="20" y="20" width="80" height="80" rx="16" fill="var(--bg-app)" stroke="var(--bdr)" stroke-width="4"/>
-          <path d="M45 20V100M75 20V100M20 45H100M20 75H100" stroke="var(--bdr)" stroke-width="2" stroke-dasharray="4 4"/>
-          <circle cx="60" cy="60" r="24" fill="var(--card)" stroke="#FF5722" stroke-width="6"/>
-          <path d="M78 78L95 95" stroke="#FF5722" stroke-width="8" stroke-linecap="round"/>
-          <path d="M50 55H54M66 55H70" stroke="var(--gray)" stroke-width="3" stroke-linecap="round"/>
-          <path d="M55 65C55 65 58 62 65 62C72 62 75 65 75 65" stroke="var(--gray)" stroke-width="3" stroke-linecap="round"/>
-        </svg>
         <h3 style="color:var(--deep); font-size:18px; font-weight:900; margin-bottom:6px; font-family:'Syne', sans-serif;">${emptyMsg}</h3>
-        <p style="color:var(--gray); font-weight:600; font-size:13px; line-height:1.5; max-width:280px; margin-bottom:20px;">${window.lang === 'hi' ? 'इस क्षेत्र में आपके फ़िल्टर से मेल खाने वाला कुछ भी नहीं है। कोई अन्य श्रेणी या बड़ा दायरा आज़माएँ।' : 'Nothing matches your filters in this exact area. Try a different category or expand your search radius.'}</p>
-        <button onclick="setR(999, Array.from(document.querySelectorAll('.rdist-btn')).find(b => b.textContent === 'Anywhere' || b.textContent === 'कहीं भी'))" style="background:var(--bg-body); border:2px solid var(--bdr); color:var(--deep); padding:12px 24px; border-radius:100px; font-size:13px; font-weight:800; font-family:inherit; cursor:pointer; box-shadow:0 4px 12px rgba(0,0,0,0.05); transition:transform 0.2s;" onmousedown="this.style.transform='scale(0.95)'" onmouseup="this.style.transform='scale(1)'">${window.lang === 'hi' ? 'कहीं भी खोजें' : 'Search Anywhere'}</button>
-      </div>
-    `;
+        <button onclick="setR(999, Array.from(document.querySelectorAll('.rdist-btn')).find(b => b.textContent === 'Anywhere' || b.textContent === 'कहीं भी'))" style="background:var(--bg-body); border:2px solid var(--bdr); color:var(--deep); padding:12px 24px; border-radius:100px; font-size:13px; font-weight:800; font-family:inherit; cursor:pointer; margin-top:20px;">${window.lang === 'hi' ? 'कहीं भी खोजें' : 'Search Anywhere'}</button>
+      </div>`;
   } else {
     const hscrEl = document.getElementById('hscr');
     hscrEl.innerHTML = ''; 
-    
     filteredList.forEach(l => {
       const card = document.createElement('div');
-      card.className = 'hcd';
-	  card.setAttribute('data-id', l.id);
-      card.onclick = () => openListing(l.id);
+      card.className = 'hcd'; card.setAttribute('data-id', l.id); card.onclick = () => openListing(l.id);
       card.style.cssText = 'min-width:200px; max-width:200px;';
       
       const topDiv = document.createElement('div');
       topDiv.style.cssText = 'display:flex; gap:10px; margin-bottom:8px; align-items:flex-start;';
-      
       const thumb = document.createElement('div');
       thumb.style.cssText = 'width:44px;height:44px;border-radius:12px;flex-shrink:0;position:relative;';
-      
       const imgUrl = l.imageUrl || l.image;
-      if (imgUrl) {
-        thumb.style.cssText += `background:#fff url('${sanitizer.sanitizeUrl(imgUrl)}') center/contain no-repeat;border:1px solid #E5E7EB;`;
-      } else {
+      
+      if (imgUrl) thumb.style.cssText += `background:#fff url('${sanitizer.sanitizeUrl(imgUrl)}') center/contain no-repeat;border:1px solid #E5E7EB;`;
+      else {
         const col = l.color || TC(l.type);
         thumb.style.cssText += `background:${col}20;display:flex;align-items:center;justify-content:center;font-size:20px;`;
         thumb.textContent = l.emoji || TE(l.type);
@@ -2366,111 +2117,57 @@ function renderCards() {
       if (l.expiryDate) {
         const hrs = (new Date(l.expiryDate) - new Date()) / 3600000;
         if (hrs > 0 && hrs <= 24) {
-          const fomoBadge = document.createElement('div');
-          fomoBadge.className = 'fomo-badge';
-          fomoBadge.style.cssText = 'top:-4px;left:-4px;font-size:8px;padding:3px 6px;';
-          fomoBadge.textContent = `🔥 ${Math.ceil(hrs)}h`;
-          thumb.appendChild(fomoBadge);
+          const fb = document.createElement('div');
+          fb.className = 'fomo-badge'; fb.style.cssText = 'top:-4px;left:-4px;font-size:8px;padding:3px 6px;';
+          fb.textContent = `🔥 ${Math.ceil(hrs)}h`; thumb.appendChild(fb);
         }
       }
       
-      const contentDiv = document.createElement('div');
-      contentDiv.style.cssText = 'flex:1;overflow:hidden;';
-      
-      const typeDiv = document.createElement('div');
-      typeDiv.className = 'hcd-type';
+      const contentDiv = document.createElement('div'); contentDiv.style.cssText = 'flex:1;overflow:hidden;';
+      const typeDiv = document.createElement('div'); typeDiv.className = 'hcd-type';
       const col = l.color || TC(l.type);
       typeDiv.style.cssText = `color:${col};margin-bottom:2px;text-transform:capitalize;`;
       typeDiv.textContent = sanitizer.sanitizeText(l.type || '', { maxLength: 20 });
       
-      const titleDiv = document.createElement('div');
-      titleDiv.className = 'hcd-title';
-      titleDiv.style.cssText = 'margin-bottom:0;font-size:13px;';
+      const titleDiv = document.createElement('div'); titleDiv.className = 'hcd-title'; titleDiv.style.cssText = 'margin-bottom:0;font-size:13px;';
       titleDiv.textContent = sanitizer.sanitizeText(l.title || '', { maxLength: 35 });
+      contentDiv.appendChild(typeDiv); contentDiv.appendChild(titleDiv);
+      topDiv.appendChild(thumb); topDiv.appendChild(contentDiv);
       
-      contentDiv.appendChild(typeDiv);
-      contentDiv.appendChild(titleDiv);
-      
-      topDiv.appendChild(thumb);
-      topDiv.appendChild(contentDiv);
-      
-      const bottomDiv = document.createElement('div');
-      bottomDiv.style.cssText = 'display:flex;justify-content:space-between;align-items:center;';
-      
-      const priceDiv = document.createElement('div');
-      priceDiv.className = 'hcd-price';
-      priceDiv.style.cssText = 'font-size:14px;font-weight:900;color:#FF5722;';
+      const bottomDiv = document.createElement('div'); bottomDiv.style.cssText = 'display:flex;justify-content:space-between;align-items:center;';
+      const priceDiv = document.createElement('div'); priceDiv.className = 'hcd-price'; priceDiv.style.cssText = 'font-size:14px;font-weight:900;color:#FF5722;';
       priceDiv.textContent = sanitizer.sanitizeText(l.price || '', { maxLength: 50 });
-      
-      const distDiv = document.createElement('div');
-      distDiv.className = 'hcd-dist';
-      distDiv.style.cssText = 'margin-top:0;font-size:11px;color:#6B7280;font-weight:700;background:#F3F4F6;padding:2px 6px;border-radius:6px;';
+      const distDiv = document.createElement('div'); distDiv.className = 'hcd-dist'; distDiv.style.cssText = 'margin-top:0;font-size:11px;color:#6B7280;font-weight:700;background:#F3F4F6;padding:2px 6px;border-radius:6px;';
       distDiv.textContent = '📍 ' + fmtDist(l);
+      bottomDiv.appendChild(priceDiv); bottomDiv.appendChild(distDiv);
       
-      bottomDiv.appendChild(priceDiv);
-      bottomDiv.appendChild(distDiv);
-      
-      card.appendChild(topDiv);
-      card.appendChild(bottomDiv);
-      hscrEl.appendChild(card);
+      card.appendChild(topDiv); card.appendChild(bottomDiv); hscrEl.appendChild(card);
     });
 
     vgrid.innerHTML = ''; 
-    
     filteredList.forEach(l => {
-      const card = document.createElement('div');
-      card.className = 'd-card';
-      card.onclick = () => openListing(l.id);
-      
-      const iconDiv = document.createElement('div');
-      iconDiv.className = 'd-ic';
-      
+      const card = document.createElement('div'); card.className = 'd-card'; card.onclick = () => openListing(l.id);
+      const iconDiv = document.createElement('div'); iconDiv.className = 'd-ic';
       const imgUrl = l.imageUrl || l.image;
-      if (imgUrl) {
-        iconDiv.style.cssText = `background:#ffffff url('${sanitizer.sanitizeUrl(imgUrl)}') center/contain no-repeat;border:1px solid #E5E7EB;`;
-      } else {
-        iconDiv.textContent = l.emoji || TE(l.type);
-      }
+      if (imgUrl) iconDiv.style.cssText = `background:#ffffff url('${sanitizer.sanitizeUrl(imgUrl)}') center/contain no-repeat;border:1px solid #E5E7EB;`;
+      else iconDiv.textContent = l.emoji || TE(l.type);
       
-      const contentDiv = document.createElement('div');
-      contentDiv.className = 'd-cont';
-      
-      const typeDiv = document.createElement('div');
-      typeDiv.className = 'd-type';
-      const col = l.color || TC(l.type);
-      typeDiv.style.color = col;
-      typeDiv.textContent = sanitizer.sanitizeText((l.type || '').toUpperCase(), { maxLength: 20 });
-      
-      const titleDiv = document.createElement('div');
-      titleDiv.className = 'd-title';
-      titleDiv.textContent = sanitizer.sanitizeText(l.title || '', { maxLength: 200 });
-      
-      const priceDiv = document.createElement('div');
-      priceDiv.className = 'd-price';
-      priceDiv.textContent = sanitizer.sanitizeText(l.price || '', { maxLength: 50 });
-      
-      const distDiv = document.createElement('div');
-      distDiv.className = 'd-dist';
-      distDiv.textContent = fmtDist(l);
+      const contentDiv = document.createElement('div'); contentDiv.className = 'd-cont';
+      const typeDiv = document.createElement('div'); typeDiv.className = 'd-type';
+      typeDiv.style.color = l.color || TC(l.type); typeDiv.textContent = sanitizer.sanitizeText((l.type || '').toUpperCase(), { maxLength: 20 });
+      const titleDiv = document.createElement('div'); titleDiv.className = 'd-title'; titleDiv.textContent = sanitizer.sanitizeText(l.title || '', { maxLength: 200 });
+      const priceDiv = document.createElement('div'); priceDiv.className = 'd-price'; priceDiv.textContent = sanitizer.sanitizeText(l.price || '', { maxLength: 50 });
+      const distDiv = document.createElement('div'); distDiv.className = 'd-dist'; distDiv.textContent = fmtDist(l);
       
       if (l.expiryDate) {
         const hrs = (new Date(l.expiryDate) - new Date()) / 3600000;
         if (hrs > 0 && hrs <= 24) {
-          const fomoBadge = document.createElement('div');
-          fomoBadge.className = 'fomo-badge';
-          fomoBadge.textContent = `🔥 ${Math.ceil(hrs)}h left`;
-          contentDiv.appendChild(fomoBadge);
+          const fb = document.createElement('div'); fb.className = 'fomo-badge'; fb.textContent = `🔥 ${Math.ceil(hrs)}h left`;
+          contentDiv.appendChild(fb);
         }
       }
-      
-      contentDiv.appendChild(typeDiv);
-      contentDiv.appendChild(titleDiv);
-      contentDiv.appendChild(priceDiv);
-      contentDiv.appendChild(distDiv);
-      
-      card.appendChild(iconDiv);
-      card.appendChild(contentDiv);
-      vgrid.appendChild(card);
+      contentDiv.appendChild(typeDiv); contentDiv.appendChild(titleDiv); contentDiv.appendChild(priceDiv); contentDiv.appendChild(distDiv);
+      card.appendChild(iconDiv); card.appendChild(contentDiv); vgrid.appendChild(card);
     });
   }
 }
@@ -2479,29 +2176,13 @@ let isListView = false;
 window.toggleListView = () => {
   window.haptic(50);
   isListView = !isListView;
-  
-  const bsht = document.querySelector('.bsht');
-  const hscr = document.getElementById('hscr');
-  const vgrid = document.getElementById('vgrid');
-  const listBtn = document.getElementById('list-btn');
-  const discBtn = document.getElementById('disc-btn');
-
+  const bsht = document.querySelector('.bsht'), hscr = document.getElementById('hscr'), vgrid = document.getElementById('vgrid'), listBtn = document.getElementById('list-btn'), discBtn = document.getElementById('disc-btn');
   if (isListView) {
-    bsht.classList.add('list-mode'); 
-    hscr.style.display = 'none'; 
-    vgrid.style.display = 'grid'; 
-    discBtn.style.display = 'none';
-    
-    listBtn.classList.add('on'); 
-    listBtn.innerHTML = window.lang === 'hi' ? '🗺️ नक्शा' : '🗺️ Map View';
+    bsht.classList.add('list-mode'); hscr.style.display = 'none'; vgrid.style.display = 'grid'; discBtn.style.display = 'none';
+    listBtn.classList.add('on'); listBtn.innerHTML = window.lang === 'hi' ? '🗺️ नक्शा' : '🗺️ Map View';
   } else {
-    bsht.classList.remove('list-mode'); 
-    hscr.style.display = 'flex'; 
-    vgrid.style.display = 'none'; 
-    discBtn.style.display = 'flex';
-    
-    listBtn.classList.remove('on'); 
-    listBtn.innerHTML = window.lang === 'hi' ? '📋 सूची' : '📋 List View';
+    bsht.classList.remove('list-mode'); hscr.style.display = 'flex'; vgrid.style.display = 'none'; discBtn.style.display = 'flex';
+    listBtn.classList.remove('on'); listBtn.innerHTML = window.lang === 'hi' ? '📋 सूची' : '📋 List View';
   }
 };
 
@@ -2520,222 +2201,162 @@ function showNotif(l) {
   
   const imgUrl = l.imageUrl || l.image;
   const nic = document.getElementById('n-ic');
-  
-  if (imgUrl) { 
-    nic.textContent = ''; 
-    nic.style.background = `#ffffff url('${sanitizer.sanitizeUrl(imgUrl)}') center/contain no-repeat`; 
-  } else { 
-    nic.textContent = sanitizer.sanitizeText(l.emoji || TE(l.type), { maxLength: 10 }); 
-    nic.style.background = `${col}20`; 
-  }
+  if (imgUrl) { nic.textContent = ''; nic.style.background = `#ffffff url('${sanitizer.sanitizeUrl(imgUrl)}') center/contain no-repeat`; } 
+  else { nic.textContent = sanitizer.sanitizeText(l.emoji || TE(l.type), { maxLength: 10 }); nic.style.background = `${col}20`; }
 
-  // Set Content
   document.getElementById('n-dist').textContent = fmtDist(l);
   document.getElementById('n-title2').textContent = sanitizer.sanitizeText(l.title || '', { maxLength: 60 });
   document.getElementById('n-body').textContent = sanitizer.sanitizeText(l.desc || '', { maxLength: 100 }) + '…';
   
-  // 🚀 MAGIC SYNC: Scroll the matching .hcd card into view and highlight it
   const matchingCard = document.querySelector(`.hcd[data-id="${l.id}"]`);
   if (matchingCard) {
-    // Reset all other cards
-    document.querySelectorAll('.hcd').forEach(c => {
-       c.style.border = '';     // Let CSS handle the theme mode
-       c.style.boxShadow = '';  // Let CSS handle the theme mode
-    });
-    // Highlight the active nearest card
-    matchingCard.style.border = `2px solid ${col}`;
-    matchingCard.style.boxShadow = `0 8px 24px ${col}40`;
+    document.querySelectorAll('.hcd').forEach(c => { c.style.border = ''; c.style.boxShadow = ''; });
+    matchingCard.style.border = `2px solid ${col}`; matchingCard.style.boxShadow = `0 8px 24px ${col}40`;
     matchingCard.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
   }
   
   document.getElementById('n-view').onclick = () => {
-    window.haptic(50);
-    window.trackEng(l.id, 8);
-    if (typeof window.gtag === 'function') gtag('event', 'funnel_step', { step_name: 'popup_clicked', listing_id: l.id });
+    window.haptic(50); window.trackEng(l.id, 8);
     try { updateDoc(doc(db, 'listings', l.id), { visits: increment(1) }); } catch(e) {}
-    hideNotif(); 
-    openListing(l.id);
+    hideNotif(); openListing(l.id);
   };
   
   document.querySelector('#notif .mn-btn.s').onclick = () => { 
-    window.haptic(30); 
-    window.trackEng(l.id, -5); 
-    manuallyDismissedId = l.id; // 🚀 User dismissed, do not re-show this specific deal until nearest changes
-    hideNotif(); 
+    window.haptic(30); window.trackEng(l.id, -5); 
+    manuallyDismissedId = l.id; hideNotif(); 
   };
   
   document.getElementById('notif').classList.add('on');
   window.haptic([100, 50, 100, 50, 100]);
-  clearTimeout(window._nt); 
-  window._nt = setTimeout(hideNotif, 8000);
+  clearTimeout(window._nt); window._nt = setTimeout(hideNotif, 8000);
 }
 window.showNotif = showNotif;
 
 window.pickType = (t, btn) => { 
-  window.haptic(30); 
-  welcomeType = t; 
+  window.haptic(30); welcomeType = t; 
   document.querySelectorAll('.wtype').forEach(b => b.classList.remove('on')); 
   btn.classList.add('on'); 
 };
 
 window.startApp = () => {
-  window.haptic(50);
-  cat = welcomeType;
-  
+  window.haptic(50); cat = welcomeType;
   document.querySelectorAll('#cat-pills .pill').forEach(b => {
     const txt = b.getAttribute('data-en');
     const match = txt === 'All' ? 'all' : txt.includes('Deals') ? 'deal' : txt.includes('Flats') ? 'rental' : txt.includes('PG') ? 'pg' : txt.includes('Jobs') ? 'job' : '';
     b.classList.toggle('on', match === cat);
   });
-  
-  const interestMap = {
-    'all':['deal','rental','pg','job'],
-    'deal':['deal'],
-    'rental':['rental'],
-    'pg':['pg'],
-    'job':['job']
-  };
-  
+  const interestMap = { 'all':['deal','rental','pg','job'], 'deal':['deal'], 'rental':['rental'], 'pg':['pg'], 'job':['job'] };
   SS('pref_interests', interestMap[welcomeType] || ['deal','rental','pg','job']);
-  
   localStorage.setItem('welcome_timestamp', Date.now().toString());
   document.getElementById('modal-welcome').classList.remove('on');
-  
-  setTimeout(() => { 
-    if (window._map) window._map.invalidateSize(); 
-  }, 300); 
-  
+  setTimeout(() => { if (window._map) window._map.invalidateSize(); }, 300); 
   getLoc();
 };
 
 window.skipWelcome = () => { 
-  window.haptic(30); 
-  
-  localStorage.setItem('welcome_timestamp', Date.now().toString()); 
-  welcomeType = 'all'; 
-  document.getElementById('modal-welcome').classList.remove('on'); 
-  
-  setTimeout(() => { 
-    if (window._map) window._map.invalidateSize(); 
-  }, 300); 
-  
+  window.haptic(30); localStorage.setItem('welcome_timestamp', Date.now().toString()); 
+  welcomeType = 'all'; document.getElementById('modal-welcome').classList.remove('on'); 
+  setTimeout(() => { if (window._map) window._map.invalidateSize(); }, 300); 
   getLoc(); 
 };
 
 let discoveryMode = false;
 window.toggleDiscovery = () => {
-  window.haptic(50);
-  discoveryMode = !discoveryMode;
+  window.haptic(50); discoveryMode = !discoveryMode;
   const btn = document.getElementById('disc-btn');
-  
   if (discoveryMode) {
-    btn.classList.add('on'); 
-    btn.textContent = window.lang === 'hi' ? '✕ खोज बंद करें' : '✕ Exit Discovery'; 
-    redraw();
-    
+    btn.classList.add('on'); btn.textContent = window.lang === 'hi' ? '✕ खोज बंद करें' : '✕ Exit Discovery'; redraw();
     if (filteredList.length) {
       const bounds = L.latLngBounds(filteredList.filter(l => l.lat).map(l => [l.lat, l.lng]));
       if (bounds.isValid()) window._map.fitBounds(bounds, { padding: [40, 40] });
     }
-    
     toast('🔍', window.lang === 'hi' ? 'डिस्कवरी मोड: ऑफर देखने के लिए किसी भी मार्कर पर टैप करें' : 'Discovery Mode: tap any marker to view offer');
   } else {
-    btn.classList.remove('on'); 
-    btn.textContent = window.lang === 'hi' ? '🔍 खोजें' : '🔍 Discover'; 
-    redraw(); 
-    
+    btn.classList.remove('on'); btn.textContent = window.lang === 'hi' ? '🔍 खोजें' : '🔍 Discover'; redraw(); 
     toast('📍', window.lang === 'hi' ? 'ऑटो-अलर्ट फिर से शुरू' : 'Auto-alerts resumed');
   }
 };
 
-window.hideNotif = () => { 
-  window.haptic(30); 
-  document.getElementById('notif').classList.remove('on'); 
-};
-
+window.hideNotif = () => { window.haptic(30); document.getElementById('notif').classList.remove('on'); };
 window.go = href => window.location.href = href;
-
-window.openListing = id => { 
-  window.haptic(50); 
-  SS('viewId', id); 
-  window.location.href = 'detail.html?id=' + encodeURIComponent(id); 
-};
+window.openListing = id => { window.haptic(50); SS('viewId', id); window.location.href = 'detail.html?id=' + encodeURIComponent(id); };
 
 window.setCat = async (c, btn) => { 
-  window.haptic(50); 
-  cat = c; 
+  window.haptic(50); cat = c; 
   document.querySelectorAll('#cat-pills .pill').forEach(b => b.classList.remove('on')); 
-  btn.classList.add('on'); 
-  redraw(); 
+  btn.classList.add('on'); redraw(); 
 };
 
 window.setR = async (km, btn) => { 
   window.haptic(50);
-  const oldKm = radiusKm; 
-  radiusKm = km; 
-  SS('searchRadius', km); 
-  
+  const oldKm = radiusKm; radiusKm = km; SS('searchRadius', km); 
   document.querySelectorAll('.rdist-btn').forEach(b => b.classList.remove('on')); 
   if (btn) btn.classList.add('on'); 
-  
-  if (oldKm <= 5 && km > 5) { 
-    await window.forceRefresh(); 
-  } else { 
-    redraw(); 
-  }
+  if (oldKm <= 5 && km > 5) { await window.forceRefresh(); } else { redraw(); }
 };
 
 async function initApp() {
   await loadNavigation(); 
   initDragToScroll();
-  
   const _cached = cacheGet(); 
-  if (_cached) { 
-    listings = _cached; 
-    redraw(); 
-  }
+  if (_cached) { listings = _cached; redraw(); }
   
-  const auth = getAuth();
+  const auth = getAuth(app); // 🚀 FIX 1: Pass 'app' instance explicitly 
   onAuthStateChanged(auth, (user) => { 
-    if (user) { loadListings(); } 
+    if (user) { 
+      loadListings(); 
+    } else {
+      // 🚀 FIX 2: Bubblewrap Fix. Automatically boot out dead sessions
+      localStorage.removeItem('np_uid');
+      window.location.href = 'index.html';
+    }
   });
   
-  setInterval(() => { 
-    if (auth.currentUser) loadListings(); 
-  }, 5 * 60 * 1000);
-  
+  setInterval(() => { if (auth.currentUser) loadListings(); }, 5 * 60 * 1000);
   const lastSeen = localStorage.getItem('welcome_timestamp');
-  const oneHour = 60 * 60 * 1000; 
-  
-  if (lastSeen && (Date.now() - parseInt(lastSeen) < oneHour)) {
-    setTimeout(() => { 
-      if (window._map) window._map.invalidateSize(); 
-    }, 500);
+  if (lastSeen && (Date.now() - parseInt(lastSeen) < 3600000)) {
+    setTimeout(() => { if (window._map) window._map.invalidateSize(); }, 500);
     getLoc();
   } else {
     document.getElementById('modal-welcome').classList.add('on');
   }
 }
 
-// ✅ Old Play Store popup removed - replaced with better app download sheet
-// The new sheet shows at 10 seconds with bottom sheet animation
+const PROXIMITY_THRESHOLD = 500;
+let currentNearestId = null, manuallyDismissedId = null, popupsPaused = false;
 
-setTimeout(() => {
-  if ('Notification' in window) {
-    if (Notification.permission === 'default') {
-      const notifPrompt = document.getElementById('notif-prompt');
-      if (notifPrompt) notifPrompt.style.display = 'flex';
-    } else if (Notification.permission === 'granted') { 
-      window.initFCM(); // Already granted — just register token, don't re-request
-    }
+window.togglePopups = () => {
+  popupsPaused = !popupsPaused;
+  const btn = document.getElementById('popup-toggle');
+  if (btn) { btn.textContent = popupsPaused ? '🔕' : '🔔'; btn.classList.toggle('paused', popupsPaused); }
+  if (popupsPaused) { hideNotif(); toast('🔕', window.lang === 'hi' ? 'पॉपअप रोक दिए गए' : 'Popups paused'); } 
+  else {
+    toast('🔔', window.lang === 'hi' ? 'पॉपअप शुरू किए गए' : 'Popups resumed');
+    manuallyDismissedId = null; 
+    if (loc) window.checkForNewNearbyListings({ isStationary: false });
   }
-}, 3000);
+};
+
+window.checkForNewNearbyListings = function(movementContext = {}) {
+  if (!filteredList || filteredList.length === 0 || !loc || !gpsConfirmed || popupsPaused) return;
+  const nearest = filteredList[0];
+  const dist = distM(loc.lat, loc.lng, nearest.lat, nearest.lng);
+
+  if (dist <= PROXIMITY_THRESHOLD) {
+    if (nearest.id === manuallyDismissedId) return;
+    if (currentNearestId !== nearest.id) {
+      currentNearestId = nearest.id; showNotif(nearest);
+    } else {
+      const popup = document.getElementById('notif');
+      if (popup && popup.classList.contains('on')) document.getElementById('n-dist').textContent = fmtDist(nearest);
+      else if (!movementContext.isStationary) showNotif(nearest);
+    }
+  } else { hideNotif(); currentNearestId = null; }
+};
 
 window.dismissGeoBlock = () => {
-  window.haptic(30);
-  document.getElementById('hard-geo-block').style.display = 'none';
-  setFallback(); 
-  toast('🗺️', window.lang === 'hi' ? 'मैन्युअल रूप से ब्राउज़ कर रहे हैं' : 'Browsing map manually');
+  window.haptic(30); document.getElementById('hard-geo-block').style.display = 'none';
+  setFallback(); toast('🗺️', window.lang === 'hi' ? 'मैन्युअल रूप से ब्राउज़ कर रहे हैं' : 'Browsing map manually');
 };
 
 initApp();
@@ -2744,212 +2365,8 @@ document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible' && typeof loadListings === 'function') loadListings(true); 
 });
 
-// Cleanup GPS manager on page unload
-window.addEventListener('beforeunload', () => {
-  if (gpsManager) {
-    gpsManager.stop();
-  }
-});
-
-// ═══════════════════════════════════════════════════════════════════
-// CONTINUOUS IN-APP POPUP NOTIFICATION SYSTEM (SYNCED)
-// ═══════════════════════════════════════════════════════════════════
-
-const PROXIMITY_THRESHOLD = 500; // Trigger radius (meters)
-let currentNearestId = null;
-let manuallyDismissedId = null;
-let popupsPaused = false;
-
-// Pause/Play toggle
-window.togglePopups = () => {
-  popupsPaused = !popupsPaused;
-  const btn = document.getElementById('popup-toggle');
-  if (btn) {
-    btn.textContent = popupsPaused ? '🔕' : '🔔';
-    btn.classList.toggle('paused', popupsPaused);
-  }
-  
-  if (popupsPaused) {
-    hideNotif();
-    toast('🔕', window.lang === 'hi' ? 'पॉपअप रोक दिए गए' : 'Popups paused');
-  } else {
-    toast('🔔', window.lang === 'hi' ? 'पॉपअप शुरू किए गए' : 'Popups resumed');
-    manuallyDismissedId = null; // Reset dismissal on unpause
-    if (loc) window.checkForNewNearbyListings({ isStationary: false });
-  }
-};
-
-// Main real-time tracker - triggered by GPS manager
-window.checkForNewNearbyListings = function(movementContext = {}) {
-  // 1. Validate dependencies
-  if (!filteredList || filteredList.length === 0 || !loc || !gpsConfirmed) return;
-  if (popupsPaused) return;
-
-  // 2. filteredList is strictly sorted nearest-first by redraw()
-  const nearest = filteredList[0];
-  const dist = distM(loc.lat, loc.lng, nearest.lat, nearest.lng);
-
-  // 3. Proximity & Synchronization check
-  if (dist <= PROXIMITY_THRESHOLD) {
-    // If the user manually dismissed this specific deal, don't annoy them
-    if (nearest.id === manuallyDismissedId) return;
-
-    if (currentNearestId !== nearest.id) {
-      // 🚀 NEW NEAREST LISTING: Sync UI and popup
-      currentNearestId = nearest.id;
-      showNotif(nearest);
-    } else {
-      // 📍 SAME LISTING: Keep distance updated in real-time
-      const popup = document.getElementById('notif');
-      if (popup && popup.classList.contains('on')) {
-        document.getElementById('n-dist').textContent = fmtDist(nearest);
-      } else if (!movementContext.isStationary) {
-        // Re-trigger if popup timed out but user is still walking towards it
-        showNotif(nearest);
-      }
-    }
-  } else {
-    // Left threshold - cleanup
-    hideNotif();
-    currentNearestId = null;
-  }
-};
-
-// ═══════════════════════════════════════════════════════════════════
-// NOTIFICATION PERMISSION MODAL
-// ═══════════════════════════════════════════════════════════════════
-
-function showNotificationPermissionModal() {
-  const modal = document.getElementById('notif-permission-modal');
-  if (!modal) return;
-  
-  modal.classList.add('show');
-  
-  // FIX: Wire directly to your existing FCM logic
-  document.getElementById('btn-notif-enable').onclick = async () => {
-    modal.classList.remove('show');
-    localStorage.setItem('np_notif_asked', Date.now().toString());
-    await window.askForNotifs(); 
-  };
-  
-  // Later button
-  document.getElementById('btn-notif-later').onclick = () => {
-    localStorage.setItem('np_notif_asked', Date.now().toString());
-    modal.classList.remove('show');
-  };
-  
-  // Close on overlay click
-  modal.onclick = (e) => {
-    if (e.target === modal) {
-      localStorage.setItem('np_notif_asked', Date.now().toString());
-      modal.classList.remove('show');
-    }
-  };
-}
-
-// Show notification permission modal 2 seconds after page load
-setTimeout(() => {
-  // Ask if not granted - covers first time (default) AND re-ask if still denied
-  if ('Notification' in window && Notification.permission !== 'granted') {
-    const lastAsked = localStorage.getItem('np_notif_asked');
-    const now = Date.now();
-    // First login: no lastAsked → show immediately
-    // Return visits: only re-ask if still not granted after 7 days
-    if (!lastAsked || (now - parseInt(lastAsked)) >= 7 * 24 * 60 * 60 * 1000) {
-      showNotificationPermissionModal();
-    }
-  }
-}, 2000);
-
-// ── Step 2: Location permission at 10 seconds ──────────────────
-setTimeout(() => {
-  // Skip if already granted
-  if (navigator.permissions) {
-    navigator.permissions.query({ name: 'geolocation' }).then(result => {
-      if (result.state === 'granted') return; // Already have it
-
-      // Skip if notification modal is still showing
-      const notifModal = document.getElementById('notif-permission-modal');
-      if (notifModal && notifModal.classList.contains('show')) return;
-
-      // Only ask if not asked today
-      const lastLocAsked = localStorage.getItem('np_loc_asked');
-      const now = Date.now();
-      if (lastLocAsked && (now - parseInt(lastLocAsked)) < 24 * 60 * 60 * 1000) return;
-
-      localStorage.setItem('np_loc_asked', now.toString());
-
-      // Trigger browser's native location prompt
-      navigator.geolocation.getCurrentPosition(
-        () => console.log('[Permissions] Location granted'),
-        () => console.log('[Permissions] Location denied'),
-        { enableHighAccuracy: true, timeout: 10000 }
-      );
-    });
-  }
-}, 10000);
-
-// ═══════════════════════════════════════════════════════════════════
-// APP DOWNLOAD PROMPT (Bottom Sheet)
-// ═══════════════════════════════════════════════════════════════════
-function showAppDownloadSheet() {
-  // FIX: Don't show if the notification permission modal is currently on screen
-  const notifModal = document.getElementById('notif-permission-modal');
-  if (notifModal && notifModal.classList.contains('show')) {
-    setTimeout(showAppDownloadSheet, 5000); // Check again in 5 seconds
-    return;
-  }
-
-  const sheet = document.getElementById('app-download-sheet');
-  if (!sheet) return;
-
-  sheet.classList.add('show');
-
-  // Download app button
-  document.getElementById('btn-download-app').onclick = () => {
-    window.open('https://play.google.com/store/apps/details?id=in.nearpop.app', '_blank');
-    localStorage.setItem('np_app_download_clicked', 'true');
-    sheet.classList.remove('show');
-  };
-
-  // Continue on web button
-  document.getElementById('btn-continue-web').onclick = () => {
-    localStorage.setItem('np_app_prompt_time', Date.now().toString());
-    localStorage.removeItem('np_app_prompt_shown');
-    localStorage.removeItem('np_app_prompt_dismissed');
-    sheet.classList.remove('show');
-  };
-}
-
-window.closeAppDownloadSheet = function() {
-  const sheet = document.getElementById('app-download-sheet');
-  if (sheet) {
-    sheet.classList.remove('show');
-  }
-};
-
-setTimeout(() => {
-  // ✅ Skip if running inside native Android app
-  if (window.isNativeAndroidApp) return;
-  // ✅ Skip if already installed as PWA/standalone
-  if (window.matchMedia('(display-mode: standalone)').matches) return;
-  // ✅ Skip if user already downloaded (clicked Play Store link)
-  if (localStorage.getItem('np_app_download_clicked')) return;
-  // ✅ Re-ask logic: show again after 3 days if not installed
-  const lastPrompt = localStorage.getItem('np_app_prompt_time');
-  const now = Date.now();
-  if (lastPrompt && (now - parseInt(lastPrompt)) < 3 * 24 * 60 * 60 * 1000) return;
-  // ✅ Don't show if notification modal is active
-  const notifModal = document.getElementById('notif-permission-modal');
-  if (notifModal && notifModal.classList.contains('show')) {
-    setTimeout(() => showAppDownloadSheet(), 5000);
-    return;
-  }
-  // ✅ Save timestamp (NOT a permanent flag - allows re-ask after 3 days)
-  localStorage.setItem('np_app_prompt_time', now.toString());
-  showAppDownloadSheet();
-}, 20000);
-
+window.addEventListener('beforeunload', () => { if (gpsManager) gpsManager.stop(); });
 </script>
+
 </body>
 </html>
