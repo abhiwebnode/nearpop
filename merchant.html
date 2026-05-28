@@ -122,7 +122,7 @@
 
     <div class="sec-title">🚀 Quick Actions</div>
     <div class="action-cards">
-      <a href="create.html" class="action-card primary">
+		<div onclick="window.checkPremium()" class="action-card primary">
         <div class="action-card-icon">➕</div>
         <div class="action-card-title">Create Listing</div>
         <div class="action-card-desc">Post new deal or offer</div>
@@ -171,9 +171,9 @@
   </div>
 </div>
 
-<a href="create.html" class="fab-create" title="Create New Listing">
+<button class="fab-create" onclick="window.checkPremium()" title="Create New Listing">
   <span class="fab-icon">＋</span> Create Listing
-</a>
+</button>
 
 <div class="modal" id="mod-credits" onclick="if(event.target===this)this.classList.remove('on')">
   <div class="msht" style="padding-bottom: 30px;">
@@ -239,7 +239,19 @@
     </button>
   </div>
 </div>
-
+<div class="modal" id="mod-premium" onclick="if(event.target===this)this.classList.remove('on')">
+  <div class="msht">
+    <div class="mh"></div>
+    <div class="mt" style="font-size:22px;">👑 Go Premium</div>
+    <p style="font-size:13px;color:var(--gray);margin-bottom:16px;line-height:1.5;">You've reached the limit of 1 free listing. Upgrade to Premium to run multiple campaigns, dominate different neighborhoods, and skyrocket your sales.</p>
+    <div style="background:rgba(245, 158, 11, 0.1); border:1px solid rgba(245, 158, 11, 0.3); border-radius:12px; padding:16px; margin-bottom:16px;">
+      <div style="font-weight:900; color:var(--or); margin-bottom:8px;">Premium Perks:</div>
+      <ul style="font-size:12px; color:var(--deep); margin-left:16px; line-height:1.6;"><li>Unlimited Active Listings</li><li>Priority Search Ranking</li><li>Advanced Insights & Analytics</li></ul>
+    </div>
+    <button class="btn-or" onclick="window.upgradePremium()" style="background:linear-gradient(135deg, #F59E0B, #D97706); width:100%;">⚡ Upgrade for 499 Credits</button>
+    <button class="btn-lt" style="width:100%; margin-top:8px;" onclick="document.getElementById('mod-premium').classList.remove('on')">Maybe Later</button>
+  </div>
+</div>
 <div class="toast" id="toast"><span id="t-ic">✅</span><span id="t-tx"></span></div>
 </div>
 
@@ -526,6 +538,64 @@ window.logout = async () => {
 
 window.toast = toast;
 onAuthStateChanged(auth, (user) => { if (user) { loadDashboard(); } });
+
+window.checkPremium = () => {
+  window.haptic(30);
+  
+  // Count how many listings they already have
+  let currentCount = 0;
+  const cached = cacheGet();
+  if (cached) {
+    currentCount = cached.filter(l => l.uid === uid).length;
+  }
+
+  // Allow if Premium OR if they have 0 listings
+  if (userPlan === 'premium' || currentCount === 0) {
+    window.location.href = 'create.html';
+  } else {
+    document.getElementById('mod-premium').classList.add('on');
+  }
+};
+
+window.upgradePremium = async () => {
+  window.haptic(50);
+  
+  if (wallet < 499) {
+    toast('⚠️', 'Insufficient credits. Earn more first!');
+    document.getElementById('mod-premium').classList.remove('on');
+    document.getElementById('mod-credits').classList.add('on'); // Show earn credits popup
+    return;
+  }
+  
+  const btn = document.querySelector('#mod-premium .btn-or');
+  btn.textContent = 'Upgrading...';
+  
+  try {
+    const newWallet = wallet - 499;
+    
+    // 🚀 CRITICAL: Write the new plan and deducted wallet to Firebase
+    await setDoc(doc(db, 'users', uid), { wallet: newWallet, plan: 'premium' }, { merge: true });
+    
+    // Update local variables
+    wallet = newWallet;
+    SS('wallet', wallet);
+    SS('plan', 'premium');
+    userPlan = 'premium';
+    
+    // Update UI
+    document.getElementById('mwal').textContent = Math.floor(wallet) + ' 🪙';
+    updateProfileDisplay(); // This adds the crown 👑 to their name
+    
+    toast('👑', 'Welcome to Premium!');
+    document.getElementById('mod-premium').classList.remove('on');
+    setTimeout(() => { window.location.href = 'create.html'; }, 1200);
+    
+  } catch(e) {
+    console.error("Upgrade error:", e);
+    toast('❌', 'Upgrade failed.');
+    btn.textContent = '⚡ Upgrade for 499 Credits';
+  }
+};
 </script>
 </body>
 </html>
