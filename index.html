@@ -207,9 +207,14 @@
 <script type="module">
 import { db, LS, SS, toast, cacheClear } from './js/app.js';
 import { sanitizer } from './js/sanitizer.js';
-import { getAuth, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithCredential } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js";
 import { doc, getDoc, setDoc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js";
 import { app } from './js/app.js';
+
+// ✅ Detect if running in native Android app (checks both flag and user agent)
+const isNativeAndroid = window.isNativeAndroidApp || navigator.userAgent.includes('NearPopNativeAndroid') || false;
+const hasNativeAuth = window.NativeAndroid && typeof window.NativeAndroid.signInWithGoogle === 'function';
+console.log('[Auth] Native Android:', isNativeAndroid, 'Native Auth Available:', hasNativeAuth);
 
 // If already logged in, redirect smoothly
 if (LS('uid')) { 
@@ -279,8 +284,20 @@ function resetLdr() {
 }
 
 window.loginWithGoogle = async () => {
-  if (!document.getElementById('agree-check').checked) return toast('⚠️', 'Please agree to the Terms & Privacy Policy.');
+  if (!document.getElementById('agree-check').checked) {
+    return toast('⚠️', 'Please agree to the Terms & Privacy Policy.');
+  }
 
+  // ✅ NATIVE ANDROID PATH
+  if (isNativeAndroid && hasNativeAuth) {
+    console.log('[Auth] Using NATIVE Android Sign-In');
+    showLdr('Opening Google Sign-In...');
+    window.NativeAndroid.signInWithGoogle();
+    return; // Exit here - callback will handle rest
+  }
+  
+  // ✅ WEB BROWSER PATH
+  console.log('[Auth] Using WEB Firebase Sign-In');
   try {
     showLdr('Connecting to Google...');
     
@@ -290,93 +307,10 @@ window.loginWithGoogle = async () => {
     const rawName = user.displayName || 'User';
     const gName = sanitizer.sanitizeText(rawName, { maxLength: 100 });
     
-    SS('uid', uid); SS('name', gName); SS('role', window.loginRole);
+    showLdr('Signing in...');
     
-    showLdr('Signing in...'); 
-    
-    const userRef = doc(db, 'users', uid);
-    const userSnap = await getDoc(userRef);
-    const isNewUser = !userSnap.exists(); 
-    
-    if (!isNewUser) {
-      const existingRole = userSnap.data().role || 'consumer';
-      
-      if (existingRole !== window.loginRole) {
-        await auth.signOut(); 
-        resetLdr();
-        
-        if (existingRole === 'consumer') {
-          return toast('⚠️', 'This Google account is registered as a Customer. You cannot log in as a Merchant.');
-        } else {
-          return toast('⚠️', 'This Google account is registered as a Merchant. You cannot log in as a Customer.');
-        }
-      }
-    }
-
-    if (window.loginRole === 'merchant') {
-      let bname = gName + "'s Business";
-      if (isNewUser) {
-        const rawBname = prompt('What is your business / shop name?') || bname;
-        // ✅ SECURE: Sanitize business name input
-        bname = sanitizer.sanitizeText(rawBname, { maxLength: 100, minLength: 3 });
-        if (bname.length < 3) {
-          bname = gName + "'s Business";
-        }
-        SS('mname', bname); SS('wallet', 500); 
-        await setDoc(userRef, { name: gName, role: 'merchant', mname: bname, wallet: 500, points: 0, liked: [], createdAt: Date.now() });
-      } else {
-        if (userSnap.data().mname) { 
-          const existingBname = userSnap.data().mname;
-          bname = sanitizer.sanitizeText(existingBname, { maxLength: 100 });
-          SS('mname', bname); 
-        } else { 
-          const rawBname = prompt('What is your business / shop name?') || bname;
-          bname = sanitizer.sanitizeText(rawBname, { maxLength: 100, minLength: 3 });
-          if (bname.length < 3) {
-            bname = gName + "'s Business";
-          }
-          SS('mname', bname); 
-          await updateDoc(userRef, { role: 'merchant', mname: bname }); 
-        }
-        SS('wallet', userSnap.data().wallet !== undefined ? userSnap.data().wallet : 500);
-        if (userSnap.data().plan) SS('plan', userSnap.data().plan);
-      }
-    } else {
-      if (isNewUser) await setDoc(userRef, { name: gName, role: 'consumer', wallet: 0, points: 50, liked: [], createdAt: Date.now() });
-    }
-    
-    cacheClear();
-    const savedIntent = sessionStorage.getItem('np_intent');
-    
-    const qrMid = urlP.get('mid');
-    if (qrMid) {
-      try {
-        if (isNewUser) {
-          await updateDoc(doc(db, 'users', qrMid), { qrNew: increment(1), qrScans: increment(1) });
-        } else {
-          await updateDoc(doc(db, 'users', qrMid), { qrRet: increment(1), qrScans: increment(1) });
-        }
-        sessionStorage.setItem('np_qr_logged_' + qrMid, 'true'); 
-      } catch (err) { console.warn("Rules blocked analytics:", err); }
-    } else if (savedIntent && savedIntent.includes('utm_source=qr_standee')) {
-      try {
-        const urlStr = savedIntent.startsWith('http') ? savedIntent : window.location.origin + '/' + savedIntent;
-        const intentUrl = new URL(urlStr);
-        const merchantId = intentUrl.searchParams.get('mid');
-        if (merchantId) {
-          if (isNewUser) await updateDoc(doc(db, 'users', merchantId), { qrNew: increment(1), qrScans: increment(1) });
-          else await updateDoc(doc(db, 'users', merchantId), { qrRet: increment(1), qrScans: increment(1) });
-          sessionStorage.setItem('np_qr_logged_' + merchantId, 'true');
-        }
-      } catch (err) { console.warn("Rules blocked fallback analytics:", err); }
-    }
-    
-    if (savedIntent) {
-      sessionStorage.removeItem('np_intent');
-      window.location.href = savedIntent;
-    } else {
-      window.location.href = window.loginRole === 'merchant' ? 'merchant.html?v=' + Date.now() : 'map.html?v=' + Date.now();
-    }
+    // ✅ SS() calls moved inside handleUserCreation - only set AFTER role validation passes
+    await handleUserCreation(uid, gName, user);
 
   } catch(e) {
     console.error("Firebase Auth Error:", e);
@@ -385,6 +319,183 @@ window.loginWithGoogle = async () => {
   }
 };
 
+// ═══════════════════════════════════════════════════════════════════
+// ✅ NATIVE ANDROID CALLBACKS
+// ═══════════════════════════════════════════════════════════════════
+
+window.onNativeSignInSuccess = async (userData) => {
+  console.log('[Auth] Native sign-in successful:', userData);
+  
+  try {
+    // ✅ CRITICAL: Authenticate web Firebase SDK so Firestore writes work
+    if (userData.idToken) {
+      const credential = GoogleAuthProvider.credential(userData.idToken);
+      await signInWithCredential(auth, credential);
+      console.log('[Auth] Web Firebase SDK authenticated ✅');
+    }
+
+    const uid = userData.uid;
+    const gName = sanitizer.sanitizeText(
+      userData.displayName || userData.email.split('@')[0],
+      { maxLength: 100 }
+    );
+    
+    showLdr('Signing in...');
+    
+    // ✅ SS() calls moved inside handleUserCreation - only set AFTER role validation passes
+    // photoURL passed as extra param to save after validation
+    await handleUserCreation(uid, gName, null, userData.photoURL || null);
+    
+  } catch (error) {
+    console.error('[Auth] Native callback error:', error);
+    toast('❌', 'Sign-in processing failed. Please try again.');
+    resetLdr();
+  }
+};
+
+window.onNativeSignInError = (errorMessage) => {
+  console.error('[Auth] Native sign-in error:', errorMessage);
+  toast('❌', 'Sign-in failed: ' + errorMessage);
+  resetLdr();
+};
+
+// ═══════════════════════════════════════════════════════════════════
+// ✅ SHARED USER CREATION LOGIC (used by both web and native paths)
+// ═══════════════════════════════════════════════════════════════════
+
+async function handleUserCreation(uid, gName, firebaseUser, photoURL = null) {
+  const userRef = doc(db, 'users', uid);
+  const userSnap = await getDoc(userRef);
+  const isNewUser = !userSnap.exists(); 
+  
+  // ── ROLE CONFLICT CHECK ──────────────────────────────────────────
+  // Must happen BEFORE writing anything to localStorage.
+  // If mismatch: sign out, clear storage, show error, stop.
+  if (!isNewUser) {
+    const existingRole = userSnap.data().role || 'consumer';
+    
+    if (existingRole !== window.loginRole) {
+      // Sign out Firebase session (web path only)
+      if (firebaseUser) {
+        await auth.signOut(); 
+      }
+      // ✅ Clear stale session so refresh doesn't auto-login
+      cacheClear();
+      resetLdr();
+      
+      if (existingRole === 'consumer') {
+        return toast('⚠️', 'This Google account is registered as a Customer. You cannot log in as a Merchant.');
+      } else {
+        return toast('⚠️', 'This Google account is registered as a Merchant. You cannot log in as a Customer.');
+      }
+    }
+  }
+
+  // ── ROLE VALIDATED ── Safe to write to localStorage now ──────────
+  SS('uid', uid);
+  SS('name', gName);
+  SS('role', window.loginRole);
+  if (photoURL) SS('photoURL', photoURL);
+
+  // Merchant setup
+  if (window.loginRole === 'merchant') {
+    let bname = gName + "'s Business";
+    
+    if (isNewUser) {
+      const rawBname = prompt('What is your business / shop name?') || bname;
+      bname = sanitizer.sanitizeText(rawBname, { maxLength: 100, minLength: 3 });
+      if (bname.length < 3) {
+        bname = gName + "'s Business";
+      }
+      SS('mname', bname); 
+      SS('wallet', 500); 
+      await setDoc(userRef, { 
+        name: gName, 
+        role: 'merchant', 
+        mname: bname, 
+        wallet: 500, 
+        points: 0, 
+        liked: [], 
+        createdAt: Date.now() 
+      });
+    } else {
+      if (userSnap.data().mname) { 
+        const existingBname = userSnap.data().mname;
+        bname = sanitizer.sanitizeText(existingBname, { maxLength: 100 });
+        SS('mname', bname); 
+      } else { 
+        const rawBname = prompt('What is your business / shop name?') || bname;
+        bname = sanitizer.sanitizeText(rawBname, { maxLength: 100, minLength: 3 });
+        if (bname.length < 3) {
+          bname = gName + "'s Business";
+        }
+        SS('mname', bname); 
+        await updateDoc(userRef, { role: 'merchant', mname: bname }); 
+      }
+      SS('wallet', userSnap.data().wallet !== undefined ? userSnap.data().wallet : 500);
+      if (userSnap.data().plan) SS('plan', userSnap.data().plan);
+    }
+  } else {
+    // Consumer setup
+    if (isNewUser) {
+      await setDoc(userRef, { 
+        name: gName, 
+        role: 'consumer', 
+        wallet: 0, 
+        points: 50, 
+        liked: [], 
+        createdAt: Date.now() 
+      });
+    }
+  }
+  
+  // QR analytics
+  cacheClear();
+  const savedIntent = sessionStorage.getItem('np_intent');
+  
+  const qrMid = urlP.get('mid');
+  if (qrMid) {
+    try {
+      if (isNewUser) {
+        await updateDoc(doc(db, 'users', qrMid), { qrNew: increment(1), qrScans: increment(1) });
+      } else {
+        await updateDoc(doc(db, 'users', qrMid), { qrRet: increment(1), qrScans: increment(1) });
+      }
+      sessionStorage.setItem('np_qr_logged_' + qrMid, 'true'); 
+    } catch (err) { 
+      console.warn("Rules blocked analytics:", err); 
+    }
+  } else if (savedIntent && savedIntent.includes('utm_source=qr_standee')) {
+    try {
+      const urlStr = savedIntent.startsWith('http') ? savedIntent : window.location.origin + '/' + savedIntent;
+      const intentUrl = new URL(urlStr);
+      const merchantId = intentUrl.searchParams.get('mid');
+      if (merchantId) {
+        if (isNewUser) {
+          await updateDoc(doc(db, 'users', merchantId), { qrNew: increment(1), qrScans: increment(1) });
+        } else {
+          await updateDoc(doc(db, 'users', merchantId), { qrRet: increment(1), qrScans: increment(1) });
+        }
+        sessionStorage.setItem('np_qr_logged_' + merchantId, 'true');
+      }
+    } catch (err) { 
+      console.warn("Rules blocked fallback analytics:", err); 
+    }
+  }
+  
+  // Redirect
+  if (savedIntent) {
+    sessionStorage.removeItem('np_intent');
+    window.location.href = savedIntent;
+  } else {
+    window.location.href = window.loginRole === 'merchant' 
+      ? 'merchant.html?v=' + Date.now() 
+      : 'map.html?v=' + Date.now();
+  }
+}
+
+console.log('[Auth] Hybrid login system initialized');
+console.log('[Auth] Mode:', isNativeAndroid ? 'NATIVE ANDROID' : 'WEB BROWSER');
 
 </script>
 <div style="text-align: center; padding: 15px; font-size: 12px; z-index: 10; position: relative;">

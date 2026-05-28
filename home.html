@@ -336,12 +336,6 @@ async function initApp() {
   }
 }
 
-// Request notification permission after 3 seconds
-setTimeout(() => {
-  if (LS('uid') && 'Notification' in window && Notification.permission === 'default') {
-    requestPushPermissions(LS('uid'));
-  }
-}, 3000);
 
 initApp();
 

@@ -2728,21 +2728,49 @@ function showNotificationPermissionModal() {
 
 // Show notification permission modal 2 seconds after page load
 setTimeout(() => {
-  if ('Notification' in window && Notification.permission === 'default') {
+  // Ask if not granted - covers first time (default) AND re-ask if still denied
+  if ('Notification' in window && Notification.permission !== 'granted') {
     const lastAsked = localStorage.getItem('np_notif_asked');
     const now = Date.now();
-    
-    // Don't ask again if asked in last 7 days
+    // First login: no lastAsked → show immediately
+    // Return visits: only re-ask if still not granted after 7 days
     if (!lastAsked || (now - parseInt(lastAsked)) >= 7 * 24 * 60 * 60 * 1000) {
       showNotificationPermissionModal();
     }
   }
 }, 2000);
 
+// ── Step 2: Location permission at 10 seconds ──────────────────
+setTimeout(() => {
+  // Skip if already granted
+  if (navigator.permissions) {
+    navigator.permissions.query({ name: 'geolocation' }).then(result => {
+      if (result.state === 'granted') return; // Already have it
+
+      // Skip if notification modal is still showing
+      const notifModal = document.getElementById('notif-permission-modal');
+      if (notifModal && notifModal.classList.contains('show')) return;
+
+      // Only ask if not asked today
+      const lastLocAsked = localStorage.getItem('np_loc_asked');
+      const now = Date.now();
+      if (lastLocAsked && (now - parseInt(lastLocAsked)) < 24 * 60 * 60 * 1000) return;
+
+      localStorage.setItem('np_loc_asked', now.toString());
+
+      // Trigger browser's native location prompt
+      navigator.geolocation.getCurrentPosition(
+        () => console.log('[Permissions] Location granted'),
+        () => console.log('[Permissions] Location denied'),
+        { enableHighAccuracy: true, timeout: 10000 }
+      );
+    });
+  }
+}, 10000);
+
 // ═══════════════════════════════════════════════════════════════════
 // APP DOWNLOAD PROMPT (Bottom Sheet)
 // ═══════════════════════════════════════════════════════════════════
-
 function showAppDownloadSheet() {
   // FIX: Don't show if the notification permission modal is currently on screen
   const notifModal = document.getElementById('notif-permission-modal');
@@ -2753,23 +2781,21 @@ function showAppDownloadSheet() {
 
   const sheet = document.getElementById('app-download-sheet');
   if (!sheet) return;
-  
+
   sheet.classList.add('show');
-  
+
   // Download app button
   document.getElementById('btn-download-app').onclick = () => {
-    // Open Play Store
     window.open('https://play.google.com/store/apps/details?id=in.nearpop.app', '_blank');
-    
-    // Track that user clicked download
     localStorage.setItem('np_app_download_clicked', 'true');
     sheet.classList.remove('show');
   };
-  
-// Continue on web button
+
+  // Continue on web button
   document.getElementById('btn-continue-web').onclick = () => {
-    // Strictly save to localStorage so it never asks again across any tabs/sessions
-    localStorage.setItem('np_app_prompt_shown', 'true');
+    localStorage.setItem('np_app_prompt_time', Date.now().toString());
+    localStorage.removeItem('np_app_prompt_shown');
+    localStorage.removeItem('np_app_prompt_dismissed');
     sheet.classList.remove('show');
   };
 }
@@ -2781,19 +2807,27 @@ window.closeAppDownloadSheet = function() {
   }
 };
 
-// Show app download prompt 10 seconds after page load
 setTimeout(() => {
-  // Check localStorage for ANY interaction to ensure strict one-time display
-  if (localStorage.getItem('np_app_prompt_shown')) return;
-  if (localStorage.getItem('np_app_prompt_dismissed')) return;
-  if (localStorage.getItem('np_app_download_clicked')) return;
+  // ✅ Skip if running inside native Android app
+  if (window.isNativeAndroidApp) return;
+  // ✅ Skip if already installed as PWA/standalone
   if (window.matchMedia('(display-mode: standalone)').matches) return;
-  
-  // Flag it as shown IMMEDIATELY so it never fires again, even if they reload the page while it's open
-  localStorage.setItem('np_app_prompt_shown', 'true');
-  
+  // ✅ Skip if user already downloaded (clicked Play Store link)
+  if (localStorage.getItem('np_app_download_clicked')) return;
+  // ✅ Re-ask logic: show again after 3 days if not installed
+  const lastPrompt = localStorage.getItem('np_app_prompt_time');
+  const now = Date.now();
+  if (lastPrompt && (now - parseInt(lastPrompt)) < 3 * 24 * 60 * 60 * 1000) return;
+  // ✅ Don't show if notification modal is active
+  const notifModal = document.getElementById('notif-permission-modal');
+  if (notifModal && notifModal.classList.contains('show')) {
+    setTimeout(() => showAppDownloadSheet(), 5000);
+    return;
+  }
+  // ✅ Save timestamp (NOT a permanent flag - allows re-ask after 3 days)
+  localStorage.setItem('np_app_prompt_time', now.toString());
   showAppDownloadSheet();
-}, 10000);
+}, 20000);
 
 </script>
 </body>
