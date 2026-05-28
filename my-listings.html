@@ -313,6 +313,12 @@ async function loadListings(force = true) {
     const userDocSnap = await getDoc(userDocRef);
     const userData = userDocSnap.exists() ? userDocSnap.data() : {};
     
+    // 🚀 CRITICAL FIX: Sync the live wallet balance to prevent stale premium upgrades
+    if (userData.wallet !== undefined) {
+      wallet = userData.wallet;
+      SS('wallet', wallet);
+    }
+    
     if(c && !force){
       renderFromData(c, userData);
       return;

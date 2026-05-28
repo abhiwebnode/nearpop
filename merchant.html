@@ -416,6 +416,13 @@ async function loadDashboard() {
     const userDocSnap = await getDoc(userDocRef);
     const userData = userDocSnap.exists() ? userDocSnap.data() : {};
     
+    // 🚀 CRITICAL FIX: Sync the live wallet balance from Firebase deductions
+    if (userData.wallet !== undefined) {
+      wallet = userData.wallet;
+      SS('wallet', wallet); // Save locally
+      document.getElementById('mwal').textContent = Math.floor(wallet) + ' 🪙'; // Update UI
+    }
+    
     if (userData.logoUrl) {
       localStorage.setItem('np_logoUrl', userData.logoUrl);
       const mLogo = document.getElementById('m-logo');
