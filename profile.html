@@ -615,11 +615,21 @@ window.deleteAccount = async () => {
 
 window.logout = async () => {
   if (isRealAuthUser(uid)) {
-    try { await pushUserData(uid); } catch(e){}
+    try { await pushUserData(uid); } catch(e) {}
   }
+  
+  // ✅ Sign out Firebase web session
   try { await signOut(getAuth()); } catch(e) {}
-  localStorage.clear(); 
-  sessionStorage.clear(); 
+  
+  // ✅ Sign out native Android session too (prevents token reuse)
+  if (window.NativeAndroid && typeof window.NativeAndroid.signOut === 'function') {
+    try { window.NativeAndroid.signOut(); } catch(e) {}
+  }
+  
+  // ✅ Clear everything
+  localStorage.clear();
+  sessionStorage.clear();
+  
   window.location.href = 'index.html';
 };
 

@@ -1938,23 +1938,144 @@ window.recenterMap = () => {
   }
 };
 
-// ═══ INITIALIZE FCM PUSH NOTIFICATIONS ═══
-(async function initPushNotifications() {
-  try {
-    if (typeof NotificationEngine.initializeFCM === 'function') {
-      const fcmReady = await NotificationEngine.initializeFCM();
-      if (fcmReady) {
-        console.log('✅ Push notifications initialized successfully');
-      } else {
-        console.warn('⚠️ Push notifications not available');
-      }
-    } else {
-      console.warn('⚠️ NotificationEngine.initializeFCM is not defined.');
-    }
-  } catch (error) {
-    console.error('FCM initialization error:', error);
+// ═══════════════════════════════════════════════════════════════════
+// UNIFIED PERMISSION SEQUENCER
+// ═══════════════════════════════════════════════════════════════════
+class PermissionSequencer {
+  static start() {
+    // 1. Notifications: Ask after 2 seconds
+    setTimeout(() => this.promptNotifications(), 2000);
+
+    // 2. Location: Ask after 10 seconds, then check/re-ask every 2 minutes
+    setTimeout(() => {
+      this.promptLocation();
+      setInterval(() => this.promptLocation(), 120000); 
+    }, 10000);
+
+    // 3. App Install: Ask after 20 seconds
+    setTimeout(() => this.promptAppInstall(), 20000);
   }
-})();
+
+  // ─── 1. NOTIFICATIONS ───
+  static promptNotifications() {
+    if (!('Notification' in window)) return;
+    
+    if (Notification.permission === 'granted') {
+      // Already granted, initialize FCM silently
+      window.initFCM(); 
+    } else if (Notification.permission === 'default') {
+      // Only show if the app download sheet isn't blocking the screen
+      const appModal = document.getElementById('app-download-sheet');
+      if (appModal && appModal.classList.contains('show')) {
+        setTimeout(() => this.promptNotifications(), 5000);
+        return;
+      }
+      showNotificationPermissionModal();
+    }
+  }
+
+  // ─── 2. LOCATION ───
+  static promptLocation() {
+    // Prevent overlapping with other modals
+    const notifModal = document.getElementById('notif-permission-modal');
+    if (notifModal && notifModal.classList.contains('show')) return;
+    
+    const appModal = document.getElementById('app-download-sheet');
+    if (appModal && appModal.classList.contains('show')) return;
+
+    if (navigator.permissions) {
+      navigator.permissions.query({ name: 'geolocation' }).then(res => {
+        if (res.state === 'granted') {
+           // Already granted, ensure tracking is active
+           if (!gpsConfirmed && window.getLoc) window.getLoc();
+        } else if (res.state === 'denied') {
+           // If denied, trigger the hard-block UI so they know to fix it
+           const geoBlock = document.getElementById('hard-geo-block');
+           if (geoBlock) geoBlock.style.display = 'flex';
+        } else {
+           // State is 'prompt', trigger native request
+           if (window.getLoc) window.getLoc();
+        }
+      });
+    } else {
+      // Fallback for older browsers
+      if (!gpsConfirmed && window.getLoc) window.getLoc();
+    }
+  }
+
+  // ─── 3. APP INSTALL ───
+  static promptAppInstall() {
+    // Abort if already in native app or installed as PWA
+    if (window.isNativeAndroidApp || window.matchMedia('(display-mode: standalone)').matches) return;
+    
+    // Abort if user already clicked download or permanently dismissed
+    if (localStorage.getItem('np_app_download_clicked')) return;
+    if (localStorage.getItem('np_app_prompt_dismissed') === 'true') return;
+
+    // Prevent overlapping with Notification modal
+    const notifModal = document.getElementById('notif-permission-modal');
+    if (notifModal && notifModal.classList.contains('show')) {
+      setTimeout(() => this.promptAppInstall(), 5000);
+      return;
+    }
+
+    showAppDownloadSheet();
+  }
+}
+
+// Start the sequencer
+PermissionSequencer.start();
+
+// ═══════════════════════════════════════════════════════════════════
+// MODAL UI BINDINGS
+// ═══════════════════════════════════════════════════════════════════
+
+// --- Notifications Modal Bindings ---
+function showNotificationPermissionModal() {
+  const modal = document.getElementById('notif-permission-modal');
+  if (!modal) return;
+  modal.classList.add('show');
+  
+  document.getElementById('btn-notif-enable').onclick = async () => {
+    modal.classList.remove('show');
+    await window.askForNotifs(); 
+  };
+  
+  document.getElementById('btn-notif-later').onclick = () => {
+    modal.classList.remove('show');
+  };
+  
+  modal.onclick = (e) => {
+    if (e.target === modal) modal.classList.remove('show');
+  };
+}
+
+// --- App Download Sheet Bindings ---
+function showAppDownloadSheet() {
+  const sheet = document.getElementById('app-download-sheet');
+  if (!sheet) return;
+  sheet.classList.add('show');
+
+  document.getElementById('btn-download-app').onclick = () => {
+    window.open('https://play.google.com/store/apps/details?id=in.nearpop.app', '_blank');
+    localStorage.setItem('np_app_download_clicked', 'true');
+    sheet.classList.remove('show');
+  };
+
+  document.getElementById('btn-continue-web').onclick = () => {
+    // Check if the "Don't show this again" box is checked
+    const dontShow = document.getElementById('app-dont-show');
+    if (dontShow && dontShow.checked) {
+      localStorage.setItem('np_app_prompt_dismissed', 'true');
+    }
+    sheet.classList.remove('show');
+  };
+}
+
+window.closeAppDownloadSheet = function() {
+  const sheet = document.getElementById('app-download-sheet');
+  if (sheet) sheet.classList.remove('show');
+};
 
 async function loadListings() {
   try {

@@ -216,16 +216,27 @@ const isNativeAndroid = window.isNativeAndroidApp || navigator.userAgent.include
 const hasNativeAuth = window.NativeAndroid && typeof window.NativeAndroid.signInWithGoogle === 'function';
 console.log('[Auth] Native Android:', isNativeAndroid, 'Native Auth Available:', hasNativeAuth);
 
-// If already logged in, redirect smoothly
-if (LS('uid')) { 
-  const savedIntent = sessionStorage.getItem('np_intent');
-  if (savedIntent) {
-    sessionStorage.removeItem('np_intent');
-    window.location.href = savedIntent;
-  } else {
-    window.location.href = LS('role') === 'merchant' ? 'merchant.html' : 'map.html'; 
+// ✅ Wait for Firebase Auth to confirm session before redirecting
+// Prevents stale localStorage uid from causing loops
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js";
+// (add to existing imports)
+
+// Replace the synchronous if(LS('uid')) check with:
+onAuthStateChanged(auth, (user) => {
+  if (user && LS('uid')) {
+    // ✅ Both Firebase AND localStorage confirm session
+    const savedIntent = sessionStorage.getItem('np_intent');
+    if (savedIntent) {
+      sessionStorage.removeItem('np_intent');
+      window.location.href = savedIntent;
+    } else {
+      window.location.href = LS('role') === 'merchant' ? 'merchant.html' : 'map.html';
+    }
+  } else if (!user && LS('uid')) {
+    // ✅ Firebase says no session but localStorage has uid — clear it
+    try { localStorage.removeItem('np_uid'); } catch(e) {}
   }
-}
+});
 
 const auth = getAuth(app);
 const provider = new GoogleAuthProvider();
