@@ -1630,9 +1630,7 @@ window.askForNotifs = async () => {
     if (perm === 'granted') {
       document.getElementById('notif-prompt').style.display = 'none';
       await window.initFCM();
-    } else {
-      document.getElementById('notif-prompt').style.display = 'none';
-    }
+    } 
   } catch (error) { console.error(error); }
 };
 
@@ -1659,11 +1657,24 @@ window.initFCM = async () => {
 };
 
 function handleGeoError(err) {
-  if (err.code === 1) { 
-    document.getElementById('hard-geo-block').style.display = 'flex'; 
-  } else { 
-    toast('📍', window.lang === 'hi' ? 'स्थान उपलब्ध नहीं है। GPS जांचें।' : 'Location unavailable. Check GPS signal.'); 
-    setFallback(); 
+  if (err.code === 1) {
+    // Permission denied — show hard block, stop retrying
+    gpsFailed = true;
+    const geoBlock = document.getElementById('hard-geo-block');
+    if (geoBlock) geoBlock.style.display = 'flex';
+
+  } else {
+    // POSITION_UNAVAILABLE or TIMEOUT
+    gpsFailed = true; // ✅ stop retry loop
+
+    if (!gpsErrorToastShown) {
+      gpsErrorToastShown = true;
+      toast('📍', window.lang === 'hi'
+        ? 'GPS उपलब्ध नहीं। मैन्युअल मोड में जारी है।'
+        : 'GPS unavailable. Continuing with last known location.');
+    }
+
+    setFallback(); // ✅ Use cached/default location — don't freeze the app
   }
 }
 
@@ -1707,7 +1718,8 @@ document.querySelectorAll('.rdist-btn').forEach(b => {
   b.classList.toggle('on', v === radiusKm);
 });
 
-let gpsManager = null, gpsConfirmed = false;
+let gpsManager = null, gpsConfirmed = false, gpsFailed = false, gpsStarting = false;
+let gpsErrorToastShown = false; // ✅ prevent duplicate toasts
 
 function syncLocationToServer(lat, lng) {
   const uid = LS('uid');
@@ -1722,6 +1734,10 @@ function syncLocationToServer(lat, lng) {
 }
 
 function startWatch() {
+  // ✅ FIX: Prevent race condition — if GPS is already starting or confirmed, bail out
+  if (gpsStarting || gpsConfirmed) return;
+  gpsStarting = true;
+
   if (!gpsManager) {
     import('./js/adaptive-gps-manager.js').then(module => {
       gpsManager = new module.AdaptiveGPSManager();
@@ -1737,13 +1753,14 @@ function startWatch() {
             window.forceRefresh();
           }
           gpsConfirmed = true;
+          gpsStarting = false; // ✅ release lock on success
           redraw();
           checkForNewNearbyListings(movementContext);
           if (filteredList && filteredList.length > 0) {
             NotificationEngine.evaluate(position, filteredList, movementContext);
           }
-        }, null, handleGeoError);
-    }).catch(err => { basicGPSFallback(); });
+        }, null, (err) => { gpsStarting = false; handleGeoError(err); }); // ✅ release lock on error
+    }).catch(err => { gpsStarting = false; basicGPSFallback(); }); // ✅ release lock on import fail
   } else {
     gpsManager.start((position, movementContext) => {
         const lat = position.coords.latitude, lng = position.coords.longitude;
@@ -1756,16 +1773,18 @@ function startWatch() {
           hasLiveCentered = true;
         }
         gpsConfirmed = true;
+        gpsStarting = false; // ✅ release lock on success
         redraw();
         checkForNewNearbyListings();
         if (filteredList && filteredList.length > 0) NotificationEngine.evaluate(position, filteredList, movementContext);
-      }, null, handleGeoError);
+      }, null, (err) => { gpsStarting = false; handleGeoError(err); }); // ✅ release lock on error
   }
 }
 
 function basicGPSFallback() {
   if (!navigator.geolocation) { setFallback(); return; }
-  navigator.geolocation.getCurrentPosition(p => {
+  navigator.geolocation.getCurrentPosition(
+    p => {
       loc = { lat: p.coords.latitude, lng: p.coords.longitude };
       SS('lastLoc', loc);
       syncLocationToServer(p.coords.latitude, p.coords.longitude);
@@ -1776,9 +1795,26 @@ function basicGPSFallback() {
         window.forceRefresh();
       }
       gpsConfirmed = true;
+      gpsFailed = false; // ✅ reset on success
+      gpsErrorToastShown = false;
       redraw();
       checkForNewNearbyListings();
-    }, handleGeoError, { enableHighAccuracy: true, timeout: 12000 });
+    },
+    err => {
+      // ✅ On timeout or unavailable: use fallback, mark failed, don't loop
+      gpsFailed = true;
+      if (!gpsErrorToastShown) {
+        gpsErrorToastShown = true;
+        toast('📍', 'Weak GPS signal. Using approximate location.');
+      }
+      setFallback();
+    },
+    { 
+      enableHighAccuracy: true, 
+      timeout: 12000,
+      maximumAge: 30000 // ✅ Accept a cached position up to 30s old — helps weak GPS
+    }
+  );
 }
 
 function getLoc() { startWatch(); }
@@ -1821,16 +1857,32 @@ window.recenterMap = () => {
 // UNIFIED PERMISSION SEQUENCER
 // ═══════════════════════════════════════════════════════════════════
 class PermissionSequencer {
-  static start() {
-    setTimeout(() => this.promptNotifications(), 2000);
+static start() {
+    // ✅ FIX: Notification only after 45s — user has had time to use the app
+    // ✅ FIX: Gate on login confirmed (LS('uid') must exist)
+    setTimeout(() => {
+      if (!LS('uid')) return; // not logged in yet, skip
+      this.promptNotifications();
+    }, 45000);
+
+    // ✅ FIX: Location starts at 3s, but retries max 3 times with backoff
+    // ✅ FIX: Stop retrying once gpsConfirmed OR gpsFailed is set
     setTimeout(() => {
       this.promptLocation();
-      setInterval(() => this.promptLocation(), 120000); 
-    }, 10000);
-    setTimeout(() => this.promptAppInstall(), 20000);
-  }
+    }, 3000);
+
+    // ✅ FIX: Retry location at 30s and 90s only — not indefinitely every 2min
+    setTimeout(() => { if (!gpsConfirmed && !gpsFailed) this.promptLocation(); }, 30000);
+    setTimeout(() => { if (!gpsConfirmed && !gpsFailed) this.promptLocation(); }, 90000);
+
+    // App install prompt unchanged
+    setTimeout(() => this.promptAppInstall(), 60000);
+}
 
   static promptNotifications() {
+    // ✅ FIX: Native Android handles its own notification permissions — skip web flow entirely
+    if (window.isNativeAndroidApp) return;
+
     if (!('Notification' in window)) return;
     if (Notification.permission === 'granted') {
       window.initFCM(); 
@@ -1844,7 +1896,10 @@ class PermissionSequencer {
     }
   }
 
-  static promptLocation() {
+static promptLocation() {
+    // ✅ FIX: Do not retry if already confirmed or already failed
+    if (gpsConfirmed || gpsFailed) return;
+
     const notifModal = document.getElementById('notif-permission-modal');
     if (notifModal && notifModal.classList.contains('show')) return;
     const appModal = document.getElementById('app-download-sheet');
@@ -1853,18 +1908,19 @@ class PermissionSequencer {
     if (navigator.permissions) {
       navigator.permissions.query({ name: 'geolocation' }).then(res => {
         if (res.state === 'granted') {
-           if (!gpsConfirmed && window.getLoc) window.getLoc();
+          if (!gpsConfirmed && window.getLoc) window.getLoc();
         } else if (res.state === 'denied') {
-           const geoBlock = document.getElementById('hard-geo-block');
-           if (geoBlock) geoBlock.style.display = 'flex';
+          gpsFailed = true;
+          const geoBlock = document.getElementById('hard-geo-block');
+          if (geoBlock) geoBlock.style.display = 'flex';
         } else {
-           if (window.getLoc) window.getLoc();
+          if (window.getLoc) window.getLoc();
         }
       });
     } else {
-      if (!gpsConfirmed && window.getLoc) window.getLoc();
+      if (window.getLoc) window.getLoc();
     }
-  }
+}
 
   static promptAppInstall() {
     if (window.isNativeAndroidApp || window.matchMedia('(display-mode: standalone)').matches) return;
@@ -1879,7 +1935,8 @@ class PermissionSequencer {
     showAppDownloadSheet();
   }
 }
-PermissionSequencer.start();
+// ✅ FIX: PermissionSequencer.start() is now called inside initApp() → onAuthStateChanged
+// so it only fires after Firebase confirms the user session, not before.
 
 // ═══════════════════════════════════════════════════════════════════
 // MODAL UI BINDINGS
@@ -2304,7 +2361,9 @@ async function initApp() {
   const auth = getAuth(app); // 🚀 FIX 1: Pass 'app' instance explicitly 
   onAuthStateChanged(auth, (user) => { 
     if (user) { 
-      loadListings(); 
+      loadListings();
+      // ✅ FIX: Start permission sequencer ONLY after Firebase confirms auth — never before
+      PermissionSequencer.start();
     } else {
       // 🚀 FIX 2: Bubblewrap Fix. Automatically boot out dead sessions
       localStorage.removeItem('np_uid');
