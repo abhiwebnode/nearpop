@@ -299,7 +299,7 @@ window.loginWithGoogle = async () => {
   // ✅ WEB BROWSER PATH
   console.log('[Auth] Using WEB Firebase Sign-In');
   try {
-    showLdr('Connecting to Google...');
+    showLdr('Connecting to Google....');
     
     const result = await signInWithPopup(auth, provider);
     const user = result.user; 
