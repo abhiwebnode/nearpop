@@ -633,6 +633,11 @@ window.logout = async () => {
   window.location.href = 'index.html';
 };
 
+// To disable pull-to-refresh on this page:
+	if (window.NativeAndroid) {
+	window.NativeAndroid.setSwipeRefreshEnabled(false);
+	}
+
 // 🚀 NEW: Play Store Redirect visibility logic
 const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
 
