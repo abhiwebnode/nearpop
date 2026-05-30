@@ -216,30 +216,20 @@ const isNativeAndroid = window.isNativeAndroidApp || navigator.userAgent.include
 const hasNativeAuth = window.NativeAndroid && typeof window.NativeAndroid.signInWithGoogle === 'function';
 console.log('[Auth] Native Android:', isNativeAndroid, 'Native Auth Available:', hasNativeAuth);
 
-import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js";
+// If already logged in, redirect smoothly
+if (LS('uid')) { 
+  const savedIntent = sessionStorage.getItem('np_intent');
+  if (savedIntent) {
+    sessionStorage.removeItem('np_intent');
+    window.location.href = savedIntent;
+  } else {
+    window.location.href = LS('role') === 'merchant' ? 'merchant.html' : 'map.html'; 
+  }
+}
 
 const auth = getAuth(app);
 const provider = new GoogleAuthProvider();
 window.loginRole = 'consumer';
-
-
-onAuthStateChanged(auth, (user) => {
-  if (user && LS('uid')) {
-    
-    const savedIntent = sessionStorage.getItem('np_intent');
-    if (savedIntent) {
-      sessionStorage.removeItem('np_intent');
-      window.location.href = savedIntent;
-    } else {
-      window.location.href = LS('role') === 'merchant' ? 'merchant.html' : 'map.html';
-    }
-  } else if (!user && LS('uid')) {
-   
-    try { localStorage.removeItem('np_uid'); } catch(e) {}
-  }
-});
-
-
 
 window.setRole = (r) => {
   window.loginRole = r;
@@ -337,7 +327,8 @@ window.onNativeSignInSuccess = async (userData) => {
   console.log('[Auth] Native sign-in successful:', userData);
   
   try {
-    // ✅ CRITICAL: Authenticate web Firebase SDK so Firestore writes work
+    // ✅ CRITICAL: Authenticate web Firebase SDK with the idToken
+    // Without this, Firestore writes fail because rules require auth.
     if (userData.idToken) {
       const credential = GoogleAuthProvider.credential(userData.idToken);
       await signInWithCredential(auth, credential);
@@ -367,6 +358,74 @@ window.onNativeSignInError = (errorMessage) => {
   console.error('[Auth] Native sign-in error:', errorMessage);
   toast('❌', 'Sign-in failed: ' + errorMessage);
   resetLdr();
+};
+
+// ═══════════════════════════════════════════════════════════════════
+// ✅ AUTO-LOGIN FOR RETURNING USERS (Native Android only)
+// ═══════════════════════════════════════════════════════════════════
+// Called by MainActivity.pushExistingAuthToWeb() when a user with an
+// existing native Firebase session opens index.html. Skips manual login.
+// ═══════════════════════════════════════════════════════════════════
+
+window.onNativeAutoLogin = async (userData) => {
+  console.log('[Auth] Auto-login for returning user:', userData.uid);
+
+  try {
+    // 1. Authenticate web Firebase SDK with the existing idToken
+    if (!userData.idToken) {
+      console.warn('[Auth] AutoLogin missing idToken — falling back to manual login');
+      return;
+    }
+
+    const credential = GoogleAuthProvider.credential(userData.idToken);
+    await signInWithCredential(auth, credential);
+    console.log('[Auth] Web Firebase SDK authenticated via auto-login ✅');
+
+    // 2. Read user document from Firestore — must exist for a returning user
+    const userRef = doc(db, 'users', userData.uid);
+    const userSnap = await getDoc(userRef);
+
+    if (!userSnap.exists()) {
+      // First time on this Google account but native already auth'd —
+      // user must do manual login to choose role (consumer / merchant)
+      console.log('[Auth] No Firestore record — letting user choose role manually');
+      return;
+    }
+
+    // 3. Restore session from Firestore (no role-selection prompt)
+    const userDoc = userSnap.data();
+    const role = userDoc.role || 'consumer';
+    const gName = sanitizer.sanitizeText(
+      userData.displayName || userDoc.name || userData.email.split('@')[0],
+      { maxLength: 100 }
+    );
+
+    SS('uid', userData.uid);
+    SS('name', gName);
+    SS('role', role);
+    if (userData.photoURL) SS('photoURL', userData.photoURL);
+
+    // Merchant: restore merchant-specific fields
+    if (role === 'merchant') {
+      if (userDoc.mname) SS('mname', sanitizer.sanitizeText(userDoc.mname, { maxLength: 100 }));
+      SS('wallet', userDoc.wallet !== undefined ? userDoc.wallet : 500);
+      if (userDoc.plan) SS('plan', userDoc.plan);
+      if (userDoc.logoUrl) SS('logoUrl', userDoc.logoUrl);
+    }
+
+    // 4. Redirect to appropriate landing page
+    const savedIntent = sessionStorage.getItem('np_intent');
+    if (savedIntent) {
+      sessionStorage.removeItem('np_intent');
+      window.location.href = savedIntent;
+    } else {
+      window.location.href = role === 'merchant' ? 'merchant.html' : 'map.html';
+    }
+
+  } catch (error) {
+    console.error('[Auth] Auto-login failed:', error);
+    // Silent fail — user can still log in manually
+  }
 };
 
 // ═══════════════════════════════════════════════════════════════════
