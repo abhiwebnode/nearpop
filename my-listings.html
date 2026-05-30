@@ -471,7 +471,7 @@ function renderCards(mine) {
       <div class="mcd">
         <div style="display:flex; gap:12px;">
           <div class="mcd-ic" style="overflow: hidden; padding: 0;">
-            ${safeImageUrl ? '<img src="' + safeImageUrl + '" style="width: 100%; height: 100%; object-fit: cover;">' : safeEmoji}
+            ${safeImageUrl ? '<img src="' + safeImageUrl + '" referrerpolicy="no-referrer" style="width: 100%; height: 100%; object-fit: cover;">' : safeEmoji}
           </div>
           <div style="flex:1;">
             <div class="mcd-t">${safeTitle}</div>

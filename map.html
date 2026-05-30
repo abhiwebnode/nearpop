@@ -2062,7 +2062,7 @@ function redraw() {
     const col = l.color || TC(l.type), imgUrl = l.imageUrl || l.image;
     const safeImgUrl = imgUrl ? sanitizer.sanitizeUrl(imgUrl) : '';
     const pinInner = safeImgUrl 
-      ? `<div style="width:100%;height:100%;border-radius:50%;overflow:hidden;"><img src="${safeImgUrl}" style="width:100%;height:100%;object-fit:cover;"></div>` 
+      ? `<div style="width:100%;height:100%;border-radius:50%;overflow:hidden;"><img src="${safeImgUrl}" referrerpolicy="no-referrer" style="width:100%;height:100%;object-fit:cover;"></div>` 
       : `<div class="pin-emo">${sanitizer.sanitizeText(l.emoji || TE(l.type), { maxLength: 10 })}</div>`;
     const ico = L.divIcon({ 
       className: '', 
