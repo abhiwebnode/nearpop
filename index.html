@@ -299,7 +299,7 @@ window.loginWithGoogle = async () => {
   // ✅ WEB BROWSER PATH
   console.log('[Auth] Using WEB Firebase Sign-In');
   try {
-    showLdr('Connecting to Google....');
+    showLdr('Connecting to Google...');
     
     const result = await signInWithPopup(auth, provider);
     const user = result.user; 
@@ -327,12 +327,16 @@ window.onNativeSignInSuccess = async (userData) => {
   console.log('[Auth] Native sign-in successful:', userData);
   
   try {
-    // ✅ CRITICAL: Authenticate web Firebase SDK with the idToken
-    // Without this, Firestore writes fail because rules require auth.
+    // ✅ Authenticate web Firebase SDK so Firestore writes pass security rules
     if (userData.idToken) {
-      const credential = GoogleAuthProvider.credential(userData.idToken);
-      await signInWithCredential(auth, credential);
-      console.log('[Auth] Web Firebase SDK authenticated ✅');
+      try {
+        const credential = GoogleAuthProvider.credential(userData.idToken);
+        await signInWithCredential(auth, credential);
+        console.log('[Auth] Web Firebase SDK authenticated ✅');
+      } catch (credErr) {
+        console.warn('[Auth] signInWithCredential failed (may already be signed in):', credErr.message);
+        // Continue — auth may already be valid from a previous attempt
+      }
     }
 
     const uid = userData.uid;
@@ -351,6 +355,10 @@ window.onNativeSignInSuccess = async (userData) => {
     console.error('[Auth] Native callback error:', error);
     toast('❌', 'Sign-in processing failed. Please try again.');
     resetLdr();
+    // ✅ Clean up native session so next attempt starts fresh
+    if (window.NativeAndroid && typeof window.NativeAndroid.signOut === 'function') {
+      try { window.NativeAndroid.signOut(); } catch(e) {}
+    }
   }
 };
 
@@ -358,74 +366,6 @@ window.onNativeSignInError = (errorMessage) => {
   console.error('[Auth] Native sign-in error:', errorMessage);
   toast('❌', 'Sign-in failed: ' + errorMessage);
   resetLdr();
-};
-
-// ═══════════════════════════════════════════════════════════════════
-// ✅ AUTO-LOGIN FOR RETURNING USERS (Native Android only)
-// ═══════════════════════════════════════════════════════════════════
-// Called by MainActivity.pushExistingAuthToWeb() when a user with an
-// existing native Firebase session opens index.html. Skips manual login.
-// ═══════════════════════════════════════════════════════════════════
-
-window.onNativeAutoLogin = async (userData) => {
-  console.log('[Auth] Auto-login for returning user:', userData.uid);
-
-  try {
-    // 1. Authenticate web Firebase SDK with the existing idToken
-    if (!userData.idToken) {
-      console.warn('[Auth] AutoLogin missing idToken — falling back to manual login');
-      return;
-    }
-
-    const credential = GoogleAuthProvider.credential(userData.idToken);
-    await signInWithCredential(auth, credential);
-    console.log('[Auth] Web Firebase SDK authenticated via auto-login ✅');
-
-    // 2. Read user document from Firestore — must exist for a returning user
-    const userRef = doc(db, 'users', userData.uid);
-    const userSnap = await getDoc(userRef);
-
-    if (!userSnap.exists()) {
-      // First time on this Google account but native already auth'd —
-      // user must do manual login to choose role (consumer / merchant)
-      console.log('[Auth] No Firestore record — letting user choose role manually');
-      return;
-    }
-
-    // 3. Restore session from Firestore (no role-selection prompt)
-    const userDoc = userSnap.data();
-    const role = userDoc.role || 'consumer';
-    const gName = sanitizer.sanitizeText(
-      userData.displayName || userDoc.name || userData.email.split('@')[0],
-      { maxLength: 100 }
-    );
-
-    SS('uid', userData.uid);
-    SS('name', gName);
-    SS('role', role);
-    if (userData.photoURL) SS('photoURL', userData.photoURL);
-
-    // Merchant: restore merchant-specific fields
-    if (role === 'merchant') {
-      if (userDoc.mname) SS('mname', sanitizer.sanitizeText(userDoc.mname, { maxLength: 100 }));
-      SS('wallet', userDoc.wallet !== undefined ? userDoc.wallet : 500);
-      if (userDoc.plan) SS('plan', userDoc.plan);
-      if (userDoc.logoUrl) SS('logoUrl', userDoc.logoUrl);
-    }
-
-    // 4. Redirect to appropriate landing page
-    const savedIntent = sessionStorage.getItem('np_intent');
-    if (savedIntent) {
-      sessionStorage.removeItem('np_intent');
-      window.location.href = savedIntent;
-    } else {
-      window.location.href = role === 'merchant' ? 'merchant.html' : 'map.html';
-    }
-
-  } catch (error) {
-    console.error('[Auth] Auto-login failed:', error);
-    // Silent fail — user can still log in manually
-  }
 };
 
 // ═══════════════════════════════════════════════════════════════════
@@ -439,23 +379,29 @@ async function handleUserCreation(uid, gName, firebaseUser, photoURL = null) {
   
   // ── ROLE CONFLICT CHECK ──────────────────────────────────────────
   // Must happen BEFORE writing anything to localStorage.
-  // If mismatch: sign out, clear storage, show error, stop.
+  // If mismatch: sign out (both web AND native), clear storage, show error, stop.
   if (!isNewUser) {
     const existingRole = userSnap.data().role || 'consumer';
     
     if (existingRole !== window.loginRole) {
-      // Sign out Firebase session (web path only)
-      if (firebaseUser) {
-        await auth.signOut(); 
+      // Sign out Firebase WEB session
+      try { await auth.signOut(); } catch(e) {}
+
+      // ✅ CRITICAL: Sign out NATIVE Android session too.
+      // Without this, native keeps cached credentials and the next attempt
+      // skips Google picker — locking the user in the wrong role forever.
+      if (window.NativeAndroid && typeof window.NativeAndroid.signOut === 'function') {
+        try { window.NativeAndroid.signOut(); } catch(e) {}
       }
+
       // ✅ Clear stale session so refresh doesn't auto-login
       cacheClear();
       resetLdr();
       
       if (existingRole === 'consumer') {
-        return toast('⚠️', 'This Google account is registered as a Customer. You cannot log in as a Merchant.');
+        return toast('⚠️', 'This Google account is registered as a Customer. Please switch to the Customer tab and sign in again.');
       } else {
-        return toast('⚠️', 'This Google account is registered as a Merchant. You cannot log in as a Customer.');
+        return toast('⚠️', 'This Google account is registered as a Merchant. Please switch to the Merchant tab and sign in again.');
       }
     }
   }
