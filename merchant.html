@@ -78,7 +78,7 @@
     <div style="display: flex; align-items: center; gap: 16px; margin-top: 24px;">
       
       <div style="position:relative; flex-shrink: 0; cursor:pointer;" onclick="window.openPhotoChoice('logo')">
-        <img id="m-logo" style="width: 64px; height: 64px; border-radius: 16px; background: #fff; object-fit: contain; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.15); border: 2px solid rgba(255,255,255,0.3);">
+        <img id="m-logo" referrerpolicy="no-referrer" style="width: 64px; height: 64px; border-radius: 16px; background: #fff; object-fit: contain; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.15); border: 2px solid rgba(255,255,255,0.3);">
         <div id="m-logo-placeholder" style="width: 64px; height: 64px; border-radius: 16px; background: rgba(255,255,255,0.2); border: 2px dashed rgba(255,255,255,0.5); display: flex; align-items: center; justify-content: center; font-size:24px; color:#fff;" title="Upload Shop Logo">📷</div>
         <div style="position:absolute; bottom:-6px; right:-6px; background:#111827; border-radius:50%; width:24px; height:24px; display:flex; align-items:center; justify-content:center; font-size:12px; border:2px solid #FF5722; color:#fff; box-shadow:0 2px 4px rgba(0,0,0,0.2);">✏️</div>
       </div>
@@ -123,7 +123,7 @@
     <div class="sec-title">🚀 Quick Actions</div>
     <div class="action-cards">
 		
-		<div onclick="window.checkPremium()" class="action-card primary">
+	  <div onclick="window.checkPremium()" class="action-card primary">
         <div class="action-card-icon">➕</div>
         <div class="action-card-title">Create Listing</div>
         <div class="action-card-desc">Post new deal or offer</div>
@@ -261,6 +261,8 @@ import { db, auth, LS, SS, toast, cacheGet, cacheSet } from './js/app.js';
 import { sanitizer } from './js/sanitizer.js';
 import { getDoc, getDocs, query, collection, where, updateDoc, doc, setDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
 import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js';
+// 🚀 NEW: Import Firebase Storage functions
+import { getStorage, ref, uploadString, getDownloadURL } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-storage.js';
 
 if (!LS('uid') || LS('role') !== 'merchant') { window.location.href = 'index.html'; }
 
@@ -373,7 +375,7 @@ const handleImageSelection = (e) => {
       ctx.drawImage(img, sx, sy, size, size, 0, 0, 400, 400);
       const compressedB64 = canvas.toDataURL('image/webp', 0.8);
       e.target.value = '';
-      await uploadLogoToImgBB(compressedB64);
+      await uploadLogoToFirebase(compressedB64); // 🚀 UPDATED
     };
     img.src = event.target.result;
   };
@@ -383,20 +385,18 @@ const handleImageSelection = (e) => {
 document.getElementById('img-camera').addEventListener('change', handleImageSelection);
 document.getElementById('img-gallery').addEventListener('change', handleImageSelection);
 
-async function uploadToImgBB(base64Str) {
-  const apiKey = "4dd5a19986e0ffeabe66a2eb0114d358";
-  const formData = new FormData();
-  formData.append("image", base64Str.split(',')[1]);
-  const res = await fetch(`https://api.imgbb.com/1/upload?key=${apiKey}`, { method: "POST", body: formData });
-  const data = await res.json();
-  if (data.success) return data.data.url;
-  throw new Error("ImgBB rejection");
-}
-
-async function uploadLogoToImgBB(b64) {
+// 🚀 REPLACED: ImgBB logic is completely removed and replaced with Firebase Storage
+async function uploadLogoToFirebase(b64) {
   document.getElementById('logo-status').textContent = '⏳ Uploading logo...';
   try {
-    const url = await uploadToImgBB(b64);
+    const storage = getStorage();
+    // Name file using the merchant UID and a timestamp to ensure uniqueness
+    const fileName = `logos/${uid}_${Date.now()}.webp`;
+    const storageRef = ref(storage, fileName);
+
+    await uploadString(storageRef, b64, 'data_url');
+    const url = await getDownloadURL(storageRef);
+
     await updateDoc(doc(db, 'users', uid), { logoUrl: url });
     localStorage.setItem('np_logoUrl', url);
     const mLogo = document.getElementById('m-logo');
@@ -406,6 +406,7 @@ async function uploadLogoToImgBB(b64) {
     document.getElementById('logo-status').textContent = '';
     toast('✅', 'Shop logo updated!');
   } catch (err) {
+    console.error("Storage upload error:", err);
     document.getElementById('logo-status').textContent = '❌ Upload failed';
     toast('❌', 'Logo upload failed. Check network.');
   }

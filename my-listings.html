@@ -241,6 +241,8 @@
 import { db, auth, LS, SS, toast, cacheGet, cacheSet, cacheClear } from './js/app.js';
 import { sanitizer } from './js/sanitizer.js';
 import { getDoc, getDocs, query, collection, where, updateDoc, deleteDoc, doc, setDoc } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
+// 🚀 NEW: Import Firebase Storage functions
+import { getStorage, ref, uploadString, getDownloadURL } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-storage.js';
 
 if (!LS('uid') || LS('role') !== 'merchant') { window.location.href = 'index.html'; }
 
@@ -293,14 +295,15 @@ const handleImageSelection = (e) => {
 document.getElementById('img-camera').addEventListener('change', handleImageSelection);
 document.getElementById('img-gallery').addEventListener('change', handleImageSelection);
 
-async function uploadToImgBB(base64Str) {
-  const apiKey = "4dd5a19986e0ffeabe66a2eb0114d358";
-  const formData = new FormData();
-  formData.append("image", base64Str.split(',')[1]);
-  const res = await fetch(`https://api.imgbb.com/1/upload?key=${apiKey}`, { method: "POST", body: formData });
-  const data = await res.json();
-  if (data.success) return data.data.url;
-  throw new Error("ImgBB rejection");
+// 🚀 REPLACED: ImgBB logic is completely removed and replaced with Firebase Storage
+async function uploadToFirebase(base64Str) {
+  const storage = getStorage();
+  // Name file using the merchant UID and a timestamp to ensure uniqueness
+  const fileName = `listings/${uid}_${Date.now()}.webp`;
+  const storageRef = ref(storage, fileName);
+
+  await uploadString(storageRef, base64Str, 'data_url');
+  return await getDownloadURL(storageRef);
 }
 
 async function loadListings(force = true) {
@@ -538,10 +541,11 @@ window.saveEdit = async () => {
     if (pendingEditImageB64) {
       btn.textContent = 'Uploading photo...';
       try {
-        const newImgUrl = await uploadToImgBB(pendingEditImageB64);
+        const newImgUrl = await uploadToFirebase(pendingEditImageB64); // 🚀 NOW UPLOADING TO FIREBASE
         updateData.imageUrl = newImgUrl;
         updateData.image = newImgUrl;
       } catch (err) {
+        console.error("Storage upload error:", err);
         toast('❌', 'Image upload failed. Saving text only.');
       }
     }

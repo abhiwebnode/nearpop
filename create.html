@@ -240,6 +240,8 @@ import { ghEncode } from './js/geohash.js';
 import { sanitizer } from './js/sanitizer.js'; // ✅ Injecting Sanitizer
 import { getDocs, addDoc, collection, query, where, doc, serverTimestamp, updateDoc } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js';
+// 🚀 NEW: Import Firebase Storage functions
+import { getStorage, ref, uploadString, getDownloadURL } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-storage.js';
 
 window.toast = toast;
 
@@ -504,22 +506,20 @@ window.doCreate = async () => {
     if (compressedImageB64) {
       showLdr('Uploading photo...');
       try {
-        const formData = new FormData();
-        formData.append("image", compressedImageB64.split(',')[1]);
+        const storage = getStorage();
+        // Create a unique file name using the merchant's UID and timestamp
+        const fileName = `listings/${secureUser.uid}_${Date.now()}.webp`;
+        const storageRef = ref(storage, fileName);
+
+        // Upload the compressed base64 string directly
+        await uploadString(storageRef, compressedImageB64, 'data_url');
         
-        const res = await fetch('https://api.imgbb.com/1/upload?key=4dd5a19986e0ffeabe66a2eb0114d358', {
-          method: "POST",
-          body: formData
-        });
-        const data = await res.json();
+        // Retrieve the permanent public URL
+        imageUrl = await getDownloadURL(storageRef);
         
-        if (data.success) {
-          imageUrl = data.data.url;
-        } else {
-          throw new Error('ImgBB upload failed');
-        }
         showLdr('Finalizing listing...');
       } catch(err) {
+        console.error("Storage upload error:", err);
         hideLdr();
         return toast('❌', 'Image upload failed. Please check your connection.');
       }
