@@ -262,7 +262,7 @@ import { sanitizer } from './js/sanitizer.js';
 import { getDoc, getDocs, query, collection, where, updateDoc, doc, setDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
 import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js';
 // 🚀 NEW: Import Firebase Storage functions
-import { getStorage, ref, uploadString, getDownloadURL } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-storage.js';
+import { getStorage, ref, uploadString, getDownloadURL, deleteObject } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-storage.js';
 
 if (!LS('uid') || LS('role') !== 'merchant') { window.location.href = 'index.html'; }
 
@@ -375,7 +375,7 @@ const handleImageSelection = (e) => {
       ctx.drawImage(img, sx, sy, size, size, 0, 0, 400, 400);
       const compressedB64 = canvas.toDataURL('image/webp', 0.8);
       e.target.value = '';
-      await uploadLogoToFirebase(compressedB64); // 🚀 UPDATED
+      await uploadLogoToFirebase(compressedB64);
     };
     img.src = event.target.result;
   };
@@ -390,6 +390,15 @@ async function uploadLogoToFirebase(b64) {
   document.getElementById('logo-status').textContent = '⏳ Uploading logo...';
   try {
     const storage = getStorage();
+    
+    // 🚀 NEW: Delete the old logo to save storage space
+    const oldLogoUrl = LS('logoUrl');
+    if (oldLogoUrl && oldLogoUrl.includes('firebasestorage')) {
+        try {
+            await deleteObject(ref(storage, oldLogoUrl));
+        } catch(e) { console.warn("Failed to delete old logo", e); }
+    }
+
     // Name file using the merchant UID and a timestamp to ensure uniqueness
     const fileName = `logos/${uid}_${Date.now()}.webp`;
     const storageRef = ref(storage, fileName);
