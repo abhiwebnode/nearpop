@@ -241,8 +241,8 @@
 import { db, auth, LS, SS, toast, cacheGet, cacheSet, cacheClear } from './js/app.js';
 import { sanitizer } from './js/sanitizer.js';
 import { getDoc, getDocs, query, collection, where, updateDoc, deleteDoc, doc, setDoc } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js';
-// 🚀 NEW: Import Firebase Storage functions
-import { getStorage, ref, uploadString, getDownloadURL } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-storage.js';
+// 🚀 NEW: Import deleteObject to safely remove old images from storage
+import { getStorage, ref, uploadString, getDownloadURL, deleteObject } from 'https://www.gstatic.com/firebasejs/12.12.0/firebase-storage.js';
 
 if (!LS('uid') || LS('role') !== 'merchant') { window.location.href = 'index.html'; }
 
@@ -295,10 +295,9 @@ const handleImageSelection = (e) => {
 document.getElementById('img-camera').addEventListener('change', handleImageSelection);
 document.getElementById('img-gallery').addEventListener('change', handleImageSelection);
 
-// 🚀 REPLACED: ImgBB logic is completely removed and replaced with Firebase Storage
+// 🚀 REPLACED: Uploading directly to Firebase Storage
 async function uploadToFirebase(base64Str) {
   const storage = getStorage();
-  // Name file using the merchant UID and a timestamp to ensure uniqueness
   const fileName = `listings/${uid}_${Date.now()}.webp`;
   const storageRef = ref(storage, fileName);
 
@@ -316,7 +315,6 @@ async function loadListings(force = true) {
     const userDocSnap = await getDoc(userDocRef);
     const userData = userDocSnap.exists() ? userDocSnap.data() : {};
     
-    // 🚀 CRITICAL FIX: Sync the live wallet balance to prevent stale premium upgrades
     if (userData.wallet !== undefined) {
       wallet = userData.wallet;
       SS('wallet', wallet);
@@ -346,7 +344,7 @@ function renderFromData(all, userData) {
   currentListings = mine;
   renderCards(mine);
   
-  // Analytics Calculations (Matched perfectly to old_merchant.html)
+  // Analytics Calculations
   const totMapViews = mine.reduce((a,l)=>a+(l.popups||0), 0);
   const totVisits = mine.reduce((a,l)=>a+(l.visits||0), 0); 
   
@@ -464,7 +462,7 @@ function renderCards(mine) {
     const safeTitle = sanitizer.sanitizeText(l.title || '', { maxLength: 200 });
     const safeImageUrl = l.image ? sanitizer.sanitizeUrl(l.image) : '';
     const safeEmoji = sanitizer.sanitizeText(l.emoji || '📍', { maxLength: 10 });
-    const safeId = (l.id || '').replace(/['"\\]/g, ''); // Remove quotes for onclick safety
+    const safeId = (l.id || '').replace(/['"\\]/g, ''); 
     const safeStatus = (l.status || 'active').replace(/['"\\]/g, '');
     const safeRadius = parseInt(l.radius) || 300;
     const safeBudget = parseInt(l.budget) || 25;
@@ -525,6 +523,7 @@ window.saveEdit = async () => {
   if (budget < 25 || budget % 25 !== 0) return toast('⚠️', 'Budget must be a multiple of 25 Credits');
   const btn = document.querySelector('#mod-edit .btn-or');
   btn.textContent = 'Saving...';
+  
   try {
     const rawTitle = document.getElementById('edit-title').value;
     const rawDesc = document.getElementById('edit-desc').value;
@@ -538,17 +537,32 @@ window.saveEdit = async () => {
       hourlyCap: parseInt(document.getElementById('edit-hourly').value) || 999,
       radius: parseInt(document.getElementById('edit-radius').value) || 300
     };
+    
     if (pendingEditImageB64) {
       btn.textContent = 'Uploading photo...';
       try {
-        const newImgUrl = await uploadToFirebase(pendingEditImageB64); // 🚀 NOW UPLOADING TO FIREBASE
+        const newImgUrl = await uploadToFirebase(pendingEditImageB64);
         updateData.imageUrl = newImgUrl;
         updateData.image = newImgUrl;
+
+        // 🚀 NEW: Delete the old listing image to save space
+        const l = currentListings.find(x => x.id === id);
+        if (l && (l.image || l.imageUrl)) {
+            const oldImg = l.image || l.imageUrl;
+            // Only try to delete if it's a Firebase Storage link (ignores old ImgBB links)
+            if (oldImg.includes('firebasestorage')) {
+                try {
+                    const storage = getStorage();
+                    await deleteObject(ref(storage, oldImg));
+                } catch(e) { console.warn("Failed to delete old image", e); }
+            }
+        }
       } catch (err) {
         console.error("Storage upload error:", err);
         toast('❌', 'Image upload failed. Saving text only.');
       }
     }
+    
     await updateDoc(doc(db, 'listings', id), updateData);
     toast('✅', 'Listing updated successfully!');
     document.getElementById('mod-edit').classList.remove('on');
@@ -574,7 +588,21 @@ window.togglePause = async (id, currentStatus) => {
 window.deleteListing = async (id) => {
   window.haptic(50);
   if (!confirm('🚨 Are you sure you want to permanently delete this listing?')) return;
+  
   try {
+    // 🚀 NEW: Delete the image from Storage before deleting the document
+    const l = currentListings.find(x => x.id === id);
+    if (l && (l.image || l.imageUrl)) {
+        const oldImg = l.image || l.imageUrl;
+        // Only try to delete if it's a Firebase Storage link (ignores old ImgBB links)
+        if (oldImg.includes('firebasestorage')) {
+            try {
+                const storage = getStorage();
+                await deleteObject(ref(storage, oldImg));
+            } catch(e) { console.warn("Failed to delete image from storage", e); }
+        }
+    }
+
     await deleteDoc(doc(db, 'listings', id));
     toast('✅', 'Listing deleted');
     loadListings(true);
@@ -583,7 +611,7 @@ window.deleteListing = async (id) => {
   }
 };
 
-// Share to WhatsApp Status — Pure Canvas (same as detail.html)
+// Share to WhatsApp Status
 window.exportStatus = async (id) => {
   window.haptic(30);
   const l = currentListings.find(x => x.id === id);
@@ -600,7 +628,7 @@ window.exportStatus = async (id) => {
     canvas.height = 1920;
     const ctx = canvas.getContext('2d');
 
-    // 1. Background — saffron/white/green gradient
+    // 1. Background
     ctx.fillStyle = '#0F0F13';
     ctx.fillRect(0, 0, 1080, 1920);
     const gradient = ctx.createLinearGradient(0, 0, 1080, 1920);
@@ -653,7 +681,7 @@ window.exportStatus = async (id) => {
       _drawPlaceholder(ctx, imgX, imgY, imgSize, l.emoji);
     }
 
-    // 4. Text — merchant, title, price
+    // 4. Text
     ctx.textAlign = 'center';
     ctx.fillStyle = '#D1D5DB';
     ctx.font = 'bold 36px sans-serif';
@@ -670,7 +698,7 @@ window.exportStatus = async (id) => {
       ctx.fillText(_decodeHTML(l.price), 540, 1400 + (titleLines.length * 80));
     }
 
-    // 5. Promo banner + QR code
+    // 5. Promo banner
     const bannerY = 1660;
     ctx.fillStyle = 'rgba(255,255,255,0.06)';
     ctx.beginPath(); _roundRect(ctx, 50, bannerY, 980, 200, 30); ctx.fill();
