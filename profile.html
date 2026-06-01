@@ -132,35 +132,68 @@
       <div class="no-saved">Loading…</div>
     </div>
 
-    <div class="sec-title">🔔 Notification Controls</div>
+    <div class="sec-title">📱 In-App Popups</div>
     <div class="pblk">
       <div class="pr">
         <span class="pr-ic">⏸️</span>
-        <div style="flex:1"><div class="pr-lbl">Pause All Notifications</div><div class="pr-sub">No popups until you turn this off</div></div>
-        <div class="tog" id="tog-pause" onclick="window.togglePause(this)"></div>
+        <div style="flex:1"><div class="pr-lbl">Pause In-App Popups</div><div class="pr-sub">Stop popups while browsing the app</div></div>
+        <div class="tog" id="tog-pause-inapp" onclick="window.toggleInAppPause(this)"></div>
       </div>
       <div class="pr" style="flex-direction:column;align-items:flex-start;gap:8px">
         <div style="display:flex;align-items:center;gap:11px;width:100%">
-          <span class="pr-ic">📅</span><span class="pr-lbl" style="flex:1">Max per day</span><span class="pr-val" id="lbl-day">3</span>
+          <span class="pr-ic">📅</span><span class="pr-lbl" style="flex:1">Max popups per day</span><span class="pr-val" id="lbl-day-inapp">No limit</span>
         </div>
         <div class="chips">
-          <button class="chip" onclick="window.setMaxDay(1,this)">1</button>
-          <button class="chip on" onclick="window.setMaxDay(3,this)">3</button>
-          <button class="chip" onclick="window.setMaxDay(5,this)">5</button>
-          <button class="chip" onclick="window.setMaxDay(10,this)">10</button>
-          <button class="chip" onclick="window.setMaxDay(999,this)">No limit</button>
+          <button class="chip" onclick="window.setInAppMaxDay(3,this)">3</button>
+          <button class="chip" onclick="window.setInAppMaxDay(5,this)">5</button>
+          <button class="chip" onclick="window.setInAppMaxDay(10,this)">10</button>
+          <button class="chip" onclick="window.setInAppMaxDay(20,this)">20</button>
+          <button class="chip on" onclick="window.setInAppMaxDay(999,this)">No limit</button>
         </div>
       </div>
       <div class="pr" style="flex-direction:column;align-items:flex-start;gap:8px">
         <div style="display:flex;align-items:center;gap:11px;width:100%">
-          <span class="pr-ic">⏰</span><span class="pr-lbl" style="flex:1">Max per hour</span><span class="pr-val" id="lbl-hour">1</span>
+          <span class="pr-ic">⏰</span><span class="pr-lbl" style="flex:1">Max popups per hour</span><span class="pr-val" id="lbl-hour-inapp">No limit</span>
         </div>
         <div class="chips">
-          <button class="chip on" onclick="window.setMaxHour(1,this)">1</button>
-          <button class="chip" onclick="window.setMaxHour(2,this)">2</button>
-          <button class="chip" onclick="window.setMaxHour(3,this)">3</button>
-		  <button class="chip" onclick="window.setMaxHour(5,this)">5</button>
-          <button class="chip" onclick="window.setMaxHour(999,this)">No limit</button>
+          <button class="chip" onclick="window.setInAppMaxHour(1,this)">1</button>
+          <button class="chip" onclick="window.setInAppMaxHour(2,this)">2</button>
+          <button class="chip" onclick="window.setInAppMaxHour(3,this)">3</button>
+          <button class="chip" onclick="window.setInAppMaxHour(5,this)">5</button>
+          <button class="chip on" onclick="window.setInAppMaxHour(999,this)">No limit</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="sec-title">🔔 Background Notifications</div>
+    <div class="pblk">
+      <div class="pr">
+        <span class="pr-ic">⏸️</span>
+        <div style="flex:1"><div class="pr-lbl">Pause Background Alerts</div><div class="pr-sub">Stop notifications when app is closed</div></div>
+        <div class="tog" id="tog-pause-bg" onclick="window.toggleBgPause(this)"></div>
+      </div>
+      <div class="pr" style="flex-direction:column;align-items:flex-start;gap:8px">
+        <div style="display:flex;align-items:center;gap:11px;width:100%">
+          <span class="pr-ic">📅</span><span class="pr-lbl" style="flex:1">Max alerts per day</span><span class="pr-val" id="lbl-day-bg">No limit</span>
+        </div>
+        <div class="chips">
+          <button class="chip" onclick="window.setBgMaxDay(3,this)">3</button>
+          <button class="chip" onclick="window.setBgMaxDay(5,this)">5</button>
+          <button class="chip" onclick="window.setBgMaxDay(10,this)">10</button>
+          <button class="chip" onclick="window.setBgMaxDay(20,this)">20</button>
+          <button class="chip on" onclick="window.setBgMaxDay(999,this)">No limit</button>
+        </div>
+      </div>
+      <div class="pr" style="flex-direction:column;align-items:flex-start;gap:8px">
+        <div style="display:flex;align-items:center;gap:11px;width:100%">
+          <span class="pr-ic">⏰</span><span class="pr-lbl" style="flex:1">Max alerts per hour</span><span class="pr-val" id="lbl-hour-bg">No limit</span>
+        </div>
+        <div class="chips">
+          <button class="chip" onclick="window.setBgMaxHour(1,this)">1</button>
+          <button class="chip" onclick="window.setBgMaxHour(2,this)">2</button>
+          <button class="chip" onclick="window.setBgMaxHour(3,this)">3</button>
+          <button class="chip" onclick="window.setBgMaxHour(5,this)">5</button>
+          <button class="chip on" onclick="window.setBgMaxHour(999,this)">No limit</button>
         </div>
       </div>
     </div>
@@ -180,14 +213,9 @@
 
     <div class="sec-title">👤 Account</div>
     <div class="pblk">
-      <div class="pr tap" onclick="window.syncNow()">
-        <span class="pr-ic">☁️</span>
-        <div style="flex:1"><div class="pr-lbl">Sync to Cloud</div><div class="pr-sub">Back up your data now</div></div>
-        <span class="pr-arrow">↑</span>
-      </div>
       <div class="pr tap" onclick="window.clearLogs()">
         <span class="pr-ic">🔄</span>
-        <div style="flex:1"><div class="pr-lbl">Reset Notification History</div><div class="pr-sub">Clears today's popup count</div></div>
+        <div style="flex:1"><div class="pr-lbl">Reset Notification History</div><div class="pr-sub">Clears cooldowns so you can see deals again</div></div>
         <span class="pr-arrow">→</span>
       </div>
 	  <div class="pr tap" onclick="window.go('terms.html')">
@@ -215,7 +243,7 @@
       
       <div class="pr tap" onclick="window.forceRefreshApp()">
         <span class="pr-ic" style="color:var(--deep)">⚡</span>
-        <div style="flex:1"><div class="pr-lbl">Refresh this app</div><div class="pr-sub">Clear cache and fetch latest data</div></div>
+        <div style="flex:1"><div class="pr-lbl">Reload Latest Data</div><div class="pr-sub">Fetch newest deals from server</div></div>
         <span class="pr-arrow">↻</span>
       </div>
 
@@ -229,10 +257,6 @@
         <span class="pr-ic" style="color:#DC2626">⚠️</span>
         <div style="flex:1"><div class="pr-lbl" style="color:#DC2626">Delete Account</div><div class="pr-sub">Permanently erase all data</div></div>
         <span class="pr-arrow">→</span>
-      </div>
-
-	  <div id="dev-reset" style="text-align:center; margin-top:50px; color:#ccc; font-size:10px; cursor:pointer;">
-        v1.0 (Reset Data)
       </div>
     </div>
 
@@ -449,65 +473,151 @@ async function loadSavedListings() {
   }
 }
 
-// ─── SAFE NATIVE NOTIFICATION PREFS ───
+// ─── LOAD PREFERENCES (split: in-app vs background) ───
 function loadPrefs(data) {
   const d = data || {};
-  const maxDay    = d.pref_maxDay    || LS('pref_maxDay')    || 5;
-  const maxHour   = d.pref_maxHour   || LS('pref_maxHour')   || 1;
-  const paused    = d.pref_paused    || LS('pref_paused')    || false;
+
+  // In-app prefs — stored only in web localStorage
+  // Defaults: unlimited (999), not paused
+  const inAppMaxDay  = parseInt(d.pref_inapp_maxDay  || LS('pref_inapp_maxDay'))  || 999;
+  const inAppMaxHour = parseInt(d.pref_inapp_maxHour || LS('pref_inapp_maxHour')) || 999;
+  const inAppPaused  = (d.pref_inapp_paused !== undefined ? d.pref_inapp_paused : LS('pref_inapp_paused')) || false;
+
+  // Background prefs — read from native if available, fallback to localStorage
+  let bgMaxDay = 999, bgMaxHour = 999, bgPaused = false;
+  if (window.NativeAndroid && typeof window.NativeAndroid.getBgMaxPerDay === 'function') {
+    try {
+      bgMaxDay  = window.NativeAndroid.getBgMaxPerDay();
+      bgMaxHour = window.NativeAndroid.getBgMaxPerHour();
+      bgPaused  = window.NativeAndroid.getBgPaused();
+    } catch(e) { console.warn('Bridge read failed', e); }
+  } else {
+    bgMaxDay  = parseInt(d.pref_maxDay  || LS('pref_maxDay'))  || 999;
+    bgMaxHour = parseInt(d.pref_maxHour || LS('pref_maxHour')) || 999;
+    bgPaused  = (d.pref_paused !== undefined ? d.pref_paused : LS('pref_paused')) || false;
+  }
+
+  // Interests (in-app feed only)
   const interests = d.pref_interests || LS('pref_interests') || ['deal', 'rental', 'pg', 'job'];
 
-  const tog = document.getElementById('tog-pause');
-  if (tog) { paused ? tog.classList.add('on') : tog.classList.remove('on'); }
+  // ── Apply in-app UI state ──
+  const togInApp = document.getElementById('tog-pause-inapp');
+  if (togInApp) togInApp.classList.toggle('on', !!inAppPaused);
 
-  const lblDay = document.getElementById('lbl-day');
-  if (lblDay) lblDay.textContent = maxDay === 999 ? 'No limit' : maxDay;
+  const lblDayInApp  = document.getElementById('lbl-day-inapp');
+  if (lblDayInApp)  lblDayInApp.textContent  = inAppMaxDay  === 999 ? 'No limit' : inAppMaxDay;
+  const lblHourInApp = document.getElementById('lbl-hour-inapp');
+  if (lblHourInApp) lblHourInApp.textContent = inAppMaxHour === 999 ? 'No limit' : inAppMaxHour;
 
-  const lblHour = document.getElementById('lbl-hour');
-  if (lblHour) lblHour.textContent = maxHour === 999 ? 'No limit' : maxHour;
-
-  document.querySelectorAll('[onclick^="window.setMaxDay"]').forEach(b => {
+  document.querySelectorAll('[onclick^="window.setInAppMaxDay"]').forEach(b => {
     const v = parseInt(b.textContent) || 999;
-    b.classList.toggle('on', v === maxDay || (b.textContent === 'No limit' && maxDay === 999));
+    b.classList.toggle('on', v === inAppMaxDay || (b.textContent === 'No limit' && inAppMaxDay === 999));
   });
-  
-  document.querySelectorAll('[onclick^="window.setMaxHour"]').forEach(b => {
+  document.querySelectorAll('[onclick^="window.setInAppMaxHour"]').forEach(b => {
     const v = parseInt(b.textContent) || 999;
-    b.classList.toggle('on', v === maxHour || (b.textContent === 'No limit' && maxHour === 999));
+    b.classList.toggle('on', v === inAppMaxHour || (b.textContent === 'No limit' && inAppMaxHour === 999));
   });
-  
+
+  // ── Apply background UI state ──
+  const togBg = document.getElementById('tog-pause-bg');
+  if (togBg) togBg.classList.toggle('on', !!bgPaused);
+
+  const lblDayBg  = document.getElementById('lbl-day-bg');
+  if (lblDayBg)  lblDayBg.textContent  = bgMaxDay  === 999 ? 'No limit' : bgMaxDay;
+  const lblHourBg = document.getElementById('lbl-hour-bg');
+  if (lblHourBg) lblHourBg.textContent = bgMaxHour === 999 ? 'No limit' : bgMaxHour;
+
+  document.querySelectorAll('[onclick^="window.setBgMaxDay"]').forEach(b => {
+    const v = parseInt(b.textContent) || 999;
+    b.classList.toggle('on', v === bgMaxDay || (b.textContent === 'No limit' && bgMaxDay === 999));
+  });
+  document.querySelectorAll('[onclick^="window.setBgMaxHour"]').forEach(b => {
+    const v = parseInt(b.textContent) || 999;
+    b.classList.toggle('on', v === bgMaxHour || (b.textContent === 'No limit' && bgMaxHour === 999));
+  });
+
+  // Interests
   document.querySelectorAll('[data-cat]').forEach(b => {
     b.classList.toggle('on', interests.includes(b.dataset.cat));
   });
 }
 
-window.togglePause = tog => {
+// ═══════════════════════════════════════════════════════════════════
+// IN-APP POPUP HANDLERS (map.html reads these keys)
+// ═══════════════════════════════════════════════════════════════════
+
+window.toggleInAppPause = tog => {
   window.haptic(30);
   tog.classList.toggle('on');
   const v = tog.classList.contains('on');
-  SS('pref_paused', v); // 🚀 FIXED: Changed LS to SS so it actually saves!
-  syncField(uid, 'pref_paused', v);
-  toast(v ? '⏸️' : '▶️', v ? 'Notifications paused' : 'Notifications resumed');
+  SS('pref_inapp_paused', v);
+  syncField(uid, 'pref_inapp_paused', v);
+  toast(v ? '⏸️' : '▶️', v ? 'In-app popups paused' : 'In-app popups resumed');
 };
 
-window.setMaxDay = (n, btn) => {
+window.setInAppMaxDay = (n, btn) => {
   window.haptic(30);
+  SS('pref_inapp_maxDay', n);
+  syncField(uid, 'pref_inapp_maxDay', n);
+  document.getElementById('lbl-day-inapp').textContent = n === 999 ? 'No limit' : n;
+  document.querySelectorAll('[onclick^="window.setInAppMaxDay"]').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+  toast('📅', 'In-app: ' + (n === 999 ? 'unlimited' : 'max ' + n) + ' per day');
+};
+
+window.setInAppMaxHour = (n, btn) => {
+  window.haptic(30);
+  SS('pref_inapp_maxHour', n);
+  syncField(uid, 'pref_inapp_maxHour', n);
+  document.getElementById('lbl-hour-inapp').textContent = n === 999 ? 'No limit' : n;
+  document.querySelectorAll('[onclick^="window.setInAppMaxHour"]').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+  toast('⏰', 'In-app: ' + (n === 999 ? 'unlimited' : 'max ' + n) + ' per hour');
+};
+
+// ═══════════════════════════════════════════════════════════════════
+// BACKGROUND NOTIFICATION HANDLERS
+// Native NotificationEngine reads from SharedPreferences via JS bridge
+// ═══════════════════════════════════════════════════════════════════
+
+window.toggleBgPause = tog => {
+  window.haptic(30);
+  tog.classList.toggle('on');
+  const v = tog.classList.contains('on');
+  // Sync to native SharedPreferences (Android)
+  if (window.NativeAndroid && typeof window.NativeAndroid.setBgPaused === 'function') {
+    try { window.NativeAndroid.setBgPaused(v); } catch(e) { console.warn(e); }
+  }
+  // Also save to localStorage/Firestore for web fallback + cross-device sync
+  SS('pref_paused', v);
+  syncField(uid, 'pref_paused', v);
+  toast(v ? '⏸️' : '▶️', v ? 'Background alerts paused' : 'Background alerts resumed');
+};
+
+window.setBgMaxDay = (n, btn) => {
+  window.haptic(30);
+  if (window.NativeAndroid && typeof window.NativeAndroid.setBgMaxPerDay === 'function') {
+    try { window.NativeAndroid.setBgMaxPerDay(n); } catch(e) { console.warn(e); }
+  }
   SS('pref_maxDay', n);
   syncField(uid, 'pref_maxDay', n);
-  document.getElementById('lbl-day').textContent = n === 999 ? 'No limit' : n;
-  document.querySelectorAll('[onclick^="window.setMaxDay"]').forEach(b => b.classList.remove('on'));
+  document.getElementById('lbl-day-bg').textContent = n === 999 ? 'No limit' : n;
+  document.querySelectorAll('[onclick^="window.setBgMaxDay"]').forEach(b => b.classList.remove('on'));
   btn.classList.add('on');
-  toast('📅', 'Max ' + (n === 999 ? 'unlimited' : n) + ' per day');
+  toast('📅', 'Background: ' + (n === 999 ? 'unlimited' : 'max ' + n) + ' per day');
 };
 
-window.setMaxHour = (n, btn) => {
+window.setBgMaxHour = (n, btn) => {
   window.haptic(30);
+  if (window.NativeAndroid && typeof window.NativeAndroid.setBgMaxPerHour === 'function') {
+    try { window.NativeAndroid.setBgMaxPerHour(n); } catch(e) { console.warn(e); }
+  }
   SS('pref_maxHour', n);
   syncField(uid, 'pref_maxHour', n);
-  document.getElementById('lbl-hour').textContent = n === 999 ? 'No limit' : n;
-  document.querySelectorAll('[onclick^="window.setMaxHour"]').forEach(b => b.classList.remove('on'));
+  document.getElementById('lbl-hour-bg').textContent = n === 999 ? 'No limit' : n;
+  document.querySelectorAll('[onclick^="window.setBgMaxHour"]').forEach(b => b.classList.remove('on'));
   btn.classList.add('on');
-  toast('⏰', 'Max ' + (n === 999 ? 'unlimited' : n) + ' per hour');
+  toast('⏰', 'Background: ' + (n === 999 ? 'unlimited' : 'max ' + n) + ' per hour');
 };
 
 window.toggleInterest = (cat, btn) => {
@@ -527,19 +637,34 @@ window.toggleInterest = (cat, btn) => {
   toast('🎯', 'Interests saved');
 };
 
-window.syncNow = async () => {
-  if (!isRealAuthUser(uid)) { toast('ℹ️', 'Cloud sync needs OTP login'); return; }
-  toast('☁️', 'Syncing…');
-  await pushUserData(uid);
-  toast('✅', 'Data synced to cloud');
-};
-
 window.clearLogs = () => {
-  SS('notif_log', []);
-  SS('vendor_shown', {});
-  SS('listing_seen', {});
+  // ─── In-app popup state ──────────────────────────────────────
+  SS('notif_log', []);                  // alerts-today counter
+  SS('vendor_shown', {});               // legacy
+  SS('listing_seen', {});               // legacy
+  SS('inapp_day_key', '');              // reset daily counter
+  SS('inapp_day_count', 0);
+  SS('inapp_hour_key', '');             // reset hourly counter
+  SS('inapp_hour_count', 0);
+
+  // ─── Per-listing 1-hour cooldowns (inapp_cooldown_<dealId>) ──
+  try {
+    const keysToRemove = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith('np_inapp_cooldown_')) keysToRemove.push(k);
+      if (k && k.startsWith('inapp_cooldown_')) keysToRemove.push(k);
+    }
+    keysToRemove.forEach(k => localStorage.removeItem(k));
+  } catch(e) { console.warn('Cooldown cleanup error:', e); }
+
+  // ─── Native Android side (background notification cooldowns) ──
+  if (window.NativeAndroid && typeof window.NativeAndroid.clearNotificationHistory === 'function') {
+    try { window.NativeAndroid.clearNotificationHistory(); } catch(e) { console.warn(e); }
+  }
+
   document.getElementById('s-notifs').textContent = 0;
-  toast('🔄', 'Notification history cleared');
+  toast('🔄', 'Notification history cleared — fresh deals coming!');
 };
 
 window.forceRefreshApp = () => {
@@ -789,19 +914,6 @@ function getDistance(lat1, lon1, lat2, lon2) {
 }
 
 
-document.getElementById('dev-reset').addEventListener('click', () => {
-  if(confirm('Wipe all local app data?')) {
-    localStorage.clear();
-    sessionStorage.clear();
-    navigator.serviceWorker.getRegistrations().then(function(registrations) {
-      for(let registration of registrations) {
-        registration.unregister();
-      }
-    });
-    alert('Data wiped. Restarting app.');
-    window.location.reload(true);
-  }
-});
 </script>
 </body>
 </html>

@@ -2658,42 +2658,71 @@ window.togglePopups = () => {
   }
 };
 
+
 // Main real-time tracker - triggered by GPS manager
 window.checkForNewNearbyListings = function(movementContext = {}) {
   // 1. Validate dependencies
   if (!filteredList || filteredList.length === 0 || !loc || !gpsConfirmed) return;
   if (popupsPaused) return;
 
-  // 2. filteredList is strictly sorted nearest-first by redraw()
-  const nearest = filteredList[0];
-  const dist = distM(loc.lat, loc.lng, nearest.lat, nearest.lng);
+  const ONE_HOUR_MS = 60 * 60 * 1000; // 1 hour in milliseconds
+  const now = Date.now();
 
-  // 3. Proximity & Synchronization check
-  if (dist <= PROXIMITY_THRESHOLD) {
-    // If the user manually dismissed this specific deal, don't annoy them
-    if (nearest.id === manuallyDismissedId) return;
+  let validNearest = null;
 
-    if (currentNearestId !== nearest.id) {
-      // 🚀 NEW NEAREST LISTING: Sync UI and popup
-      currentNearestId = nearest.id;
-      showNotif(nearest);
+  // 2. Find the absolute nearest listing that is within PROXIMITY_THRESHOLD 
+  // and NOT currently in its 1-hour in-app cooldown.
+  for (const l of filteredList) {
+    const safeLat = parseFloat(l.lat);
+    const safeLng = parseFloat(l.lng);
+    if (isNaN(safeLat) || isNaN(safeLng)) continue;
+
+    const dist = distM(loc.lat, loc.lng, safeLat, safeLng);
+
+    if (dist <= PROXIMITY_THRESHOLD) {
+      // Skip if manually dismissed during this specific session
+      if (l.id === manuallyDismissedId) continue;
+
+      // 🚀 IN-APP POPUP COOLDOWN LOGIC ONLY (Isolated from FCM/Background)
+      const lastShownInApp = parseInt(localStorage.getItem('inapp_cooldown_' + l.id)) || 0;
+      
+      // Bypass the cooldown ONLY if this listing is the one currently 
+      // visible on the screen (so its live distance keeps updating).
+      if (l.id !== currentNearestId && (now - lastShownInApp < ONE_HOUR_MS)) {
+          continue; // 🛑 Cooldown active: skip this listing and check the next one
+      }
+
+      validNearest = l;
+      break; // filteredList is pre-sorted by distance, so first valid match is our nearest
     } else {
-      // 📍 SAME LISTING: Keep distance updated in real-time
+      // If the closest listing is outside the radius, all others are too.
+      break;
+    }
+  }
+
+  // 3. Trigger UI
+  if (validNearest) {
+    if (currentNearestId !== validNearest.id) {
+      // 🚀 NEW NEAREST LISTING: Sync UI and record the cooldown timestamp
+      currentNearestId = validNearest.id;
+      
+      // Save the exact time this specific listing was shown in the app
+      localStorage.setItem('inapp_cooldown_' + validNearest.id, now.toString());
+      
+      showNotif(validNearest);
+    } else {
+      // 📍 SAME LISTING: Keep distance updated in real-time while popup is visible
       const popup = document.getElementById('notif');
       if (popup && popup.classList.contains('on')) {
-        document.getElementById('n-dist').textContent = fmtDist(nearest);
-      } else if (!movementContext.isStationary) {
-        // Re-trigger if popup timed out but user is still walking towards it
-        showNotif(nearest);
+        document.getElementById('n-dist').textContent = fmtDist(validNearest);
       }
     }
   } else {
-    // Left threshold - cleanup
+    // Left threshold or all nearby deals are on cooldown - hide the popup
     hideNotif();
     currentNearestId = null;
   }
 };
-
 // ═══════════════════════════════════════════════════════════════════
 // NOTIFICATION PERMISSION MODAL
 // ═══════════════════════════════════════════════════════════════════
