@@ -1347,19 +1347,24 @@
 <body>
 <div id="hard-geo-block" style="display:none; position:fixed; inset:0; background:var(--bg-body); color:var(--deep); z-index:99999; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:30px;">
   <div style="font-size:64px; margin-bottom:20px; filter: drop-shadow(0 10px 20px rgba(255,87,34,0.3));">📍</div>
-  <h2 style="font-family:'Syne', sans-serif; font-size:26px; margin-bottom:12px; font-weight:800;" data-en="Location Required" data-hi="स्थान आवश्यक है">Location Required</h2>
-  <p style="color:var(--gray); font-size:15px; margin-bottom:24px; line-height:1.6;" data-en="NearPop is a proximity engine. We need your GPS to find live deals on the streets around you." data-hi="NearPop एक निकटता इंजन है। आपके आस-पास की डील्स खोजने के लिए हमें आपके GPS की आवश्यकता है।">NearPop is a proximity engine. We need your GPS to find live deals on the streets around you.</p>
-  
-  <div style="background:var(--cream); border:1px solid var(--bdr); padding:18px; border-radius:14px; font-size:13px; color:var(--deep); text-align:left; line-height:1.7; margin-bottom:24px; width:100%; max-width:320px;">
+  <h2 id="geo-block-title" style="font-family:'Syne', sans-serif; font-size:26px; margin-bottom:12px; font-weight:800;" data-en="Location Required" data-hi="स्थान आवश्यक है">Location Required</h2>
+  <p id="geo-block-msg" style="color:var(--gray); font-size:15px; margin-bottom:24px; line-height:1.6;" data-en="NearPop is a proximity engine. We need your GPS to find live deals on the streets around you." data-hi="NearPop एक निकटता इंजन है। आपके आस-पास की डील्स खोजने के लिए हमें आपके GPS की आवश्यकता है।">NearPop is a proximity engine. We need your GPS to find live deals on the streets around you.</p>
+
+  <!-- Browser-only instructions (hidden in native app) -->
+  <div id="geo-block-web-instructions" style="background:var(--cream); border:1px solid var(--bdr); padding:18px; border-radius:14px; font-size:13px; color:var(--deep); text-align:left; line-height:1.7; margin-bottom:24px; width:100%; max-width:320px;">
     <b style="font-size:14px;" data-en="How to unblock:" data-hi="अनब्लॉक कैसे करें:">How to unblock:</b><br>
     <span data-en="1. Tap the Lock icon 🔒 or Settings icon ⚙️ in your browser's address bar." data-hi="1. अपने ब्राउज़र के एड्रेस बार में लॉक 🔒 या सेटिंग ⚙️ आइकन पर टैप करें।">1. Tap the <b>Lock icon 🔒</b> or <b>Settings icon ⚙️</b> in your browser's address bar.</span><br>
     <span data-en="2. Tap Permissions → Location." data-hi="2. अनुमतियां (Permissions) → स्थान (Location) पर टैप करें।">2. Tap <b>Permissions</b> → <b>Location</b>.</span><br>
     <span data-en="3. Change the setting to Allow." data-hi="3. सेटिंग को 'अनुमति दें' (Allow) में बदलें।">3. Change the setting to <b>Allow</b>.</span><br>
     <span data-en="4. Reload this page." data-hi="4. इस पेज को फिर से लोड करें।">4. Reload this page.</span>
   </div>
-  
-  <button onclick="window.location.reload()" style="background:var(--or); color:#fff; padding:16px 32px; border-radius:14px; border:none; font-weight:800; font-size:15px; cursor:pointer; box-shadow:0 4px 14px rgba(255,87,34,.25);" data-en="🔄 Reload Page" data-hi="🔄 पेज रीलोड करें">🔄 Reload Page</button>
-  
+
+  <!-- Native Android: direct Open Settings button -->
+  <button id="geo-block-open-settings" style="display:none; background:var(--or); color:#fff; padding:16px 32px; border-radius:14px; border:none; font-weight:800; font-size:15px; cursor:pointer; box-shadow:0 4px 14px rgba(255,87,34,.25); margin-bottom:8px;" onclick="window.openGpsSettingsFromBlock()" data-en="⚙️ Open Settings" data-hi="⚙️ सेटिंग्स खोलें">⚙️ Open Settings</button>
+
+  <!-- Browser reload button -->
+  <button id="geo-block-reload" onclick="window.location.reload()" style="background:var(--or); color:#fff; padding:16px 32px; border-radius:14px; border:none; font-weight:800; font-size:15px; cursor:pointer; box-shadow:0 4px 14px rgba(255,87,34,.25);" data-en="🔄 Reload Page" data-hi="🔄 पेज रीलोड करें">🔄 Reload Page</button>
+
   <button onclick="window.dismissGeoBlock()" style="background:transparent; color:var(--gray); padding:16px 32px; border:none; font-weight:800; font-size:14px; cursor:pointer; margin-top:8px;" data-en="Continue without GPS" data-hi="GPS के बिना जारी रखें">Continue without GPS</button>
 </div>
 
@@ -1696,13 +1701,113 @@ window.initFCM = async () => {
 };
 
 function handleGeoError(err) {
-  if (err.code === 1) { 
-    document.getElementById('hard-geo-block').style.display = 'flex'; 
-  } else { 
-    toast('📍', window.lang === 'hi' ? 'स्थान उपलब्ध नहीं है। GPS जांचें।' : 'Location unavailable. Check GPS signal.'); 
-    setFallback(); 
+  const isNative = window.isNativeAndroidApp || navigator.userAgent.includes('NearPopNativeAndroid');
+  const block = document.getElementById('hard-geo-block');
+  const title = document.getElementById('geo-block-title');
+  const msg = document.getElementById('geo-block-msg');
+  const webInstructions = document.getElementById('geo-block-web-instructions');
+  const openSettingsBtn = document.getElementById('geo-block-open-settings');
+  const reloadBtn = document.getElementById('geo-block-reload');
+
+  // err.code 1 = PERMISSION_DENIED, 2 = POSITION_UNAVAILABLE (GPS off), 3 = TIMEOUT
+  // On Android native we treat all errors as recoverable via Settings
+  if (err.code === 1 || isNative) {
+    // Customize message based on whether GPS device is off vs app permission denied
+    if (isNative && window.NativeAndroid && typeof window.NativeAndroid.isLocationEnabled === 'function') {
+      try {
+        const gpsOn = window.NativeAndroid.isLocationEnabled();
+        if (!gpsOn) {
+          if (title) title.textContent = window.lang === 'hi' ? 'GPS बंद है' : 'GPS is Off';
+          if (msg) msg.textContent = window.lang === 'hi'
+            ? 'कृपया अपने डिवाइस की लोकेशन सर्विस चालू करें।'
+            : 'Please turn on Location Services on your device.';
+        } else {
+          if (title) title.textContent = window.lang === 'hi' ? 'स्थान अनुमति आवश्यक' : 'Location Permission Needed';
+          if (msg) msg.textContent = window.lang === 'hi'
+            ? 'NearPop को आस-पास की डील्स खोजने के लिए स्थान की अनुमति चाहिए।'
+            : 'NearPop needs location permission to find deals near you.';
+        }
+      } catch(e) { /* fail open */ }
+    }
+
+    // Show/hide controls based on environment
+    if (isNative) {
+      if (webInstructions) webInstructions.style.display = 'none';
+      if (openSettingsBtn) openSettingsBtn.style.display = 'inline-block';
+      if (reloadBtn) reloadBtn.style.display = 'none';
+    } else {
+      if (webInstructions) webInstructions.style.display = 'block';
+      if (openSettingsBtn) openSettingsBtn.style.display = 'none';
+      if (reloadBtn) reloadBtn.style.display = 'inline-block';
+    }
+
+    if (block) block.style.display = 'flex';
+  } else {
+    toast('📍', window.lang === 'hi' ? 'स्थान उपलब्ध नहीं है। GPS जांचें।' : 'Location unavailable. Check GPS signal.');
+    setFallback();
   }
 }
+
+// ── "Open Settings" button on the Location Required popup (native Android) ──
+window.openGpsSettingsFromBlock = function() {
+  if (!window.NativeAndroid) return;
+  try {
+    // Decide which settings to open based on GPS state
+    const gpsEnabled = typeof window.NativeAndroid.isLocationEnabled === 'function'
+        ? window.NativeAndroid.isLocationEnabled() : true;
+    if (!gpsEnabled && typeof window.NativeAndroid.openLocationSettings === 'function') {
+      // GPS is off → open device Location Services
+      window.NativeAndroid.openLocationSettings();
+    } else if (typeof window.NativeAndroid.openAppSettings === 'function') {
+      // GPS is on but app permission denied → open app permissions
+      window.NativeAndroid.openAppSettings();
+    }
+  } catch(e) { console.warn('openGpsSettingsFromBlock failed', e); }
+};
+
+// ── Called by MainActivity.onResume() — re-checks GPS/perms and refreshes map ──
+window.onNativeAppResumed = function() {
+  try {
+    const isNative = window.isNativeAndroidApp || navigator.userAgent.includes('NearPopNativeAndroid');
+    if (!isNative) return;
+
+    const block = document.getElementById('hard-geo-block');
+    const isBlocked = block && block.style.display === 'flex';
+
+    // If we were blocked (waiting for user to enable GPS / grant permission), re-try
+    if (isBlocked && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (p) => {
+          // Success! Hide the block, refresh location, reload deals
+          if (block) block.style.display = 'none';
+          loc = { lat: p.coords.latitude, lng: p.coords.longitude };
+          gpsConfirmed = true;
+          try { SS('lastLoc', loc); } catch(e) {}
+          if (typeof loadListings === 'function') loadListings(true);
+          if (typeof updateMapView === 'function') updateMapView();
+          toast('✅', window.lang === 'hi' ? 'स्थान चालू हो गया' : 'Location enabled');
+        },
+        handleGeoError,
+        { enableHighAccuracy: true, timeout: 10000 }
+      );
+    }
+
+    // Also close notification tutorial if user just granted notification permission
+    const tut = document.getElementById('perm-tutorial-modal');
+    if (tut && tut.classList.contains('on') && window.NativeAndroid
+        && typeof window.NativeAndroid.hasNotificationPermission === 'function') {
+      try {
+        if (window.NativeAndroid.hasNotificationPermission()) {
+          tut.classList.remove('on');
+          // Reset denial counter so we don't re-prompt
+          localStorage.removeItem('np_notif_denied_count');
+          localStorage.removeItem('np_notif_asked');
+          toast('✅', window.lang === 'hi' ? 'सूचनाएं चालू हो गईं' : 'Notifications enabled');
+        }
+      } catch(e) {}
+    }
+  } catch(e) { console.warn('onNativeAppResumed error', e); }
+};
 
 if (!LS('uid')) { 
   window.location.href = 'index.html'; 
